@@ -1,0 +1,50 @@
+import React from "react";
+import { cn } from "../../utils/cn";
+
+type Variant = "primary" | "secondary" | "outline" | "gradient";
+type Size = "sm" | "md" | "lg";
+
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant;
+  size?: Size;
+  fullWidth?: boolean;
+};
+
+const base =
+  "inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+
+const variants: Record<Variant, string> = {
+  primary: "bg-brand text-brand-foreground hover:bg-blue-600",
+  secondary: "bg-surface-soft text-gray-900 hover:bg-gray-200",
+  outline:
+    "border border-gray-300 text-gray-900 hover:bg-gray-50 focus-visible:ring-brand",
+  gradient:
+    "bg-gradient-to-r from-accent-from to-accent-to text-white shadow-soft hover:brightness-105"
+};
+
+const sizes: Record<Size, string> = {
+  sm: "h-9 px-3 text-sm",
+  md: "h-11 px-4 text-sm",
+  lg: "h-12 px-6 text-base"
+};
+
+export function Button({
+  className,
+  variant = "primary",
+  size = "md",
+  fullWidth,
+  ...props
+}: Props) {
+  return (
+    <button
+      className={cn(
+        base,
+        variants[variant],
+        sizes[size],
+        fullWidth && "w-full",
+        className
+      )}
+      {...props}
+    />
+  );
+}
