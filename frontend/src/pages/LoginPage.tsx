@@ -60,7 +60,7 @@ const LoginPage: React.FC = () => {
               <input id="remember" type="checkbox" className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
               <span className="text-sm text-gray-700">Remember me</span>
             </div>
-            <Link to="#" className="text-sm text-blue-600 hover:text-blue-700">
+            <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
               Forgot password
             </Link>
           </div>

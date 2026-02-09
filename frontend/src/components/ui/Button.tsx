@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "../../utils/cn";
 
-type Variant = "primary" | "secondary" | "outline" | "gradient";
+type Variant = "primary" | "secondary" | "outline" | "gradient" | "ghost";
 type Size = "sm" | "md" | "lg";
 
 type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -14,12 +14,13 @@ const base =
   "inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-brand text-brand-foreground hover:bg-blue-600",
+  primary: "bg-brand text-brand-foreground hover:bg-blue-600 shadow-sm",
   secondary: "bg-surface-soft text-gray-900 hover:bg-gray-200",
   outline:
-    "border border-gray-300 text-gray-900 hover:bg-gray-50 focus-visible:ring-brand",
+    "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus-visible:ring-brand shadow-sm",
   gradient:
-    "bg-gradient-to-r from-accent-from to-accent-to text-white shadow-soft hover:brightness-105"
+    "bg-gradient-to-r from-brand to-palette-violet text-white shadow-soft hover:brightness-110 border border-transparent",
+  ghost: "bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900"
 };
 
 const sizes: Record<Size, string> = {
