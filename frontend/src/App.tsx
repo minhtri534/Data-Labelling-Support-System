@@ -7,7 +7,12 @@ import ReviewerDashboard from './pages/ReviewerDashboard';
 import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
 import AdminUserManagement from './pages/AdminUserManagement';
+import ReviewQueuePage from './pages/ReviewQueuePage';
+import ReviewDetailPage from './pages/ReviewDetailPage';
+import QualityReportPage from './pages/QualityReportPage';
+
 import './App.css';
+
 
 function App() {
   return (
@@ -22,6 +27,9 @@ function App() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/admin/users" element={<AdminUserManagement />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/review" element={<ReviewQueuePage />} />
+        <Route path="/review/:id" element={<ReviewDetailPage />} />
+        <Route path="/quality-report" element={<QualityReportPage />} />
       </Routes>
     </Router>
   );
