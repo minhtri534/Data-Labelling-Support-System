@@ -10,6 +10,8 @@ import AdminUserManagement from './pages/AdminUserManagement';
 import ReviewQueuePage from './pages/ReviewQueuePage';
 import ReviewDetailPage from './pages/ReviewDetailPage';
 import QualityReportPage from './pages/QualityReportPage';
+import AnnotatorReturnedTasksPage from "./pages/AnnotatorReturnedTasksPage";
+import AnnotatorReworkPage from "./pages/AnnotatorReworkPage";
 
 import './App.css';
 
@@ -30,6 +32,9 @@ function App() {
         <Route path="/review" element={<ReviewQueuePage />} />
         <Route path="/review/:id" element={<ReviewDetailPage />} />
         <Route path="/quality-report" element={<QualityReportPage />} />
+        <Route path="/annotator/returned" element={<AnnotatorReturnedTasksPage />} />
+        <Route path="/annotator/rework/:id" element={<AnnotatorReworkPage />} />
+
       </Routes>
     </Router>
   );

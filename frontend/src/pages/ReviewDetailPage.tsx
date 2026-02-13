@@ -1,31 +1,50 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { reviewService } from "../services/reviewService";
 
 export default function ReviewDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const [task, setTask] = useState<any>(null);
   const [feedback, setFeedback] = useState("");
-  const [status, setStatus] = useState<"pending" | "approved" | "returned">("pending");
+  const [loading, setLoading] = useState(true);
 
-  const detectInconsistency = () => {
-    alert("System detected 2 inconsistent labels.");
-  };
+  useEffect(() => {
+    if (!id) return;
 
-  const handleApprove = () => {
-    setStatus("approved");
-    alert("Task approved!");
+    const fetchTask = async () => {
+      const data = await reviewService.getTaskById(id);
+      setTask(data);
+      setLoading(false);
+    };
+
+    fetchTask();
+  }, [id]);
+
+  const handleApprove = async () => {
+    if (!id) return;
+    await reviewService.approveTask(id);
     navigate("/review");
   };
 
-  const handleReturn = () => {
-    setStatus("returned");
-    alert("Task returned with feedback.");
+  const handleReturn = async () => {
+    if (!id) return;
+    await reviewService.returnTask(id, feedback);
     navigate("/review");
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <p className="text-gray-500 p-6">Loading task...</p>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -33,31 +52,21 @@ export default function ReviewDetailPage() {
         <h1 className="text-2xl font-bold">Review Task {id}</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Labeled Data */}
           <Card className="p-4 space-y-3">
             <h2 className="font-semibold">Labeled Data</h2>
-            <img
-              src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600"
-              className="rounded-lg"
-            />
+            <img src={task.imageUrl} className="rounded-lg" />
           </Card>
 
-          {/* Guideline */}
           <Card className="p-4 space-y-3">
             <h2 className="font-semibold">Guideline</h2>
-            <p className="text-sm text-gray-600">
-              - Bounding boxes must tightly fit object  
-              - Label must match category list  
-              - No duplicate overlapping labels  
-            </p>
-
-            <Button variant="outline" onClick={detectInconsistency}>
-              Detect Inconsistent Labels
-            </Button>
+            {task.guideline.map((rule: string, index: number) => (
+              <p key={index} className="text-sm text-gray-600">
+                - {rule}
+              </p>
+            ))}
           </Card>
         </div>
 
-        {/* Feedback Section */}
         <Card className="p-4 space-y-3">
           <h2 className="font-semibold">Reviewer Feedback</h2>
           <Input
@@ -67,7 +76,6 @@ export default function ReviewDetailPage() {
           />
         </Card>
 
-        {/* Actions */}
         <div className="flex gap-4">
           <Button variant="gradient" onClick={handleApprove}>
             Approve
