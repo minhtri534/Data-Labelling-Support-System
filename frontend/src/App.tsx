@@ -12,6 +12,18 @@ import ReviewDetailPage from './pages/ReviewDetailPage';
 import QualityReportPage from './pages/QualityReportPage';
 import AnnotatorReturnedTasksPage from "./pages/AnnotatorReturnedTasksPage";
 import AnnotatorReworkPage from "./pages/AnnotatorReworkPage";
+import ManagerProjectBudgetPage from "./pages/ManagerProjectBudgetPage";
+import ManagerCostApprovalPage from "./pages/ManagerCostApprovalPage";
+import ManagerExpenseReportPage from "./pages/ManagerExpenseReportPage";
+import ManagerPaymentPage from "./pages/ManagerPaymentPage";
+import AnnotatorEarningsPage from "./pages/AnnotatorEarningsPage";
+import ReviewerEarningsPage from "./pages/ReviewerEarningsPage";
+import AdminWorkforcePaymentPage from "./pages/AdminWorkforcePaymentPage";
+import AdminDisputePage from "./pages/AdminDisputePage";
+import AdminSystemConfigPage from "./pages/AdminSystemConfigPage";
+import AdminSystemHealthPage from "./pages/AdminSystemHealthPage";
+import AdminLogsPage from "./pages/AdminLogsPage";
+import AdminPaymentVerificationPage from "./pages/AdminPaymentVerificationPage";
 
 import './App.css';
 
@@ -34,6 +46,18 @@ function App() {
         <Route path="/quality-report" element={<QualityReportPage />} />
         <Route path="/annotator/returned" element={<AnnotatorReturnedTasksPage />} />
         <Route path="/annotator/rework/:id" element={<AnnotatorReworkPage />} />
+        <Route path="/manager/budget" element={<ManagerProjectBudgetPage />} />
+        <Route path="/manager/approve-cost" element={<ManagerCostApprovalPage />} />
+        <Route path="/manager/expense-report" element={<ManagerExpenseReportPage />} />
+        <Route path="/manager/payment" element={<ManagerPaymentPage />} />
+        <Route path="/annotator/earnings" element={<AnnotatorEarningsPage />} />
+        <Route path="/reviewer/earnings" element={<ReviewerEarningsPage />} />
+        <Route path="/admin/workforce-payment" element={<AdminWorkforcePaymentPage />} />
+        <Route path="/admin/dispute" element={<AdminDisputePage />} />
+        <Route path="/admin/system-config" element={<AdminSystemConfigPage />} />
+        <Route path="/admin/system-health" element={<AdminSystemHealthPage />} />
+        <Route path="/admin/logs" element={<AdminLogsPage />} />
+        <Route path="/admin/payment-verification" element={<AdminPaymentVerificationPage />} />
 
       </Routes>
     </Router>

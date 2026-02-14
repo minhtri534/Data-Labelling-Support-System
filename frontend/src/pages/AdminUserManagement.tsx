@@ -4,165 +4,222 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { INITIAL_USERS } from '../data/mockData';
 import type { User } from '../data/mockData';
-import { 
-  Users, 
-  Search, 
-  Key, 
-  MoreVertical, 
-  CheckCircle, 
+import {
+  Users,
+  Search,
+  Key,
+  CheckCircle,
   XCircle,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  Edit,
+  Shield
 } from 'lucide-react';
 
 const AdminUserManagement: React.FC = () => {
-  const [users] = useState<User[]>(INITIAL_USERS);
+  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [searchQuery, setSearchQuery] = useState('');
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserRole, setNewUserRole] = useState<User['role']>('annotator');
 
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleResetPassword = (userId: string) => {
-    setResettingId(userId);
-    // Simulate API call
-    setTimeout(() => {
-      setResettingId(null);
-      alert('Password reset link has been sent to the user.');
-    }, 1500);
+  // =============================
+  // CREATE USER (UC-99)
+  // =============================
+  const handleCreateUser = () => {
+    const newUser: User = {
+      id: Date.now().toString(),
+      name: newUserName,
+      email: newUserEmail,
+      role: newUserRole,
+      status: 'active',
+      lastActive: 'Just now'
+    };
+
+    setUsers([...users, newUser]);
+    setNewUserName('');
+    setNewUserEmail('');
+    alert('User created successfully');
   };
 
-  const getRoleBadgeColor = (role: User['role']) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'reviewer':
-        return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'annotator':
-        return 'bg-green-100 text-green-700 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
+  // =============================
+  // UPDATE ROLE (UC-101 + UC-105)
+  // =============================
+  const handleChangeRole = (id: string, role: User['role']) => {
+    setUsers(users.map(u =>
+      u.id === id ? { ...u, role } : u
+    ));
+  };
+
+  // =============================
+  // DISABLE USER (UC-102)
+  // =============================
+  const handleDisableUser = (id: string) => {
+    setUsers(users.map(u =>
+      u.id === id ? { ...u, status: 'inactive' } : u
+    ));
+  };
+
+  // =============================
+  // DELETE USER (UC-103)
+  // =============================
+  const handleDeleteUser = (id: string) => {
+    setUsers(users.filter(u => u.id !== id));
+  };
+
+  // =============================
+  // RESET PASSWORD
+  // =============================
+  const handleResetPassword = (userId: string) => {
+    setResettingId(userId);
+    setTimeout(() => {
+      setResettingId(null);
+      alert('Password reset link sent');
+    }, 1000);
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-8 max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-              User Management
-            </h1>
-            <p className="text-gray-500 mt-1">
-              Manage user access and security settings.
-            </p>
-          </div>
-          <Button>
-            <Users className="h-4 w-4 mr-2" />
-            Add New User
-          </Button>
+
+        {/* HEADER */}
+        <div>
+          <h1 className="text-3xl font-bold">Admin User Management</h1>
+          <p className="text-gray-500">Manage users, roles & permissions</p>
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-sm flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input 
-              placeholder="Search users by name or email..." 
-              className="pl-10 bg-white/50"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+        {/* CREATE USER FORM */}
+        <div className="bg-white p-6 rounded-xl shadow space-y-4">
+          <h2 className="font-semibold">Create New User</h2>
+
+          <div className="flex gap-4">
+            <Input
+              placeholder="Name"
+              value={newUserName}
+              onChange={(e) => setNewUserName(e.target.value)}
             />
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              Filter
-            </Button>
-            <Button variant="outline">
-              Export
+            <Input
+              placeholder="Email"
+              value={newUserEmail}
+              onChange={(e) => setNewUserEmail(e.target.value)}
+            />
+            <select
+              className="border rounded px-3"
+              value={newUserRole}
+              onChange={(e) => setNewUserRole(e.target.value as User['role'])}
+            >
+              <option value="annotator">Annotator</option>
+              <option value="reviewer">Reviewer</option>
+              <option value="admin">Admin</option>
+            </select>
+
+            <Button onClick={handleCreateUser}>
+              <Users className="h-4 w-4 mr-2" />
+              Create
             </Button>
           </div>
         </div>
 
-        {/* Users Table */}
-        <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50/50 text-gray-500 font-medium">
-                <tr>
-                  <th className="px-6 py-4">User</th>
-                  <th className="px-6 py-4">Role</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Last Active</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-white/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-brand to-palette-violet flex items-center justify-center text-white font-medium shadow-md shadow-brand/20">
-                          {user.name.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-900">{user.name}</div>
-                          <div className="text-gray-500">{user.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleBadgeColor(user.role)}`}>
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+        {/* SEARCH */}
+        <div className="flex gap-4">
+          <Search className="h-5 w-5 text-gray-400 mt-2" />
+          <Input
+            placeholder="Search user..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        {/* USER TABLE */}
+        <div className="bg-white rounded-xl shadow overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="p-4">User</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredUsers.map(user => (
+                <tr key={user.id} className="border-t">
+                  <td className="p-4">
+                    <div className="font-medium">{user.name}</div>
+                    <div className="text-gray-500 text-xs">{user.email}</div>
+                  </td>
+
+                  <td>
+                    <select
+                      className="border rounded px-2 py-1"
+                      value={user.role}
+                      onChange={(e) =>
+                        handleChangeRole(user.id, e.target.value as User['role'])
+                      }
+                    >
+                      <option value="annotator">Annotator</option>
+                      <option value="reviewer">Reviewer</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </td>
+
+                  <td>
+                    {user.status === 'active' ? (
+                      <span className="text-green-600 flex items-center gap-1">
+                        <CheckCircle size={14} /> Active
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {user.status === 'active' ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-gray-400" />
-                        )}
-                        <span className={user.status === 'active' ? 'text-gray-700' : 'text-gray-500'}>
-                          {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-500">
-                      {user.lastActive}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="text-gray-500 hover:text-brand hover:bg-brand/5"
-                          onClick={() => handleResetPassword(user.id)}
-                          disabled={resettingId === user.id}
-                        >
-                          {resettingId === user.id ? (
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Key className="h-4 w-4" />
-                          )}
-                          <span className="ml-2">Reset Password</span>
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4 text-gray-400" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
+                    ) : (
+                      <span className="text-gray-400 flex items-center gap-1">
+                        <XCircle size={14} /> Inactive
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="flex gap-2 p-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleResetPassword(user.id)}
+                      disabled={resettingId === user.id}
+                    >
+                      {resettingId === user.id ? (
+                        <RefreshCw className="animate-spin h-4 w-4" />
+                      ) : (
+                        <Key className="h-4 w-4" />
+                      )}
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDisableUser(user.id)}
+                    >
+                      <Shield className="h-4 w-4 text-yellow-500" />
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteUser(user.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
           {filteredUsers.length === 0 && (
-            <div className="p-8 text-center text-gray-500">
-              No users found matching your search.
+            <div className="p-6 text-center text-gray-500">
+              No users found.
             </div>
           )}
         </div>
