@@ -1,4 +1,67 @@
 # Fullstack Project Context: C# .NET & React (Shadcn UI)
+# PROJECT OVERVIEW: DATA LABELING SUPPORT SYSTEM (DLSS)
+1. Executive Summary
+Data Labeling Support System (DLSS) là một nền tảng quản lý quy trình gán nhãn dữ liệu toàn diện (End-to-End). Hệ thống cho phép các tổ chức quản lý dự án, dữ liệu thô, đội ngũ nhân sự và quy trình kiểm soát chất lượng nhằm tạo ra các bộ dữ liệu chuẩn (Ground Truth) cho AI. Điểm khác biệt của hệ thống nằm ở khả năng hỗ trợ gán nhãn bằng AI (AI-assisted), quản lý phiên bản dữ liệu và tích hợp module tài chính (Cost & Payment) cho cả khách hàng (Project) và cộng tác viên (Workforce).
+
+2. System Actors
+Manager: Chủ dự án, người thiết lập cấu trúc nhãn, quản lý dataset, điều phối task và giám sát tiến độ/chất lượng.
+
+Annotator (Người gán nhãn): Thực hiện gán nhãn thủ công hoặc sử dụng gợi ý từ AI, xử lý phản hồi từ Reviewer.
+
+Reviewer (Người kiểm duyệt): Kiểm tra tính chính xác, tính nhất quán của nhãn và đưa ra phản hồi (Reject/Approve).
+
+Admin: Quản trị hệ thống, cấu hình phân quyền, giám sát logs, cấu hình biểu phí và phê duyệt thanh toán tổng thể.
+
+3. Core Modules & Domain Model
+Hệ thống được tổ chức thành 13 Epic chính, tập trung vào các thực thể (Entities) sau:
+
+A. Project & Data Management (Epic 3, 4, 5)
+Project: Đơn vị quản lý cao nhất, chứa các Guideline, cấu hình nhãn và ngân sách.
+
+Dataset & Versioning: Quản lý dữ liệu thô. Hỗ trợ import từ nguồn ngoài và lưu vết phiên bản (Versioning) để đảm bảo tính toàn vẹn dữ liệu.
+
+Label Configuration: Định nghĩa các Label Set, Category và Annotation Type (Bbox, Polygon, Tagging, v.v.).
+
+B. Workforce & Task Orchestration (Epic 6, 7, 10)
+Task Lifecycle: Từ lúc khởi tạo -> Gán (Assign) -> Đang làm (In-progress) -> Tạm dừng (Pause) -> Nộp (Submit).
+
+Labeling Engine: Giao diện làm việc của Annotator, hỗ trợ lưu nháp (Draft) và xử lý vòng lặp sửa lỗi (Rework Loop) dựa trên feedback của Reviewer.
+
+C. AI-Assisted Labeling (Epic 8)
+Tích hợp Model AI để gợi ý nhãn (Pre-labeling). Annotator đóng vai trò kiểm chứng (Accept/Modify/Reject), giúp tăng tốc độ gán nhãn gấp nhiều lần.
+
+D. Quality Assurance (QA) & Monitoring (Epic 9)
+Quy trình Review chéo.
+
+Công cụ phát hiện nhãn không nhất quán (Inconsistent Labels) và báo cáo hiệu suất (Performance Report).
+
+E. Financial & Payment Governance (Epic 11, 12)
+Project Side: Quản lý ngân sách dự án, ước tính chi phí, hóa đơn (Invoice) và thanh toán từ phía khách hàng.
+
+Workforce Side: Tính toán thu nhập cho Annotator/Reviewer dựa trên số lượng nhãn/task đã được Approve. Xử lý tranh chấp (Dispute) thanh toán.
+
+F. Administration & Security (Epic 1, 2, 13)
+Quản lý danh tính (Identity Management), phân quyền dựa trên Role (RBAC).
+
+Hệ thống Audit Log ghi lại mọi tác động vào dữ liệu và cấu hình hệ thống.
+
+4. Primary Workflows
+Setup: Admin tạo User -> Manager tạo Project -> Upload Dataset -> Cấu hình Label Set & Guideline.
+
+Execution: Manager tạo Task & Assign cho Annotator -> Annotator thực hiện gán nhãn (có sự hỗ trợ của AI) -> Submit.
+
+Review: Reviewer kiểm tra -> (Approve -> Kết thúc task) HOẶC (Reject -> Task quay lại Annotator để sửa).
+
+Export: Dữ liệu sau khi qua Review được Validate và Export theo định dạng yêu cầu (JSON, CSV, XML...).
+
+Settlement: Hệ thống tính toán chi phí dự án và thu nhập cho nhân sự dựa trên kết quả cuối cùng.
+
+5. Technical Constraints & Logic
+Data Integrity: Dữ liệu đã gán nhãn và được Approve phải được khóa để đảm bảo tính nhất quán khi Export.
+
+Concurrency: Xử lý tranh chấp khi nhiều Annotator cùng thực hiện các task trong một dataset lớn.
+
+AI Integration: Flow AI gợi ý phải có tính năng "Preview" trước khi lưu vào database chính thức.
 
 ## 🛠 1. Tech Stack Summary
 - **Backend:** C# (.NET 8/9+), ASP.NET Core Web API.
