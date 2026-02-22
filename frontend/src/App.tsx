@@ -24,6 +24,7 @@ import AdminSystemConfigPage from "./pages/AdminSystemConfigPage";
 import AdminSystemHealthPage from "./pages/AdminSystemHealthPage";
 import AdminLogsPage from "./pages/AdminLogsPage";
 import AdminPaymentVerificationPage from "./pages/AdminPaymentVerificationPage";
+import AnnotatorAILabelPage from "./pages/AnnotatorAILabelPage";
 
 import './App.css';
 
@@ -58,6 +59,7 @@ function App() {
         <Route path="/admin/system-health" element={<AdminSystemHealthPage />} />
         <Route path="/admin/logs" element={<AdminLogsPage />} />
         <Route path="/admin/payment-verification" element={<AdminPaymentVerificationPage />} />
+        <Route path="/annotator/ai-label" element={<AnnotatorAILabelPage />} />
 
       </Routes>
     </Router>
