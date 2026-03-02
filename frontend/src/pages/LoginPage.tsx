@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LogIn, Mail, Lock } from "lucide-react";
 import AuthLayout from "../layouts/AuthLayout";
 import { Card } from "../components/ui/Card";
@@ -7,13 +7,35 @@ import { Label } from "../components/ui/Label";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 
+
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+  const DEFAULT_ROUTE_BY_ROLE: Record<string, string> = {
+    reviewer: "/reviewer",
+    annotator: "/annotator/returned",
+    manager: "/manager/budget",
+    admin: "/admin/users",
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt:', { email, password });
+    let role = "reviewer";
+
+    if (email.includes("annotator")) role = "annotator";
+    if (email.includes("manager")) role = "manager";
+    if (email.includes("admin")) role = "admin";
+    localStorage.setItem("role", role);
+
+    const DEFAULT_ROUTE_BY_ROLE: Record<string, string> = {
+      reviewer: "/reviewer",
+      annotator: "/annotator/returned",
+      manager: "/manager/budget",
+      admin: "/admin/users",
+    };
+    
+    navigate(DEFAULT_ROUTE_BY_ROLE[role]);
   };
 
   return (

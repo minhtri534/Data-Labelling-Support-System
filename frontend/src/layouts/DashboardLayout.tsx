@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  CheckSquare, 
-  History, 
-  Settings, 
-  LogOut, 
-  Bell, 
+import { useNavigate } from "react-router-dom";
+
+import {
+  LayoutDashboard,
+  CheckSquare,
+  History,
+  Settings,
+  LogOut,
+  Bell,
   Search,
   Menu,
   X,
   MessageSquare,
-  Users
+  Users,
+  ClipboardList,
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import { Button } from '../components/ui/Button';
@@ -22,22 +27,55 @@ type Props = {
   children: React.ReactNode;
 };
 
-const NAV_ITEMS = [
-  { label: 'Overview', icon: LayoutDashboard, path: '/reviewer' },
-  { label: 'Review Queue', icon: CheckSquare, path: '/reviewer/queue' },
-  { label: 'History', icon: History, path: '/reviewer/history' },
-  { label: 'User Management', icon: Users, path: '/admin/users' },
-  { label: 'Settings', icon: Settings, path: '/settings' },
-];
+const NAV_BY_ROLE = {
+  reviewer: [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/reviewer' },
+    { label: 'Review Queue', icon: CheckSquare, path: '/review' },
+    { label: 'Quality Report', icon: ClipboardList, path: '/quality-report' },
+    { label: 'My Earnings', icon: History, path: '/reviewer/earnings' },
+  ],
+
+  annotator: [
+    { label: 'Returned Tasks', icon: History, path: '/annotator/returned' },
+    { label: 'AI Labeling', icon: Sparkles, path: '/annotator/ai-label' },
+    { label: 'Earnings', icon: History, path: '/annotator/earnings' },
+  ],
+
+  manager: [
+    { label: 'Project Budget', icon: LayoutDashboard, path: '/manager/budget' },
+    { label: 'Approve Cost', icon: CheckSquare, path: '/manager/approve-cost' },
+    { label: 'Expense Report', icon: History, path: '/manager/expense-report' },
+    { label: 'Payment', icon: History, path: '/manager/payment' },
+  ],
+
+  admin: [
+    { label: 'User Management', icon: Users, path: '/admin/users' },
+    { label: 'Workforce Payment', icon: CheckSquare, path: '/admin/workforce-payment' },
+    { label: 'Dispute', icon: MessageSquare, path: '/admin/dispute' },
+    { label: 'System Config', icon: Settings, path: '/admin/system-config' },
+    { label: 'System Health', icon: ShieldCheck, path: '/admin/system-health' },
+    { label: 'Logs', icon: History, path: '/admin/logs' },
+    { label: 'Payment Verification', icon: CheckSquare, path: '/admin/payment-verification' },
+  ],
+};
+
+type UserRole = keyof typeof NAV_BY_ROLE;
 
 export default function DashboardLayout({ children }: Props) {
+  const [role] = useState<UserRole>(() => {
+    const storedRole = localStorage.getItem("role");
+    return storedRole && storedRole in NAV_BY_ROLE
+      ? (storedRole as UserRole)
+      : "reviewer";
+  });
+  const NAV_ITEMS = NAV_BY_ROLE[role];
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showNotificationPreview, setShowNotificationPreview] = useState(false);
   const location = useLocation();
-
+  const navigate = useNavigate();
   const unreadCount = INITIAL_NOTIFICATIONS.filter(n => !n.isRead).length;
   const latestUnread = INITIAL_NOTIFICATIONS.find(n => !n.isRead);
-
+  
   useEffect(() => {
     // Show preview if there are unread messages and we're not on the notifications page
     if (unreadCount > 0 && location.pathname !== '/notifications') {
@@ -114,6 +152,11 @@ export default function DashboardLayout({ children }: Props) {
             <Button 
               variant="ghost" 
               className="w-full justify-start text-gray-500 hover:text-red-600 hover:bg-red-50/50"
+              onClick={() => {
+              localStorage.removeItem("role"); // xóa role
+              localStorage.removeItem("token"); // nếu có token
+              navigate("/login"); // chuyển về login
+            }}
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sign out
