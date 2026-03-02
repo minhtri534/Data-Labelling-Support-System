@@ -1,0 +1,141 @@
+using DataLabellingSupportSystem.Api.Database;
+using DataLabellingSupportSystem.Api.Middlewares;
+using DataLabellingSupportSystem.Api.Services.Auth;
+using DataLabellingSupportSystem.Api.Services.Roles;
+using DataLabellingSupportSystem.Api.Services.Users;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+namespace DataLabellingSupportSystem.Api.Configurations;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddDlssControllersAndValidation(this IServiceCollection services)
+    {
+        services.AddControllers();
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+        services.AddEndpointsApiExplorer();
+        return services;
+    }
+
+    public static IServiceCollection AddDlssSwagger(this IServiceCollection services)
+    {
+        services.AddSwaggerGen(options =>
+        {
+            var bearerScheme = new Microsoft.OpenApi.OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = Microsoft.OpenApi.SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                In = Microsoft.OpenApi.ParameterLocation.Header,
+                Description = "Paste only the JWT access token here. Swagger will send: Authorization: Bearer <token>"
+            };
+
+            options.AddSecurityDefinition("Bearer", bearerScheme);
+
+            options.AddSecurityRequirement(document => new Microsoft.OpenApi.OpenApiSecurityRequirement
+            {
+                { new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer", document, null), new List<string>() }
+            });
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddDlssDatabase(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddDbContext<AppDbContext>(options =>
+            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+
+        return services;
+    }
+
+    public static IServiceCollection AddDlssDomainServices(this IServiceCollection services)
+    {
+        services.AddScoped<IUsersService, UsersService>();
+        services.AddScoped<IRolesService, RolesService>();
+        return services;
+    }
+
+    public static IServiceCollection AddDlssAuth(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+        services.Configure<GoogleAuthOptions>(configuration.GetSection("GoogleAuth"));
+
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
+        services.AddSingleton<IJwtTokenService, JwtTokenService>();
+        services.AddSingleton<IGoogleIdTokenValidator, GoogleIdTokenValidator>();
+
+        services.AddScoped<IAuthService, AuthService>();
+
+        var jwt = configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
+        var signingKeyBytes = Encoding.UTF8.GetBytes(jwt.SigningKey ?? string.Empty);
+
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.MapInboundClaims = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwt.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwt.Audience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(signingKeyBytes),
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromSeconds(30)
+                };
+            });
+
+        services.AddAuthorization();
+
+        return services;
+    }
+
+    public static IServiceCollection AddDlssCors(this IServiceCollection services)
+    {
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontend", policy =>
+            {
+                policy.WithOrigins("http://localhost:5173")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials();
+            });
+        });
+
+        return services;
+    }
+
+    public static WebApplication UseDlssPipeline(this WebApplication app)
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
+
+        var hasHttpsUrl = app.Urls.Any(url => url.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+        if (hasHttpsUrl)
+        {
+            app.UseHttpsRedirection();
+        }
+
+        app.UseCors("AllowFrontend");
+        app.UseMiddleware<GlobalExceptionHandler>();
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapControllers();
+        return app;
+    }
+}

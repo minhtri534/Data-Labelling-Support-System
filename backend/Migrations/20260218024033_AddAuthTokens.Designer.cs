@@ -4,6 +4,7 @@ using DataLabellingSupportSystem.Api.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLabellingSupportSystem.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260218024033_AddAuthTokens")]
+    partial class AddAuthTokens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,7 +37,7 @@ namespace DataLabellingSupportSystem.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasColumnName("createdAt")
-                        .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())");
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2")
@@ -78,7 +81,7 @@ namespace DataLabellingSupportSystem.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasColumnName("createdAt")
-                        .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())");
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2")
@@ -147,7 +150,7 @@ namespace DataLabellingSupportSystem.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasColumnName("createdAt")
-                        .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())");
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<DateOnly?>("DateOfBirth")
                         .HasColumnType("date")
@@ -202,7 +205,7 @@ namespace DataLabellingSupportSystem.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasColumnName("updatedAt")
-                        .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())");
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.HasKey("Id");
 
