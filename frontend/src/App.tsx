@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 import ReviewerDashboard from './pages/ReviewerDashboard';
 import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
@@ -37,6 +38,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/reviewer" element={<ReviewerDashboard />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/notifications" element={<NotificationsPage />} />

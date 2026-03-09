@@ -99,10 +99,10 @@ export default function ProfilePage() {
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-100">
-                <Link to="/reset-password" state={{ from: 'profile' }}>
+                <Link to="/change-password">
                   <Button variant="outline" className="w-full justify-center">
                     <Lock className="h-4 w-4 mr-2" />
-                    Reset Password
+                    Change Password
                   </Button>
                 </Link>
               </div>

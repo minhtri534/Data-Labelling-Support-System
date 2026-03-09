@@ -1,52 +1,99 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Lock, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Lock, ShieldCheck, ArrowLeft, AlertCircle } from "lucide-react";
 import AuthLayout from "../layouts/AuthLayout";
 import { Card } from "../components/ui/Card";
 import { Label } from "../components/ui/Label";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
+import { authService } from "../services/authService";
 
 const ResetPasswordPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Lấy email và token từ URL (ví dụ: /reset-password?token=abc&email=test@gmail.com)
+  const queryParams = new URLSearchParams(location.search);
+  const token = queryParams.get('token') || '';
+  const email = queryParams.get('email') || '';
 
   const fromProfile = location.state?.from === 'profile';
   const backLink = fromProfile ? '/profile' : '/login';
-  const backText = fromProfile ? 'Back to Profile' : 'Back to Sign in';
+  const backText = fromProfile ? 'Quay lại Trang cá nhân' : 'Quay lại Đăng nhập';
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      setError("Mật khẩu xác nhận không khớp");
       return;
     }
-    console.log('Reset password attempt:', { password });
-    setIsSuccess(true);
+
+    if (password.length < 8) {
+      setError("Mật khẩu phải có ít nhất 8 ký tự");
+      return;
+    }
+
+    if (!token || !email) {
+      setError("Liên kết khôi phục mật khẩu không hợp lệ hoặc đã hết hạn");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await authService.resetPassword({
+        email,
+        resetToken: token,
+        newPassword: password
+      });
+
+      if (response.isSuccess) {
+        setIsSuccess(true);
+      } else {
+        setError(response.message || "Đã có lỗi xảy ra");
+      }
+    } catch (err: any) {
+      console.error('Reset password error:', err);
+      setError(err.response?.data?.message || "Không thể kết nối đến máy chủ");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <AuthLayout title="Secure your account" subtitle="Create a new strong password for your account." variant="simple">
+    <AuthLayout title="Bảo mật tài khoản" subtitle="Tạo mật khẩu mới mạnh mẽ cho tài khoản của bạn." variant="simple">
       <Card className="w-full max-w-md p-8">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center">
             <ShieldCheck className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <div className="text-sm text-gray-500">Security</div>
-            <h2 className="text-xl font-semibold text-gray-900">Set New Password</h2>
+            <div className="text-sm text-gray-500">Bảo mật</div>
+            <h2 className="text-xl font-semibold text-gray-900">Đặt mật khẩu mới</h2>
           </div>
         </div>
+
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
+        )}
 
         {!isSuccess ? (
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <p className="text-sm text-gray-600">
-              Your new password must be different from previously used passwords.
+              Mật khẩu mới của bạn phải khác với các mật khẩu đã sử dụng trước đó.
             </p>
             <div>
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password">Mật khẩu mới</Label>
               <Input
                 id="password"
                 name="password"
@@ -59,7 +106,7 @@ const ResetPasswordPage: React.FC = () => {
               />
             </div>
             <div>
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -72,12 +119,12 @@ const ResetPasswordPage: React.FC = () => {
               />
             </div>
             
-            <Button type="submit" fullWidth variant="gradient">
-              Reset Password
+            <Button type="submit" fullWidth variant="gradient" disabled={loading}>
+              {loading ? "Đang xử lý..." : "Đặt lại mật khẩu"}
             </Button>
 
             <div className="text-center text-sm text-gray-600">
-              <Link to={backLink} className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900">
+              <Link to={backLink} className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
                 <ArrowLeft className="h-4 w-4" /> {backText}
               </Link>
             </div>
@@ -88,14 +135,14 @@ const ResetPasswordPage: React.FC = () => {
                 <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                   <ShieldCheck className="h-8 w-8 text-green-600" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900">Password Reset Complete</h3>
+                <h3 className="text-lg font-medium text-gray-900">Hoàn tất đặt lại mật khẩu</h3>
                 <p className="text-center text-sm text-gray-600 mt-2">
-                  Your password has been successfully updated. You can now sign in with your new password.
+                  Mật khẩu của bạn đã được cập nhật thành công. Bây giờ bạn có thể đăng nhập bằng mật khẩu mới.
                 </p>
              </div>
             <Link to="/login">
               <Button fullWidth variant="gradient">
-                Sign in
+                Đăng nhập ngay
               </Button>
             </Link>
           </div>
@@ -106,3 +153,4 @@ const ResetPasswordPage: React.FC = () => {
 };
 
 export default ResetPasswordPage;
+
