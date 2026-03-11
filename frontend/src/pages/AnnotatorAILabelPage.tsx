@@ -1,4 +1,6 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+
 import DashboardLayout from "../layouts/DashboardLayout";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -7,7 +9,8 @@ import {
   Bot,
   Trash,
   Pencil,
-  MousePointer,
+  ZoomIn,
+  ZoomOut,
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
@@ -21,7 +24,10 @@ interface Box {
 
 export default function AnnotatorAILabelPage(){
 
+  const navigate = useNavigate()
+
   const imgRef = useRef<HTMLImageElement|null>(null)
+  const containerRef = useRef<HTMLDivElement|null>(null)
 
   const images = [
     "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600",
@@ -30,72 +36,95 @@ export default function AnnotatorAILabelPage(){
   ]
 
   const [current,setCurrent] = useState(0)
+  const [zoom,setZoom] = useState(1)
 
   const [annotations,setAnnotations] = useState<Record<number,Box[]>>({})
-
   const boxes = annotations[current] || []
 
   const [drawMode,setDrawMode] = useState(false)
   const [drawing,setDrawing] = useState(false)
 
   const [startPoint,setStartPoint] = useState<{x:number,y:number}|null>(null)
-
   const [previewBox,setPreviewBox] = useState<Box|null>(null)
 
   const [aiBox,setAiBox] = useState<Box|null>(null)
 
-  // START DRAW
+  // ---------------- ZOOM ----------------
+
+  const zoomIn = () => {
+    setZoom(prev => Math.min(prev + 0.5,4))
+  }
+
+  const zoomOut = () => {
+    setZoom(prev => Math.max(prev - 0.5,1))
+  }
+
+  // ---------------- GET MOUSE POSITION ----------------
+
+  const getMousePosition=(e:any)=>{
+
+    const container = containerRef.current!
+    const rect = container.getBoundingClientRect()
+
+    return{
+      x:(e.clientX - rect.left + container.scrollLeft)/zoom,
+      y:(e.clientY - rect.top + container.scrollTop)/zoom
+    }
+
+  }
+
+  // ---------------- DRAW ----------------
+
   const handleMouseDown=(e:any)=>{
 
     if(!drawMode) return
 
-    const rect = imgRef.current!.getBoundingClientRect()
+    e.preventDefault()
 
-    const startX=e.clientX-rect.left
-    const startY=e.clientY-rect.top
+    const pos = getMousePosition(e)
 
-    setStartPoint({
-      x:startX,
-      y:startY
-    })
-
+    setStartPoint(pos)
     setDrawing(true)
+
   }
 
-  // DRAG PREVIEW
   const handleMouseMove=(e:any)=>{
 
     if(!drawing || !startPoint) return
 
-    const rect = imgRef.current!.getBoundingClientRect()
-
-    const currentX=e.clientX-rect.left
-    const currentY=e.clientY-rect.top
+    const pos = getMousePosition(e)
 
     setPreviewBox({
       x:startPoint.x,
       y:startPoint.y,
-      width:currentX-startPoint.x,
-      height:currentY-startPoint.y
+      width:pos.x-startPoint.x,
+      height:pos.y-startPoint.y
     })
+
   }
 
-  // FINISH DRAW
   const handleMouseUp=(e:any)=>{
 
     if(!drawing || !startPoint) return
 
-    const rect = imgRef.current!.getBoundingClientRect()
+    const pos = getMousePosition(e)
 
-    const endX=e.clientX-rect.left
-    const endY=e.clientY-rect.top
+    let x = startPoint.x
+    let y = startPoint.y
+    let w = pos.x - startPoint.x
+    let h = pos.y - startPoint.y
 
-    const newBox:Box={
-      x:startPoint.x,
-      y:startPoint.y,
-      width:endX-startPoint.x,
-      height:endY-startPoint.y
+    if(w < 0){
+      x += w
+      w = Math.abs(w)
     }
+
+    if(h < 0){
+      y += h
+      h = Math.abs(h)
+    }
+
+    const newBox:Box={x,y,width:w,height:h}
 
     const updated=[...boxes,newBox]
 
@@ -107,26 +136,27 @@ export default function AnnotatorAILabelPage(){
     setDrawing(false)
     setStartPoint(null)
     setPreviewBox(null)
+
   }
 
-  const clearBoxes=()=>{
+  // ---------------- CLEAR ----------------
 
+  const clearBoxes=()=>{
     setAnnotations({
       ...annotations,
       [current]:[]
     })
   }
 
-  // MOCK AI
-  const handleRequestAI=()=>{
+  // ---------------- AI ----------------
 
+  const handleRequestAI=()=>{
     const box={
       x:150,
       y:80,
       width:120,
       height:100
     }
-
     setAiBox(box)
   }
 
@@ -142,28 +172,46 @@ export default function AnnotatorAILabelPage(){
     })
 
     setAiBox(null)
+
   }
 
   const rejectAI=()=>setAiBox(null)
 
-  const nextImage=()=>{
+  // ---------------- NAVIGATION ----------------
 
-    if(current<images.length-1){
+  const nextImage=()=>{
+    if(current < images.length-1){
       setCurrent(current+1)
       setAiBox(null)
     }
   }
 
   const prevImage=()=>{
-
-    if(current>0){
+    if(current > 0){
       setCurrent(current-1)
       setAiBox(null)
     }
   }
 
-  return(
+  // ---------------- SUBMIT ----------------
 
+  const handleSubmit=()=>{
+
+    const payload={
+      taskId:"task-demo-001",
+      annotations
+    }
+
+    console.log("Submit Payload:",payload)
+
+    alert("Task submitted successfully!")
+
+    // sau này có thể redirect
+    navigate("/annotator/returned")
+
+  }
+
+  return(
     <DashboardLayout>
 
       <div className="max-w-6xl mx-auto space-y-6">
@@ -194,15 +242,16 @@ export default function AnnotatorAILabelPage(){
                 <Bot className="w-4 h-4"/>
               </Button>
 
-              <Button
-                variant="outline"
-                onClick={clearBoxes}
-              >
-                <Trash className="w-4 h-4"/>
+              <Button variant="outline" onClick={zoomIn}>
+                <ZoomIn className="w-4 h-4"/>
               </Button>
 
-              <Button variant="outline">
-                <MousePointer className="w-4 h-4"/>
+              <Button variant="outline" onClick={zoomOut}>
+                <ZoomOut className="w-4 h-4"/>
+              </Button>
+
+              <Button variant="outline" onClick={clearBoxes}>
+                <Trash className="w-4 h-4"/>
               </Button>
 
             </div>
@@ -211,14 +260,17 @@ export default function AnnotatorAILabelPage(){
 
             <div className="flex items-center gap-4">
 
-              {current>0 && (
+              {current>0 &&(
                 <Button variant="outline" onClick={prevImage}>
                   <ChevronLeft/>
                 </Button>
               )}
 
               <div
-                className={`relative ${drawMode ? "cursor-crosshair":""}`}
+                ref={containerRef}
+                className={`relative overflow-auto max-w-[700px] max-h-[500px] ${
+                  drawMode ? "cursor-crosshair":""
+                }`}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
@@ -227,55 +279,55 @@ export default function AnnotatorAILabelPage(){
                 <img
                   ref={imgRef}
                   src={images[current]}
-                  className="rounded-lg"
+                  draggable={false}
+                  className="rounded-lg select-none"
+                  style={{
+                    transform:`scale(${zoom})`,
+                    transformOrigin:"top left",
+                    userSelect:"none"
+                  }}
                 />
-
-                {/* USER BOXES */}
 
                 {boxes.map((box,i)=>(
                   <div
                     key={i}
                     className="absolute border-2 border-green-500"
                     style={{
-                      left:box.x,
-                      top:box.y,
-                      width:box.width,
-                      height:box.height
+                      left:box.x*zoom,
+                      top:box.y*zoom,
+                      width:box.width*zoom,
+                      height:box.height*zoom
                     }}
                   />
                 ))}
-
-                {/* PREVIEW */}
 
                 {previewBox &&(
                   <div
                     className="absolute border-2 border-blue-500 border-dashed"
                     style={{
-                      left:previewBox.x,
-                      top:previewBox.y,
-                      width:previewBox.width,
-                      height:previewBox.height
+                      left:previewBox.x*zoom,
+                      top:previewBox.y*zoom,
+                      width:previewBox.width*zoom,
+                      height:previewBox.height*zoom
                     }}
                   />
                 )}
-
-                {/* AI BOX */}
 
                 {aiBox &&(
                   <div
                     className="absolute border-2 border-purple-500 border-dashed"
                     style={{
-                      left:aiBox.x,
-                      top:aiBox.y,
-                      width:aiBox.width,
-                      height:aiBox.height
+                      left:aiBox.x*zoom,
+                      top:aiBox.y*zoom,
+                      width:aiBox.width*zoom,
+                      height:aiBox.height*zoom
                     }}
                   />
                 )}
 
               </div>
 
-              {current<images.length-1 &&(
+              {current < images.length-1 &&(
                 <Button variant="outline" onClick={nextImage}>
                   <ChevronRight/>
                 </Button>
@@ -302,6 +354,14 @@ export default function AnnotatorAILabelPage(){
           </Card>
 
         )}
+
+        {/* SUBMIT BUTTON */}
+
+        <div className="flex justify-end">
+          <Button variant="gradient" onClick={handleSubmit}>
+            Submit Annotation
+          </Button>
+        </div>
 
       </div>
 

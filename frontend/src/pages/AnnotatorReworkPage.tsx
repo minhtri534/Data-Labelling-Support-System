@@ -10,7 +10,9 @@ import {
   Pencil,
   Trash,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ZoomIn,
+  ZoomOut
 } from "lucide-react"
 
 interface Box{
@@ -26,6 +28,7 @@ export default function AnnotatorReworkPage(){
   const navigate=useNavigate()
 
   const imgRef=useRef<HTMLImageElement|null>(null)
+  const containerRef=useRef<HTMLDivElement|null>(null)
 
   const images=[
     "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600",
@@ -34,16 +37,15 @@ export default function AnnotatorReworkPage(){
   ]
 
   const [current,setCurrent]=useState(0)
+  const [zoom,setZoom]=useState(1)
 
   const [annotations,setAnnotations]=useState<Record<number,Box[]>>({})
-
   const boxes=annotations[current]||[]
 
   const [drawMode,setDrawMode]=useState(false)
   const [drawing,setDrawing]=useState(false)
 
   const [startPoint,setStartPoint]=useState<{x:number,y:number}|null>(null)
-
   const [previewBox,setPreviewBox]=useState<Box|null>(null)
 
   const [comment,setComment]=useState("")
@@ -51,53 +53,84 @@ export default function AnnotatorReworkPage(){
   const feedback="Bounding box too loose around object."
   const errorCategory="Bounding Box Error"
 
-  // START DRAW
+  // ---------------- ZOOM ----------------
+
+  const zoomIn=()=>{
+    setZoom(prev=>Math.min(prev+0.5,4))
+  }
+
+  const zoomOut=()=>{
+    setZoom(prev=>Math.max(prev-0.5,1))
+  }
+
+  // ---------------- GET MOUSE POSITION ----------------
+
+  const getMousePosition=(e:any)=>{
+
+    const container=containerRef.current!
+    const rect=container.getBoundingClientRect()
+
+    return{
+      x:(e.clientX-rect.left+container.scrollLeft)/zoom,
+      y:(e.clientY-rect.top+container.scrollTop)/zoom
+    }
+
+  }
+
+  // ---------------- DRAW ----------------
+
   const handleMouseDown=(e:any)=>{
 
     if(!drawMode) return
 
-    const rect=imgRef.current!.getBoundingClientRect()
+    e.preventDefault()
 
-    const startX=e.clientX-rect.left
-    const startY=e.clientY-rect.top
+    const pos=getMousePosition(e)
 
-    setStartPoint({x:startX,y:startY})
+    setStartPoint(pos)
     setDrawing(true)
   }
 
-  // DRAG PREVIEW
   const handleMouseMove=(e:any)=>{
 
     if(!drawing||!startPoint) return
 
-    const rect=imgRef.current!.getBoundingClientRect()
-
-    const currentX=e.clientX-rect.left
-    const currentY=e.clientY-rect.top
+    const pos=getMousePosition(e)
 
     setPreviewBox({
       x:startPoint.x,
       y:startPoint.y,
-      width:currentX-startPoint.x,
-      height:currentY-startPoint.y
+      width:pos.x-startPoint.x,
+      height:pos.y-startPoint.y
     })
   }
 
-  // FINISH DRAW
   const handleMouseUp=(e:any)=>{
 
     if(!drawing||!startPoint) return
 
-    const rect=imgRef.current!.getBoundingClientRect()
+    const pos=getMousePosition(e)
 
-    const endX=e.clientX-rect.left
-    const endY=e.clientY-rect.top
+    let x=startPoint.x
+    let y=startPoint.y
+    let w=pos.x-startPoint.x
+    let h=pos.y-startPoint.y
+
+    if(w<0){
+      x+=w
+      w=Math.abs(w)
+    }
+
+    if(h<0){
+      y+=h
+      h=Math.abs(h)
+    }
 
     const newBox:Box={
-      x:startPoint.x,
-      y:startPoint.y,
-      width:endX-startPoint.x,
-      height:endY-startPoint.y
+      x,
+      y,
+      width:w,
+      height:h
     }
 
     const updated=[...boxes,newBox]
@@ -112,12 +145,31 @@ export default function AnnotatorReworkPage(){
     setPreviewBox(null)
   }
 
+  // ---------------- DELETE BOX ----------------
+
+  const deleteBox=(index:number)=>{
+
+    const updated=boxes.filter((_,i)=>i!==index)
+
+    setAnnotations({
+      ...annotations,
+      [current]:updated
+    })
+
+  }
+
+  // ---------------- CLEAR ----------------
+
   const clearBoxes=()=>{
+
     setAnnotations({
       ...annotations,
       [current]:[]
     })
+
   }
+
+  // ---------------- NAVIGATION ----------------
 
   const nextImage=()=>{
     if(current<images.length-1) setCurrent(current+1)
@@ -126,6 +178,8 @@ export default function AnnotatorReworkPage(){
   const prevImage=()=>{
     if(current>0) setCurrent(current-1)
   }
+
+  // ---------------- SUBMIT ----------------
 
   const handleResubmit=()=>{
 
@@ -152,6 +206,8 @@ export default function AnnotatorReworkPage(){
           Revise Task {id}
         </h1>
 
+        {/* REVIEWER FEEDBACK */}
+
         <Card className="p-4 space-y-2">
 
           <h2 className="font-semibold">
@@ -168,6 +224,8 @@ export default function AnnotatorReworkPage(){
 
         </Card>
 
+        {/* ANNOTATION AREA */}
+
         <Card className="p-6">
 
           <div className="flex gap-6">
@@ -183,13 +241,21 @@ export default function AnnotatorReworkPage(){
                 <Pencil className="w-4 h-4"/>
               </Button>
 
+              <Button variant="outline" onClick={zoomIn}>
+                <ZoomIn className="w-4 h-4"/>
+              </Button>
+
+              <Button variant="outline" onClick={zoomOut}>
+                <ZoomOut className="w-4 h-4"/>
+              </Button>
+
               <Button variant="outline" onClick={clearBoxes}>
                 <Trash className="w-4 h-4"/>
               </Button>
 
             </div>
 
-            {/* IMAGE */}
+            {/* IMAGE AREA */}
 
             <div className="flex items-center gap-4">
 
@@ -200,7 +266,10 @@ export default function AnnotatorReworkPage(){
               )}
 
               <div
-                className={`relative ${drawMode?"cursor-crosshair":""}`}
+                ref={containerRef}
+                className={`relative overflow-auto max-w-[700px] max-h-[500px] ${
+                  drawMode?"cursor-crosshair":""
+                }`}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
@@ -209,36 +278,47 @@ export default function AnnotatorReworkPage(){
                 <img
                   ref={imgRef}
                   src={images[current]}
-                  className="rounded-lg"
+                  draggable={false}
+                  className="rounded-lg select-none"
+                  style={{
+                    transform:`scale(${zoom})`,
+                    transformOrigin:"top left",
+                    userSelect:"none"
+                  }}
                 />
 
                 {/* SAVED BOXES */}
 
                 {boxes.map((box,i)=>(
+
                   <div
                     key={i}
-                    className="absolute border-2 border-green-500"
+                    onClick={()=>deleteBox(i)}
+                    className="absolute border-2 border-green-500 cursor-pointer"
                     style={{
-                      left:box.x,
-                      top:box.y,
-                      width:box.width,
-                      height:box.height
+                      left:box.x*zoom,
+                      top:box.y*zoom,
+                      width:box.width*zoom,
+                      height:box.height*zoom
                     }}
                   />
+
                 ))}
 
                 {/* PREVIEW BOX */}
 
                 {previewBox&&(
+
                   <div
                     className="absolute border-2 border-blue-500 border-dashed"
                     style={{
-                      left:previewBox.x,
-                      top:previewBox.y,
-                      width:previewBox.width,
-                      height:previewBox.height
+                      left:previewBox.x*zoom,
+                      top:previewBox.y*zoom,
+                      width:previewBox.width*zoom,
+                      height:previewBox.height*zoom
                     }}
                   />
+
                 )}
 
               </div>
@@ -255,6 +335,8 @@ export default function AnnotatorReworkPage(){
 
         </Card>
 
+        {/* COMMENT */}
+
         <Card className="p-4 space-y-3">
 
           <h2 className="font-semibold">
@@ -269,7 +351,12 @@ export default function AnnotatorReworkPage(){
 
         </Card>
 
-        <Button variant="gradient" onClick={handleResubmit}>
+        {/* SUBMIT */}
+
+        <Button
+          variant="gradient"
+          onClick={handleResubmit}
+        >
           Resubmit Task
         </Button>
 
