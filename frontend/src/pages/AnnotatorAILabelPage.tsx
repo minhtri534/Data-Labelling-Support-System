@@ -37,24 +37,50 @@ export default function AnnotatorAILabelPage(){
 
   const [drawMode,setDrawMode] = useState(false)
   const [drawing,setDrawing] = useState(false)
+
   const [startPoint,setStartPoint] = useState<{x:number,y:number}|null>(null)
+
+  const [previewBox,setPreviewBox] = useState<Box|null>(null)
 
   const [aiBox,setAiBox] = useState<Box|null>(null)
 
+  // START DRAW
   const handleMouseDown=(e:any)=>{
 
     if(!drawMode) return
 
     const rect = imgRef.current!.getBoundingClientRect()
 
+    const startX=e.clientX-rect.left
+    const startY=e.clientY-rect.top
+
     setStartPoint({
-      x:e.clientX-rect.left,
-      y:e.clientY-rect.top
+      x:startX,
+      y:startY
     })
 
     setDrawing(true)
   }
 
+  // DRAG PREVIEW
+  const handleMouseMove=(e:any)=>{
+
+    if(!drawing || !startPoint) return
+
+    const rect = imgRef.current!.getBoundingClientRect()
+
+    const currentX=e.clientX-rect.left
+    const currentY=e.clientY-rect.top
+
+    setPreviewBox({
+      x:startPoint.x,
+      y:startPoint.y,
+      width:currentX-startPoint.x,
+      height:currentY-startPoint.y
+    })
+  }
+
+  // FINISH DRAW
   const handleMouseUp=(e:any)=>{
 
     if(!drawing || !startPoint) return
@@ -80,6 +106,7 @@ export default function AnnotatorAILabelPage(){
 
     setDrawing(false)
     setStartPoint(null)
+    setPreviewBox(null)
   }
 
   const clearBoxes=()=>{
@@ -90,6 +117,7 @@ export default function AnnotatorAILabelPage(){
     })
   }
 
+  // MOCK AI
   const handleRequestAI=()=>{
 
     const box={
@@ -183,19 +211,16 @@ export default function AnnotatorAILabelPage(){
 
             <div className="flex items-center gap-4">
 
-              {/* PREV */}
-
               {current>0 && (
                 <Button variant="outline" onClick={prevImage}>
                   <ChevronLeft/>
                 </Button>
               )}
 
-              {/* CANVAS */}
-
               <div
-                className="relative"
+                className={`relative ${drawMode ? "cursor-crosshair":""}`}
                 onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
               >
 
@@ -204,6 +229,8 @@ export default function AnnotatorAILabelPage(){
                   src={images[current]}
                   className="rounded-lg"
                 />
+
+                {/* USER BOXES */}
 
                 {boxes.map((box,i)=>(
                   <div
@@ -218,9 +245,25 @@ export default function AnnotatorAILabelPage(){
                   />
                 ))}
 
-                {aiBox &&(
+                {/* PREVIEW */}
+
+                {previewBox &&(
                   <div
                     className="absolute border-2 border-blue-500 border-dashed"
+                    style={{
+                      left:previewBox.x,
+                      top:previewBox.y,
+                      width:previewBox.width,
+                      height:previewBox.height
+                    }}
+                  />
+                )}
+
+                {/* AI BOX */}
+
+                {aiBox &&(
+                  <div
+                    className="absolute border-2 border-purple-500 border-dashed"
                     style={{
                       left:aiBox.x,
                       top:aiBox.y,
@@ -231,8 +274,6 @@ export default function AnnotatorAILabelPage(){
                 )}
 
               </div>
-
-              {/* NEXT */}
 
               {current<images.length-1 &&(
                 <Button variant="outline" onClick={nextImage}>

@@ -44,25 +44,46 @@ export default function AnnotatorReworkPage(){
 
   const [startPoint,setStartPoint]=useState<{x:number,y:number}|null>(null)
 
+  const [previewBox,setPreviewBox]=useState<Box|null>(null)
+
   const [comment,setComment]=useState("")
 
   const feedback="Bounding box too loose around object."
   const errorCategory="Bounding Box Error"
 
+  // START DRAW
   const handleMouseDown=(e:any)=>{
 
     if(!drawMode) return
 
     const rect=imgRef.current!.getBoundingClientRect()
 
-    setStartPoint({
-      x:e.clientX-rect.left,
-      y:e.clientY-rect.top
-    })
+    const startX=e.clientX-rect.left
+    const startY=e.clientY-rect.top
 
+    setStartPoint({x:startX,y:startY})
     setDrawing(true)
   }
 
+  // DRAG PREVIEW
+  const handleMouseMove=(e:any)=>{
+
+    if(!drawing||!startPoint) return
+
+    const rect=imgRef.current!.getBoundingClientRect()
+
+    const currentX=e.clientX-rect.left
+    const currentY=e.clientY-rect.top
+
+    setPreviewBox({
+      x:startPoint.x,
+      y:startPoint.y,
+      width:currentX-startPoint.x,
+      height:currentY-startPoint.y
+    })
+  }
+
+  // FINISH DRAW
   const handleMouseUp=(e:any)=>{
 
     if(!drawing||!startPoint) return
@@ -88,10 +109,10 @@ export default function AnnotatorReworkPage(){
 
     setDrawing(false)
     setStartPoint(null)
+    setPreviewBox(null)
   }
 
   const clearBoxes=()=>{
-
     setAnnotations({
       ...annotations,
       [current]:[]
@@ -179,8 +200,9 @@ export default function AnnotatorReworkPage(){
               )}
 
               <div
-                className="relative"
+                className={`relative ${drawMode?"cursor-crosshair":""}`}
                 onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
               >
 
@@ -189,6 +211,8 @@ export default function AnnotatorReworkPage(){
                   src={images[current]}
                   className="rounded-lg"
                 />
+
+                {/* SAVED BOXES */}
 
                 {boxes.map((box,i)=>(
                   <div
@@ -202,6 +226,20 @@ export default function AnnotatorReworkPage(){
                     }}
                   />
                 ))}
+
+                {/* PREVIEW BOX */}
+
+                {previewBox&&(
+                  <div
+                    className="absolute border-2 border-blue-500 border-dashed"
+                    style={{
+                      left:previewBox.x,
+                      top:previewBox.y,
+                      width:previewBox.width,
+                      height:previewBox.height
+                    }}
+                  />
+                )}
 
               </div>
 
