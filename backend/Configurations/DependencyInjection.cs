@@ -1,7 +1,11 @@
 using DataLabellingSupportSystem.Api.Database;
 using DataLabellingSupportSystem.Api.Middlewares;
+using DataLabellingSupportSystem.Api.Services.Annotator;
 using DataLabellingSupportSystem.Api.Services.Auth;
+using DataLabellingSupportSystem.Api.Services.DevSeed;
+using DataLabellingSupportSystem.Api.Services.Exports;
 using DataLabellingSupportSystem.Api.Services.Roles;
+using DataLabellingSupportSystem.Api.Services.Storage;
 using DataLabellingSupportSystem.Api.Services.Users;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -60,6 +64,16 @@ public static class DependencyInjection
     {
         services.AddScoped<IUsersService, UsersService>();
         services.AddScoped<IRolesService, RolesService>();
+        services.AddScoped<IAnnotatorService, AnnotatorService>();
+        services.AddScoped<IExportService, ExportService>();
+        services.AddHostedService<DevSeedHostedService>();
+        return services;
+    }
+
+    public static IServiceCollection AddDlssStorage(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<StorageOptions>(configuration.GetSection("Storage"));
+        services.AddScoped<IStorageService, LocalStorageService>();
         return services;
     }
 
@@ -67,6 +81,7 @@ public static class DependencyInjection
     {
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.Configure<GoogleAuthOptions>(configuration.GetSection("GoogleAuth"));
+        services.Configure<DevSeedOptions>(configuration.GetSection("DevSeed"));
 
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();

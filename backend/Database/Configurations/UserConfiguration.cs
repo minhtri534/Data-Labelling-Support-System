@@ -1,4 +1,5 @@
 using DataLabellingSupportSystem.Api.Models;
+using DataLabellingSupportSystem.Api.Database.ValueGenerators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,7 +16,9 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.Id)
             .HasColumnName("_id")
             .HasColumnType("varchar(24)")
-            .ValueGeneratedNever();
+            .HasSentinel(string.Empty)
+            .ValueGeneratedOnAdd()
+            .HasValueGenerator<ObjectIdValueGenerator>();
 
         builder.Property(x => x.FullName)
             .HasColumnName("fullName")

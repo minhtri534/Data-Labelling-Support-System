@@ -1,4 +1,5 @@
 using DataLabellingSupportSystem.Api.Models;
+using DataLabellingSupportSystem.Api.Database.ValueGenerators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,7 +17,9 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
             .HasColumnName("_id")
             .HasColumnType("varchar(24)")
             .HasMaxLength(24)
-            .ValueGeneratedNever();
+            .HasSentinel(string.Empty)
+            .ValueGeneratedOnAdd()
+            .HasValueGenerator<ObjectIdValueGenerator>();
 
         builder.Property(x => x.Name)
             .HasColumnName("name")
