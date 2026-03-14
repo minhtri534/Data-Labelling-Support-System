@@ -10,10 +10,18 @@ public class AppDbContext : DbContext
     {
     }
 
-    public DbSet<User> Users { get; set; }
-    public DbSet<Role> Roles { get; set; }
-    public DbSet<RefreshToken> RefreshTokens { get; set; }
-    public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+    public DbSet<User> Users { get; set; } = default!;
+    public DbSet<Role> Roles { get; set; } = default!;
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = default!;
+    public DbSet<PasswordResetToken> PasswordResetTokens { get; set; } = default!;
+
+    public DbSet<Project> Projects { get; set; } = default!;
+    public DbSet<Dataset> Datasets { get; set; } = default!;
+    public DbSet<DataItem> DataItems { get; set; } = default!;
+    public DbSet<Label> Labels { get; set; } = default!;
+    public DbSet<LabelingTask> LabelingTasks { get; set; } = default!;
+    public DbSet<LabelingTaskItem> LabelingTaskItems { get; set; } = default!;
+    public DbSet<Annotation> Annotations { get; set; } = default!;
 
     public override int SaveChanges()
     {
@@ -62,6 +70,132 @@ public class AppDbContext : DbContext
             if (entry.State == EntityState.Added && entry.Entity.CreatedAt == default)
             {
                 entry.Entity.CreatedAt = now;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<Project>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = now;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<Dataset>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = now;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<DataItem>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = now;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<Label>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = now;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<LabelingTask>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = now;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<LabelingTaskItem>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = now;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<Annotation>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = now;
             }
         }
     }

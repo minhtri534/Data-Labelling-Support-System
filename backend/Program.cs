@@ -7,6 +7,7 @@ builder.Services
     .AddDlssSwagger()
     .AddDlssDatabase(builder.Configuration)
     .AddDlssDomainServices()
+    .AddDlssStorage(builder.Configuration)
     .AddDlssAuth(builder.Configuration)
     .AddDlssCors();
 
