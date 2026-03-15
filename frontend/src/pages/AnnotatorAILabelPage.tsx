@@ -1,9 +1,10 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 import DashboardLayout from "../layouts/DashboardLayout";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { annotatorService } from "../services/annotatorService";
 
 import {
   Bot,
@@ -12,359 +13,308 @@ import {
   ZoomIn,
   ZoomOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from "lucide-react";
 
 interface Box {
-  x:number
-  y:number
-  width:number
-  height:number
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  labelId?: string;
 }
 
-export default function AnnotatorAILabelPage(){
+export default function AnnotatorAILabelPage() {
+  const { id } = useParams<{ id: string }>(); 
+  const navigate = useNavigate();
 
-  const navigate = useNavigate()
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const imgRef = useRef<HTMLImageElement|null>(null)
-  const containerRef = useRef<HTMLDivElement|null>(null)
+  const [taskItems, setTaskItems] = useState<any[]>([]);
+  const [labels, setLabels] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const images = [
-    "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600",
-    "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600",
-    "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=600"
-  ]
+  const [current, setCurrent] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const [annotations, setAnnotations] = useState<Record<number, Box[]>>({});
+  const boxes = annotations[current] || [];
 
-  const [current,setCurrent] = useState(0)
-  const [zoom,setZoom] = useState(1)
+  const [drawMode, setDrawMode] = useState(false);
+  const [drawing, setDrawing] = useState(false);
+  const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
+  const [previewBox, setPreviewBox] = useState<Box | null>(null);
+  const [aiBox, setAiBox] = useState<Box | null>(null);
 
-  const [annotations,setAnnotations] = useState<Record<number,Box[]>>({})
-  const boxes = annotations[current] || []
+  useEffect(() => {
+    const loadTaskData = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const [itemsRes, labelsRes] = await Promise.all([
+          annotatorService.getTaskItems(id),
+          annotatorService.getLabels(id)
+        ]);
 
-  const [drawMode,setDrawMode] = useState(false)
-  const [drawing,setDrawing] = useState(false)
+        if (itemsRes.isSuccess) setTaskItems(itemsRes.data);
+        if (labelsRes.isSuccess) setLabels(labelsRes.data);
+      } catch (err) {
+        console.error("Load task data failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTaskData();
+  }, [id]);
 
-  const [startPoint,setStartPoint] = useState<{x:number,y:number}|null>(null)
-  const [previewBox,setPreviewBox] = useState<Box|null>(null)
+  const imageUrl = taskItems[current]
+    ? annotatorService.getImageUrl(taskItems[current].taskItemId)
+    : "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600";
 
-  const [aiBox,setAiBox] = useState<Box|null>(null)
+  const zoomIn = () => setZoom(prev => Math.min(prev + 0.5, 4));
+  const zoomOut = () => setZoom(prev => Math.max(prev - 0.5, 1));
 
-  // ---------------- ZOOM ----------------
+  const getMousePosition = (e: any) => {
+    const container = containerRef.current!;
+    const rect = container.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left + container.scrollLeft) / zoom,
+      y: (e.clientY - rect.top + container.scrollTop) / zoom
+    };
+  };
 
-  const zoomIn = () => {
-    setZoom(prev => Math.min(prev + 0.5,4))
-  }
+  const handleMouseDown = (e: any) => {
+    if (!drawMode) return;
+    e.preventDefault();
+    setStartPoint(getMousePosition(e));
+    setDrawing(true);
+  };
 
-  const zoomOut = () => {
-    setZoom(prev => Math.max(prev - 0.5,1))
-  }
-
-  // ---------------- GET MOUSE POSITION ----------------
-
-  const getMousePosition=(e:any)=>{
-
-    const container = containerRef.current!
-    const rect = container.getBoundingClientRect()
-
-    return{
-      x:(e.clientX - rect.left + container.scrollLeft)/zoom,
-      y:(e.clientY - rect.top + container.scrollTop)/zoom
-    }
-
-  }
-
-  // ---------------- DRAW ----------------
-
-  const handleMouseDown=(e:any)=>{
-
-    if(!drawMode) return
-
-    e.preventDefault()
-
-    const pos = getMousePosition(e)
-
-    setStartPoint(pos)
-    setDrawing(true)
-
-  }
-
-  const handleMouseMove=(e:any)=>{
-
-    if(!drawing || !startPoint) return
-
-    const pos = getMousePosition(e)
-
+  const handleMouseMove = (e: any) => {
+    if (!drawing || !startPoint) return;
+    const pos = getMousePosition(e);
     setPreviewBox({
-      x:startPoint.x,
-      y:startPoint.y,
-      width:pos.x-startPoint.x,
-      height:pos.y-startPoint.y
-    })
+      x: startPoint.x,
+      y: startPoint.y,
+      width: pos.x - startPoint.x,
+      height: pos.y - startPoint.y
+    });
+  };
 
-  }
+  const handleMouseUp = (e: any) => {
+    if (!drawing || !startPoint) return;
+    const pos = getMousePosition(e);
+    let { x, y } = startPoint;
+    let w = pos.x - startPoint.x;
+    let h = pos.y - startPoint.y;
 
-  const handleMouseUp=(e:any)=>{
+    if (w < 0) { x += w; w = Math.abs(w); }
+    if (h < 0) { y += h; h = Math.abs(h); }
 
-    if(!drawing || !startPoint) return
+    const newBox: Box = { 
+      x, y, width: w, height: h, 
+      labelId: labels[0]?.labelId 
+    };
 
-    const pos = getMousePosition(e)
+    setAnnotations({ ...annotations, [current]: [...boxes, newBox] });
+    setDrawing(false);
+    setStartPoint(null);
+    setPreviewBox(null);
+  };
 
-    let x = startPoint.x
-    let y = startPoint.y
-    let w = pos.x - startPoint.x
-    let h = pos.y - startPoint.y
+  const clearBoxes = () => setAnnotations({ ...annotations, [current]: [] });
 
-    if(w < 0){
-      x += w
-      w = Math.abs(w)
+  const handleRequestAI = () => {
+    setAiBox({ x: 100, y: 100, width: 200, height: 150, labelId: labels[0]?.labelId });
+  };
+
+  const acceptAI = () => {
+    if (!aiBox) return;
+    setAnnotations({ ...annotations, [current]: [...boxes, aiBox] });
+    setAiBox(null);
+  };
+
+  const nextImage = () => {
+    const max = taskItems.length > 0 ? taskItems.length : 3;
+    if (current < max - 1) {
+      setCurrent(current + 1);
+      setAiBox(null);
+    }
+  };
+
+  const prevImage = () => {
+    if (current > 0) {
+      setCurrent(current - 1);
+      setAiBox(null);
+    }
+  };
+
+  const handleSubmit = async () => {
+    const taskItem = taskItems[current];
+
+    if (!taskItem || !id) {
+      console.log("Demo Mode: Submitting annotations...", boxes);
+      alert("Demo: Task submitted successfully!");
+      
+      if (current < (taskItems.length || 3) - 1) {
+        nextImage();
+      } else {
+        navigate("/annotator/returned");
+      }
+      return;
     }
 
-    if(h < 0){
-      y += h
-      h = Math.abs(h)
+    const payload = {
+      objects: boxes.map(b => ({
+        labelId: b.labelId || labels[0]?.labelId,
+        geometryData: { 
+          x: b.x,
+          y: b.y,
+          width: b.width,
+          height: b.height
+        }
+      }))
+    };
+
+    try {
+      const res = await annotatorService.submit(taskItem.taskItemId, payload);
+      
+      if (res.isSuccess) {
+        alert("Annotation submitted successfully!");
+        
+        if (current === taskItems.length - 1) {
+          navigate("/annotator/returned");
+        } else {
+          nextImage();
+        }
+      } else {
+        alert(res.message || "Submit failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("Submit error:", err);
+      alert("Error connecting to server. Please check your connection.");
     }
+  };
 
-    const newBox:Box={x,y,width:w,height:h}
-
-    const updated=[...boxes,newBox]
-
-    setAnnotations({
-      ...annotations,
-      [current]:updated
-    })
-
-    setDrawing(false)
-    setStartPoint(null)
-    setPreviewBox(null)
-
+  if (loading && id) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center h-64 gap-2">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+          <p className="text-gray-500">Loading Task Items...</p>
+        </div>
+      </DashboardLayout>
+    );
   }
 
-  // ---------------- CLEAR ----------------
+  const deleteBox = (index: number) => {
+    setAnnotations(prev => ({
+      ...prev,
+      [current]: prev[current].filter((_, i) => i !== index)
+    }));
+  };
 
-  const clearBoxes=()=>{
-    setAnnotations({
-      ...annotations,
-      [current]:[]
-    })
-  }
-
-  // ---------------- AI ----------------
-
-  const handleRequestAI=()=>{
-    const box={
-      x:150,
-      y:80,
-      width:120,
-      height:100
-    }
-    setAiBox(box)
-  }
-
-  const acceptAI=()=>{
-
-    if(!aiBox) return
-
-    const updated=[...boxes,aiBox]
-
-    setAnnotations({
-      ...annotations,
-      [current]:updated
-    })
-
-    setAiBox(null)
-
-  }
-
-  const rejectAI=()=>setAiBox(null)
-
-  // ---------------- NAVIGATION ----------------
-
-  const nextImage=()=>{
-    if(current < images.length-1){
-      setCurrent(current+1)
-      setAiBox(null)
-    }
-  }
-
-  const prevImage=()=>{
-    if(current > 0){
-      setCurrent(current-1)
-      setAiBox(null)
-    }
-  }
-
-  // ---------------- SUBMIT ----------------
-
-  const handleSubmit=()=>{
-
-    const payload={
-      taskId:"task-demo-001",
-      annotations
-    }
-
-    console.log("Submit Payload:",payload)
-
-    alert("Task submitted successfully!")
-
-    // sau này có thể redirect
-    navigate("/annotator/returned")
-
-  }
-
-  return(
+  return (
     <DashboardLayout>
-
       <div className="max-w-6xl mx-auto space-y-6">
-
-        <h1 className="text-2xl font-bold">
-          AI Assisted Annotation
-        </h1>
+        <h1 className="text-2xl font-bold">AI Assisted Annotation</h1>
 
         <Card className="p-6">
-
           <div className="flex gap-6">
-
-            {/* TOOLBAR */}
-
             <div className="flex flex-col gap-3">
-
               <Button
-                variant={drawMode?"gradient":"outline"}
-                onClick={()=>setDrawMode(!drawMode)}
+                variant={drawMode ? "gradient" : "outline"}
+                onClick={() => setDrawMode(!drawMode)}
               >
-                <Pencil className="w-4 h-4"/>
+                <Pencil className="w-4 h-4" />
               </Button>
-
-              <Button
-                variant="outline"
-                onClick={handleRequestAI}
-              >
-                <Bot className="w-4 h-4"/>
+              <Button variant="outline" onClick={handleRequestAI}>
+                <Bot className="w-4 h-4 text-purple-600" />
               </Button>
-
               <Button variant="outline" onClick={zoomIn}>
-                <ZoomIn className="w-4 h-4"/>
+                <ZoomIn className="w-4 h-4" />
               </Button>
-
               <Button variant="outline" onClick={zoomOut}>
-                <ZoomOut className="w-4 h-4"/>
+                <ZoomOut className="w-4 h-4" />
               </Button>
-
               <Button variant="outline" onClick={clearBoxes}>
-                <Trash className="w-4 h-4"/>
+                <Trash className="w-4 h-4 text-red-500" />
               </Button>
-
             </div>
 
-            {/* IMAGE AREA */}
-
-            <div className="flex items-center gap-4">
-
-              {current>0 &&(
-                <Button variant="outline" onClick={prevImage}>
-                  <ChevronLeft/>
-                </Button>
-              )}
+            <div className="flex items-center gap-4 flex-1 justify-center bg-gray-50 rounded-lg p-4">
+              <Button variant="outline" onClick={prevImage} disabled={current === 0}>
+                <ChevronLeft />
+              </Button>
 
               <div
                 ref={containerRef}
-                className={`relative overflow-auto max-w-[700px] max-h-[500px] ${
-                  drawMode ? "cursor-crosshair":""
-                }`}
+                className={`relative overflow-hidden border bg-white ${drawMode ? "cursor-crosshair" : ""}`}
+                style={{ width: "700px", height: "500px" }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
               >
-
                 <img
                   ref={imgRef}
-                  src={images[current]}
+                  src={imageUrl}
                   draggable={false}
-                  className="rounded-lg select-none"
+                  className="max-w-none select-none"
                   style={{
-                    transform:`scale(${zoom})`,
-                    transformOrigin:"top left",
-                    userSelect:"none"
+                    transform: `scale(${zoom})`,
+                    transformOrigin: "top left",
                   }}
                 />
-
-                {boxes.map((box,i)=>(
-                  <div
-                    key={i}
-                    className="absolute border-2 border-green-500"
-                    style={{
-                      left:box.x*zoom,
-                      top:box.y*zoom,
-                      width:box.width*zoom,
-                      height:box.height*zoom
+                {boxes.map((box, i) => (
+                  <div 
+                    key={i} 
+                    onClick={(e) => { 
+                      e.stopPropagation();
+                      deleteBox(i); 
+                    }}
+                    className="absolute border-2 border-green-500 bg-green-500/10 hover:bg-red-500/20 hover:border-red-500 transition-colors cursor-pointer"
+                    style={{ 
+                      left: box.x * zoom, 
+                      top: box.y * zoom, 
+                      width: box.width * zoom, 
+                      height: box.height * zoom 
                     }}
                   />
                 ))}
-
-                {previewBox &&(
-                  <div
-                    className="absolute border-2 border-blue-500 border-dashed"
-                    style={{
-                      left:previewBox.x*zoom,
-                      top:previewBox.y*zoom,
-                      width:previewBox.width*zoom,
-                      height:previewBox.height*zoom
-                    }}
+                {previewBox && (
+                  <div className="absolute border-2 border-blue-500 border-dashed"
+                    style={{ left: previewBox.x * zoom, top: previewBox.y * zoom, width: previewBox.width * zoom, height: previewBox.height * zoom }}
                   />
                 )}
-
-                {aiBox &&(
-                  <div
-                    className="absolute border-2 border-purple-500 border-dashed"
-                    style={{
-                      left:aiBox.x*zoom,
-                      top:aiBox.y*zoom,
-                      width:aiBox.width*zoom,
-                      height:aiBox.height*zoom
-                    }}
+                {aiBox && (
+                  <div className="absolute border-2 border-purple-500 border-dashed animate-pulse"
+                    style={{ left: aiBox.x * zoom, top: aiBox.y * zoom, width: aiBox.width * zoom, height: aiBox.height * zoom }}
                   />
                 )}
-
               </div>
 
-              {current < images.length-1 &&(
-                <Button variant="outline" onClick={nextImage}>
-                  <ChevronRight/>
-                </Button>
-              )}
-
+              <Button variant="outline" onClick={nextImage} disabled={current === (taskItems.length || 3) - 1}>
+                <ChevronRight />
+              </Button>
             </div>
-
           </div>
-
         </Card>
 
-        {aiBox &&(
-
-          <Card className="p-4 flex gap-4">
-
-            <Button variant="gradient" onClick={acceptAI}>
-              Accept AI
-            </Button>
-
-            <Button variant="outline" onClick={rejectAI}>
-              Reject AI
-            </Button>
-
+        {aiBox && (
+          <Card className="p-4 flex gap-4 items-center bg-purple-50 border-purple-200">
+            <span className="flex-1 text-purple-800 text-sm font-medium">AI has suggested a bounding box. Do you want to accept it?</span>
+            <Button variant="outline" onClick={() => setAiBox(null)}>Reject</Button>
+            <Button variant="gradient" onClick={acceptAI}>Accept AI</Button>
           </Card>
-
         )}
-
-        {/* SUBMIT BUTTON */}
 
         <div className="flex justify-end">
           <Button variant="gradient" onClick={handleSubmit}>
             Submit Annotation
           </Button>
         </div>
-
       </div>
-
     </DashboardLayout>
-  )
+  );
 }
