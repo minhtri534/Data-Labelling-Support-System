@@ -2,7 +2,7 @@ import axios from 'axios';
 import { authService } from '../services/authService';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api', // Cấu hình port backend tại đây
+  baseURL: 'http://localhost:5000/api', // Cấu hình port backend tại đây
   headers: {
     'Content-Type': 'application/json',
   },
