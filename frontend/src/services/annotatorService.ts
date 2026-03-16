@@ -32,6 +32,19 @@ export const annotatorService = {
   },
 
   getImageUrl(taskItemId: string) {
-    return `${api.defaults.baseURL}/annotator/task-items/${taskItemId}/data-item/content`;
+    return `${api.defaults.baseURL}/annotator/task-items/${taskItemId}/data-item/content`; 
+  },
+
+  async getImageSecure(taskItemId: string): Promise<Blob> {
+    const url = `/annotator/task-items/${taskItemId}/data-item/content`; 
+    try {
+        const res = await api.get(url, { responseType: 'blob' });
+        return res.data;
+    } catch (error: any) {
+        if (error.response?.status === 404) {
+            console.error(`Lỗi 404: Không tìm thấy file cho Item ${taskItemId}. Kiểm tra folder lưu trữ trên Backend!`);
+        }
+        throw error;
+    }
   }
-}
+};

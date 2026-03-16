@@ -62,7 +62,7 @@ function App() {
         <Route path="/admin/logs" element={<AdminLogsPage />} />
         <Route path="/admin/payment-verification" element={<AdminPaymentVerificationPage />} />
         <Route path="/annotator/ai-label" element={<AnnotatorAILabelPage />} />
-
+        <Route path="/annotator/ai-label/:id" element={<AnnotatorAILabelPage />} />
       </Routes>
     </Router>
   );

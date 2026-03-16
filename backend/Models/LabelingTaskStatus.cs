@@ -1,8 +1,8 @@
 namespace DataLabellingSupportSystem.Api.Models;
 
-public enum LabelingTaskStatus
-{
+public enum LabelingTaskStatus {
     Assigned = 0,
     InProgress = 1,
-    Submitted = 2
+    Submitted = 2,
+    Rejected = 3 
 }
