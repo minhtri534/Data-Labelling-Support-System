@@ -1,5 +1,8 @@
+<<<<<<< Updated upstream
 using DataLabellingSupportSystem.Api.Models;
 using DataLabellingSupportSystem.Api.Utils;
+=======
+>>>>>>> Stashed changes
 using Microsoft.EntityFrameworkCore;
 
 namespace DataLabellingSupportSystem.Api.Database;
@@ -10,6 +13,7 @@ public class AppDbContext : DbContext
     {
     }
 
+<<<<<<< Updated upstream
     public DbSet<User> Users { get; set; } = default!;
     public DbSet<Role> Roles { get; set; } = default!;
     public DbSet<RefreshToken> RefreshTokens { get; set; } = default!;
@@ -239,6 +243,11 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+=======
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+>>>>>>> Stashed changes
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }
