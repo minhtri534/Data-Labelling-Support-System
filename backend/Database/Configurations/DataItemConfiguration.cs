@@ -38,19 +38,49 @@ public sealed class DataItemConfiguration : IEntityTypeConfiguration<DataItem>
             .IsRequired();
 
         builder.Property(x => x.ObjectKey)
-            .HasColumnName("objectKey")
+            .HasColumnName("filePath")
             .HasMaxLength(500)
             .IsRequired();
 
         builder.Property(x => x.OriginalWidth)
-            .HasColumnName("originalWidth")
+            .HasColumnName("width")
             .HasDefaultValue(0)
             .IsRequired();
 
         builder.Property(x => x.OriginalHeight)
-            .HasColumnName("originalHeight")
+            .HasColumnName("height")
             .HasDefaultValue(0)
             .IsRequired();
+
+        builder.Property(x => x.DataType)
+            .HasColumnName("dataType")
+            .HasColumnType("varchar(50)")
+            .HasMaxLength(50)
+            .HasDefaultValue("Image")
+            .IsRequired();
+
+        builder.Property(x => x.Checksum)
+            .HasColumnName("checksum")
+            .HasColumnType("varchar(64)")
+            .HasMaxLength(64);
+
+        builder.Property(x => x.Status)
+            .HasColumnName("status")
+            .HasColumnType("varchar(20)")
+            .HasMaxLength(20)
+            .HasDefaultValue("Active")
+            .IsRequired();
+
+        builder.Property(x => x.UploadedByUserId)
+            .HasColumnName("uploadedBy")
+            .HasColumnType("varchar(24)")
+            .HasMaxLength(24);
+
+        builder.HasOne(x => x.UploadedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.UploadedByUserId)
+            .HasPrincipalKey(x => x.Id)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.CreatedAt)
             .HasColumnName("createdAt")

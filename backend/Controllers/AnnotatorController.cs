@@ -3,6 +3,7 @@ using DataLabellingSupportSystem.Api.Common.Extensions;
 using DataLabellingSupportSystem.Api.Common.Results;
 using DataLabellingSupportSystem.Api.DTOs.Requests.Annotator;
 using DataLabellingSupportSystem.Api.DTOs.Responses.Annotator;
+using DataLabellingSupportSystem.Api.Services.AiAssist;
 using DataLabellingSupportSystem.Api.Services.Annotator;
 using DataLabellingSupportSystem.Api.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
@@ -13,7 +14,7 @@ namespace DataLabellingSupportSystem.Api.Controllers;
 [ApiController]
 [Route("api/annotator")]
 [Authorize(Roles = "Annotator")]
-public sealed class AnnotatorController(IAnnotatorService annotatorService, IStorageService storageService) : ControllerBase
+public sealed class AnnotatorController(IAnnotatorService annotatorService, IStorageService storageService, IAiAssistService aiAssistService) : ControllerBase
 {
     [HttpGet("tasks")]
     public async Task<ActionResult<ServiceResponse<List<AnnotatorTaskSummaryResponse>>>> GetMyTasks()
@@ -80,8 +81,8 @@ public sealed class AnnotatorController(IAnnotatorService annotatorService, ISto
         return this.ToOkOrStatusCode(result, StatusCodes.Status403Forbidden);
     }
 
-    [HttpGet("task-items/{taskItemId}/data-item/content")]
-    public async Task<IActionResult> OpenDataItemContent([FromRoute] string taskItemId, CancellationToken cancellationToken)
+    [HttpGet("tasks/{taskId}/data-item/content")]
+    public async Task<IActionResult> OpenDataItemContent([FromRoute] string taskId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
         if (string.IsNullOrWhiteSpace(userId))
@@ -89,7 +90,7 @@ public sealed class AnnotatorController(IAnnotatorService annotatorService, ISto
             return Unauthorized();
         }
 
-        var dataItemResult = await annotatorService.GetTaskItemDataItemStorageAsync(userId, taskItemId, cancellationToken);
+        var dataItemResult = await annotatorService.GetTaskDataItemStorageAsync(userId, taskId, cancellationToken);
         if (!dataItemResult.IsSuccess)
         {
             return string.Equals(dataItemResult.Message, ErrorMessages.NotFound, StringComparison.Ordinal)
@@ -109,8 +110,8 @@ public sealed class AnnotatorController(IAnnotatorService annotatorService, ISto
         return File(opened.Value.Stream, opened.Value.ContentType, opened.Value.FileName);
     }
 
-    [HttpGet("task-items/{taskItemId}/annotations")]
-    public async Task<ActionResult<ServiceResponse<List<AnnotatorAnnotationResponse>>>> GetTaskItemAnnotations([FromRoute] string taskItemId)
+    [HttpGet("tasks/{taskId}/annotations")]
+    public async Task<ActionResult<ServiceResponse<List<AnnotatorAnnotationResponse>>>> GetTaskAnnotations([FromRoute] string taskId)
     {
         var userId = User.GetUserId();
         if (string.IsNullOrWhiteSpace(userId))
@@ -118,13 +119,13 @@ public sealed class AnnotatorController(IAnnotatorService annotatorService, ISto
             return Unauthorized(ServiceResponse<List<AnnotatorAnnotationResponse>>.Failure(ErrorMessages.Unauthorized, ["Missing user id claim"]));
         }
 
-        var result = await annotatorService.GetTaskItemAnnotationsAsync(userId, taskItemId);
+        var result = await annotatorService.GetTaskAnnotationsAsync(userId, taskId);
         return this.ToOkOrStatusCode(result, StatusCodes.Status403Forbidden);
     }
 
-    [HttpPut("task-items/{taskItemId}/annotations/draft")]
+    [HttpPut("tasks/{taskId}/annotations/draft")]
     public async Task<ActionResult<ServiceResponse<bool>>> SaveDraft(
-        [FromRoute] string taskItemId,
+        [FromRoute] string taskId,
         [FromBody] UpsertTaskItemAnnotationsRequest request)
     {
         var userId = User.GetUserId();
@@ -133,13 +134,13 @@ public sealed class AnnotatorController(IAnnotatorService annotatorService, ISto
             return Unauthorized(ServiceResponse<bool>.Failure(ErrorMessages.Unauthorized, ["Missing user id claim"]));
         }
 
-        var result = await annotatorService.SaveTaskItemAnnotationsDraftAsync(userId, taskItemId, request);
+        var result = await annotatorService.SaveTaskAnnotationsDraftAsync(userId, taskId, request);
         return this.ToOkOrStatusCode(result, StatusCodes.Status403Forbidden);
     }
 
-    [HttpPost("task-items/{taskItemId}/annotations/submit")]
+    [HttpPost("tasks/{taskId}/annotations/submit")]
     public async Task<ActionResult<ServiceResponse<bool>>> Submit(
-        [FromRoute] string taskItemId,
+        [FromRoute] string taskId,
         [FromBody] UpsertTaskItemAnnotationsRequest request)
     {
         var userId = User.GetUserId();
@@ -148,7 +149,23 @@ public sealed class AnnotatorController(IAnnotatorService annotatorService, ISto
             return Unauthorized(ServiceResponse<bool>.Failure(ErrorMessages.Unauthorized, ["Missing user id claim"]));
         }
 
-        var result = await annotatorService.SubmitTaskItemAnnotationsAsync(userId, taskItemId, request);
+        var result = await annotatorService.SubmitTaskAnnotationsAsync(userId, taskId, request);
+        return this.ToOkOrStatusCode(result, StatusCodes.Status403Forbidden);
+    }
+
+    [HttpPost("tasks/{taskId}/ai-suggest")]
+    public async Task<ActionResult<ServiceResponse<AiAssistSuggestResponse>>> AiSuggestBbox(
+        [FromRoute] string taskId,
+        [FromQuery] bool apply,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(ServiceResponse<AiAssistSuggestResponse>.Failure(ErrorMessages.Unauthorized, ["Missing user id claim"]));
+        }
+
+        var result = await aiAssistService.SuggestBboxAsync(userId, taskId, apply, cancellationToken);
         return this.ToOkOrStatusCode(result, StatusCodes.Status403Forbidden);
     }
 }

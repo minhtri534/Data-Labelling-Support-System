@@ -4,6 +4,7 @@ using DataLabellingSupportSystem.Api.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLabellingSupportSystem.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260317032103_RenameLabelAndTaskTables")]
+    partial class RenameLabelAndTaskTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,10 +38,6 @@ namespace DataLabellingSupportSystem.Api.Migrations
                         .HasMaxLength(24)
                         .HasColumnType("varchar(24)");
 
-                    b.Property<string>("AppliedAnnotationSetId")
-                        .HasMaxLength(24)
-                        .HasColumnType("nvarchar(24)");
-
                     b.Property<float>("Confidence")
                         .HasColumnType("real");
 
@@ -50,11 +49,6 @@ namespace DataLabellingSupportSystem.Api.Migrations
                         .HasMaxLength(24)
                         .HasColumnType("varchar(24)");
 
-                    b.Property<string>("Decision")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
                     b.Property<bool>("IsAccepted")
                         .HasColumnType("bit");
 
@@ -65,10 +59,6 @@ namespace DataLabellingSupportSystem.Api.Migrations
                     b.Property<string>("PredictionData")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TaskId")
-                        .HasMaxLength(24)
-                        .HasColumnType("nvarchar(24)");
 
                     b.HasKey("Id");
 

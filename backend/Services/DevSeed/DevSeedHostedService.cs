@@ -63,7 +63,7 @@ public sealed class DevSeedHostedService(
             // Idempotency guard: if the demo annotator already has any task, don't create more demo tasks.
             var hasAnyTask = await dbContext.LabelingTasks
                 .AsNoTracking()
-                .AnyAsync(x => x.AssignedToUserId == annotator.Id, cancellationToken);
+                .AnyAsync(x => x.AnnotatorId == annotator.Id, cancellationToken);
             if (hasAnyTask)
             {
                 return;
@@ -109,8 +109,9 @@ public sealed class DevSeedHostedService(
 
             var desiredLabels = new[]
             {
-                new { Name = "object", YoloClassId = 0 },
-                new { Name = "person", YoloClassId = 1 }
+                // Align with common COCO class ids for YOLO pretrained models
+                new { Name = "person", YoloClassId = 0 },
+                new { Name = "car", YoloClassId = 2 }
             };
 
             foreach (var desired in desiredLabels)
@@ -166,56 +167,25 @@ public sealed class DevSeedHostedService(
 
             var now = DlssTime.VietnamNow;
 
-            var task = new LabelingTask
-            {
-                ProjectId = project.Id,
-                DatasetId = dataset.Id,
-                Name = "Demo Task (BBox)",
-                AssignedToUserId = annotator.Id,
-                Status = LabelingTaskStatus.Assigned,
-                AssignedAt = now
-            };
-
-            dbContext.LabelingTasks.Add(task);
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            var existingTaskItemDataItemIds = await dbContext.LabelingTaskItems
-                .AsNoTracking()
-                .Where(x => x.TaskId == task.Id)
-                .Select(x => x.DataItemId)
-                .ToListAsync(cancellationToken);
-
-            var maxOrderIndex = await dbContext.LabelingTaskItems
-                .AsNoTracking()
-                .Where(x => x.TaskId == task.Id)
-                .Select(x => (int?)x.OrderIndex)
-                .MaxAsync(cancellationToken) ?? -1;
-
             foreach (var dataItem in dataItems)
             {
-                if (existingTaskItemDataItemIds.Contains(dataItem.Id))
+                dbContext.LabelingTasks.Add(new LabelingTask
                 {
-                    continue;
-                }
-
-                maxOrderIndex++;
-                dbContext.LabelingTaskItems.Add(new LabelingTaskItem
-                {
-                    TaskId = task.Id,
+                    ProjectId = project.Id,
                     DataItemId = dataItem.Id,
-                    Status = LabelingTaskItemStatus.NotStarted,
-                    OrderIndex = maxOrderIndex
+                    AnnotatorId = annotator.Id,
+                    Status = "Assigned",
+                    AssignedAt = now
                 });
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation(
-                "Dev seed completed. Annotator email: {Email}. ProjectId: {ProjectId}. TaskId: {TaskId}",
+                "Dev seed completed. Annotator email: {Email}. ProjectId: {ProjectId}. TasksCreated={Tasks}",
                 annotator.Email,
                 project.Id,
-                task.Id);
+                dataItems.Count);
         }
         catch (Exception ex)
         {

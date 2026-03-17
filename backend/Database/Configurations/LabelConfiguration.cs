@@ -9,7 +9,7 @@ public sealed class LabelConfiguration : IEntityTypeConfiguration<Label>
 {
     public void Configure(EntityTypeBuilder<Label> builder)
     {
-        builder.ToTable("Labels");
+        builder.ToTable("label_classes");
 
         builder.HasKey(x => x.Id);
 

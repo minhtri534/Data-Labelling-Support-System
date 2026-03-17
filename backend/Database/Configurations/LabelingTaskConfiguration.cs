@@ -9,7 +9,7 @@ public sealed class LabelingTaskConfiguration : IEntityTypeConfiguration<Labelin
 {
     public void Configure(EntityTypeBuilder<LabelingTask> builder)
     {
-        builder.ToTable("Tasks");
+        builder.ToTable("tasks");
 
         builder.HasKey(x => x.Id);
 
@@ -32,62 +32,55 @@ public sealed class LabelingTaskConfiguration : IEntityTypeConfiguration<Labelin
             .HasPrincipalKey(x => x.Id)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.Property(x => x.DatasetId)
-            .HasColumnName("datasetId")
-            .HasColumnType("varchar(24)")
-            .HasMaxLength(24);
-
-        builder.HasOne(x => x.Dataset)
-            .WithMany()
-            .HasForeignKey(x => x.DatasetId)
-            .HasPrincipalKey(x => x.Id)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.Property(x => x.Name)
-            .HasColumnName("name")
-            .HasMaxLength(200)
-            .IsRequired();
-
-        builder.Property(x => x.AssignedToUserId)
-            .HasColumnName("assignedToUserId")
+        builder.Property(x => x.DataItemId)
+            .HasColumnName("dataItemId")
             .HasColumnType("varchar(24)")
             .HasMaxLength(24)
             .IsRequired();
 
-        builder.HasOne(x => x.AssignedToUser)
+        builder.HasOne(x => x.DataItem)
             .WithMany()
-            .HasForeignKey(x => x.AssignedToUserId)
+            .HasForeignKey(x => x.DataItemId)
+            .HasPrincipalKey(x => x.Id)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(x => x.AnnotatorId)
+            .HasColumnName("annotatorId")
+            .HasColumnType("varchar(24)")
+            .HasMaxLength(24)
+            .IsRequired();
+
+        builder.HasOne(x => x.Annotator)
+            .WithMany()
+            .HasForeignKey(x => x.AnnotatorId)
+            .HasPrincipalKey(x => x.Id)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(x => x.AssignedByUserId)
+            .HasColumnName("assignedBy")
+            .HasColumnType("varchar(24)")
+            .HasMaxLength(24);
+
+        builder.HasOne(x => x.AssignedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.AssignedByUserId)
             .HasPrincipalKey(x => x.Id)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.Status)
             .HasColumnName("status")
-            .HasConversion<int>()
-            .HasDefaultValue(LabelingTaskStatus.Assigned)
+            .HasColumnType("varchar(20)")
+            .HasMaxLength(20)
+            .HasDefaultValue("Assigned")
             .IsRequired();
 
         builder.Property(x => x.AssignedAt)
             .HasColumnName("assignedAt");
 
-        builder.Property(x => x.StartedAt)
-            .HasColumnName("startedAt");
+        builder.Property(x => x.CompletedAt)
+            .HasColumnName("completedAt");
 
-        builder.Property(x => x.SubmittedAt)
-            .HasColumnName("submittedAt");
-
-        builder.Property(x => x.DueAt)
-            .HasColumnName("dueAt");
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnName("createdAt")
-            .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())")
-            .IsRequired();
-
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnName("updatedAt")
-            .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())")
-            .IsRequired();
-
-        builder.HasIndex(x => x.AssignedToUserId);
+        builder.HasIndex(x => x.AnnotatorId);
+        builder.HasIndex(x => x.DataItemId);
     }
 }

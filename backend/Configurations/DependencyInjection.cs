@@ -2,6 +2,7 @@ using DataLabellingSupportSystem.Api.Database;
 using DataLabellingSupportSystem.Api.Middlewares;
 using DataLabellingSupportSystem.Api.Services.Annotator;
 using DataLabellingSupportSystem.Api.Services.Auth;
+using DataLabellingSupportSystem.Api.Services.AiAssist;
 using DataLabellingSupportSystem.Api.Services.DevSeed;
 using DataLabellingSupportSystem.Api.Services.Exports;
 using DataLabellingSupportSystem.Api.Services.Roles;
@@ -65,8 +66,24 @@ public static class DependencyInjection
         services.AddScoped<IUsersService, UsersService>();
         services.AddScoped<IRolesService, RolesService>();
         services.AddScoped<IAnnotatorService, AnnotatorService>();
+        services.AddScoped<IAiAssistService, AiAssistService>();
         services.AddScoped<IExportService, ExportService>();
         services.AddHostedService<DevSeedHostedService>();
+        return services;
+    }
+
+    public static IServiceCollection AddDlssAiAssist(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<AiAssistOptions>(configuration.GetSection("AiAssist"));
+
+        services.AddHttpClient<HttpYoloInferenceClient>((sp, http) =>
+        {
+            var opt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiAssistOptions>>().Value;
+            http.BaseAddress = new Uri(opt.BaseUrl);
+            http.Timeout = TimeSpan.FromSeconds(Math.Max(1, opt.TimeoutSeconds));
+        });
+
+        services.AddScoped<IYoloInferenceClient>(sp => sp.GetRequiredService<HttpYoloInferenceClient>());
         return services;
     }
 

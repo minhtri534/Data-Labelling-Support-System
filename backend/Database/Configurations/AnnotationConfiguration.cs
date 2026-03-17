@@ -20,29 +20,17 @@ public sealed class AnnotationConfiguration : IEntityTypeConfiguration<Annotatio
             .ValueGeneratedOnAdd()
             .HasValueGenerator<ObjectIdValueGenerator>();
 
-        builder.Property(x => x.TaskItemId)
-            .HasColumnName("taskItemId")
+        builder.Property(x => x.AnnotationSetId)
+            .HasColumnName("annotationSetId")
             .HasColumnType("varchar(24)")
             .HasMaxLength(24)
             .IsRequired();
 
-        builder.HasOne(x => x.TaskItem)
-            .WithMany()
-            .HasForeignKey(x => x.TaskItemId)
+        builder.HasOne(x => x.AnnotationSet)
+            .WithMany(x => x.Annotations)
+            .HasForeignKey(x => x.AnnotationSetId)
             .HasPrincipalKey(x => x.Id)
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Property(x => x.DataItemId)
-            .HasColumnName("dataItemId")
-            .HasColumnType("varchar(24)")
-            .HasMaxLength(24)
-            .IsRequired();
-
-        builder.HasOne(x => x.DataItem)
-            .WithMany()
-            .HasForeignKey(x => x.DataItemId)
-            .HasPrincipalKey(x => x.Id)
-            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.LabelId)
             .HasColumnName("labelId")
@@ -56,30 +44,21 @@ public sealed class AnnotationConfiguration : IEntityTypeConfiguration<Annotatio
             .HasPrincipalKey(x => x.Id)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Property(x => x.AnnotationType)
+            .HasColumnName("annotationType")
+            .HasColumnType("varchar(50)")
+            .HasMaxLength(50)
+            .IsRequired();
+
         builder.Property(x => x.GeometryData)
             .HasColumnName("geometryData")
             .HasColumnType("nvarchar(max)")
             .IsRequired();
 
-        builder.Property(x => x.CreatedByUserId)
-            .HasColumnName("createdBy")
-            .HasColumnType("varchar(24)")
-            .HasMaxLength(24)
+        builder.Property(x => x.Version)
+            .HasColumnName("version")
+            .HasDefaultValue(1)
             .IsRequired();
-
-        builder.HasOne(x => x.CreatedByUser)
-            .WithMany()
-            .HasForeignKey(x => x.CreatedByUserId)
-            .HasPrincipalKey(x => x.Id)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.Property(x => x.IsDraft)
-            .HasColumnName("isDraft")
-            .HasDefaultValue(true)
-            .IsRequired();
-
-        builder.Property(x => x.SubmittedAt)
-            .HasColumnName("submittedAt");
 
         builder.Property(x => x.CreatedAt)
             .HasColumnName("createdAt")
@@ -91,9 +70,7 @@ public sealed class AnnotationConfiguration : IEntityTypeConfiguration<Annotatio
             .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())")
             .IsRequired();
 
-        builder.HasIndex(x => x.TaskItemId);
-        builder.HasIndex(x => x.DataItemId);
+        builder.HasIndex(x => x.AnnotationSetId);
         builder.HasIndex(x => x.LabelId);
-        builder.HasIndex(x => x.CreatedByUserId);
     }
 }

@@ -22,7 +22,22 @@ public sealed class ExportService(AppDbContext dbContext) : IExportService
 
         var task = await dbContext.LabelingTasks
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .Where(x => x.Id == id)
+            .Select(x => new
+            {
+                x.Id,
+                x.ProjectId,
+                DataItem = x.DataItem == null
+                    ? null
+                    : new
+                    {
+                        x.DataItem.Id,
+                        x.DataItem.ObjectKey,
+                        x.DataItem.OriginalWidth,
+                        x.DataItem.OriginalHeight
+                    }
+            })
+            .FirstOrDefaultAsync();
 
         if (task is null)
         {
@@ -44,101 +59,76 @@ public sealed class ExportService(AppDbContext dbContext) : IExportService
         var labelIdToClassId = labels.ToDictionary(x => x.Id, x => x.YoloClassId, StringComparer.Ordinal);
         var classes = labels.OrderBy(x => x.YoloClassId).Select(x => x.Name).ToList();
 
-        var taskItems = await dbContext.LabelingTaskItems
-            .AsNoTracking()
-            .Where(x => x.TaskId == id)
-            .Select(x => new
-            {
-                TaskItemId = x.Id,
-                DataItem = x.DataItem == null
-                    ? null
-                    : new
-                    {
-                        x.DataItem.Id,
-                        x.DataItem.ObjectKey,
-                        x.DataItem.OriginalWidth,
-                        x.DataItem.OriginalHeight
-                    }
-            })
-            .ToListAsync();
+        if (task.DataItem is null)
+        {
+            return ServiceResponse<YoloExportResponse>.Failure(ErrorMessages.NotFound, ["Data item not found"]);
+        }
 
-        var taskItemIds = taskItems.Select(x => x.TaskItemId).ToList();
+        var submittedSet = await dbContext.AnnotationSets
+            .AsNoTracking()
+            .Where(x => x.TaskId == id && x.Status == "Submitted")
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => new { x.Id })
+            .FirstOrDefaultAsync();
+
+        if (submittedSet is null)
+        {
+            return ServiceResponse<YoloExportResponse>.Success(new YoloExportResponse(classes, []), "OK");
+        }
 
         var annotations = await dbContext.Annotations
             .AsNoTracking()
-            .Where(x => taskItemIds.Contains(x.TaskItemId) && !x.IsDraft)
-            .Select(x => new { x.TaskItemId, x.DataItemId, x.LabelId, x.GeometryData })
+            .Where(x => x.AnnotationSetId == submittedSet.Id)
+            .Select(x => new { x.LabelId, x.GeometryData })
             .ToListAsync();
 
-        var annotationsByTaskItem = annotations
-            .GroupBy(x => x.TaskItemId)
-            .ToDictionary(x => x.Key, x => x.ToList(), StringComparer.Ordinal);
-
-        var files = new List<YoloLabelFileResponse>();
-
-        foreach (var item in taskItems)
+        var w = task.DataItem.OriginalWidth;
+        var h = task.DataItem.OriginalHeight;
+        if (w <= 0 || h <= 0)
         {
-            if (item.DataItem is null)
-            {
-                continue;
-            }
-
-            if (!annotationsByTaskItem.TryGetValue(item.TaskItemId, out var annoList) || annoList.Count == 0)
-            {
-                continue;
-            }
-
-            var w = item.DataItem.OriginalWidth;
-            var h = item.DataItem.OriginalHeight;
-            if (w <= 0 || h <= 0)
-            {
-                continue;
-            }
-
-            var sb = new StringBuilder();
-
-            foreach (var anno in annoList)
-            {
-                if (!labelIdToClassId.TryGetValue(anno.LabelId, out var classId))
-                {
-                    continue;
-                }
-
-                if (!TryReadBbox(anno.GeometryData, out var bbox))
-                {
-                    continue;
-                }
-
-                var xCenter = (bbox.X + (bbox.Width / 2.0)) / w;
-                var yCenter = (bbox.Y + (bbox.Height / 2.0)) / h;
-                var wNorm = bbox.Width / w;
-                var hNorm = bbox.Height / h;
-
-                if (!IsValidYoloValue(xCenter) || !IsValidYoloValue(yCenter) || !IsValidYoloValue(wNorm) || !IsValidYoloValue(hNorm))
-                {
-                    continue;
-                }
-
-                sb.Append(classId.ToString(CultureInfo.InvariantCulture));
-                sb.Append(' ');
-                sb.Append(FormatYoloFloat(xCenter));
-                sb.Append(' ');
-                sb.Append(FormatYoloFloat(yCenter));
-                sb.Append(' ');
-                sb.Append(FormatYoloFloat(wNorm));
-                sb.Append(' ');
-                sb.Append(FormatYoloFloat(hNorm));
-                sb.AppendLine();
-            }
-
-            var content = sb.ToString().TrimEnd();
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                continue;
-            }
-
-            files.Add(new YoloLabelFileResponse($"{item.DataItem.Id}.txt", content));
+            return ServiceResponse<YoloExportResponse>.Failure("Invalid image size", ["OriginalWidth/OriginalHeight must be > 0"]);
         }
+
+        var sb = new StringBuilder();
+
+        foreach (var anno in annotations)
+        {
+            if (!labelIdToClassId.TryGetValue(anno.LabelId, out var classId))
+            {
+                continue;
+            }
+
+            if (!TryReadBbox(anno.GeometryData, out var bbox))
+            {
+                continue;
+            }
+
+            var xCenter = (bbox.X + (bbox.Width / 2.0)) / w;
+            var yCenter = (bbox.Y + (bbox.Height / 2.0)) / h;
+            var wNorm = bbox.Width / w;
+            var hNorm = bbox.Height / h;
+
+            if (!IsValidYoloValue(xCenter) || !IsValidYoloValue(yCenter) || !IsValidYoloValue(wNorm) || !IsValidYoloValue(hNorm))
+            {
+                continue;
+            }
+
+            sb.Append(classId.ToString(CultureInfo.InvariantCulture));
+            sb.Append(' ');
+            sb.Append(FormatYoloFloat(xCenter));
+            sb.Append(' ');
+            sb.Append(FormatYoloFloat(yCenter));
+            sb.Append(' ');
+            sb.Append(FormatYoloFloat(wNorm));
+            sb.Append(' ');
+            sb.Append(FormatYoloFloat(hNorm));
+            sb.AppendLine();
+        }
+
+        var content = sb.ToString().TrimEnd();
+        var files = string.IsNullOrWhiteSpace(content)
+            ? new List<YoloLabelFileResponse>()
+            : new List<YoloLabelFileResponse> { new($"{task.DataItem.Id}.txt", content) };
 
         return ServiceResponse<YoloExportResponse>.Success(new YoloExportResponse(classes, files), "OK");
     }
