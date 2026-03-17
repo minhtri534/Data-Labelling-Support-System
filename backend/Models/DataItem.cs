@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DataLabellingSupportSystem.Api.Models;
 
@@ -25,6 +26,21 @@ public class DataItem
     public int OriginalWidth { get; set; }
 
     public int OriginalHeight { get; set; }
+
+    [MaxLength(50)]
+    public string DataType { get; set; } = "Image";
+
+    [MaxLength(64)]
+    public string? Checksum { get; set; }
+
+    [MaxLength(20)]
+    public string Status { get; set; } = "Active";
+
+    [MaxLength(24)]
+    public string? UploadedByUserId { get; set; }
+
+    [ForeignKey(nameof(UploadedByUserId))]
+    public User? UploadedByUser { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

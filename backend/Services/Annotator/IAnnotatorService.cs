@@ -11,8 +11,8 @@ public interface IAnnotatorService
     Task<ServiceResponse<List<AnnotatorTaskItemResponse>>> GetTaskItemsAsync(string userId, string taskId);
     Task<ServiceResponse<List<LabelResponse>>> GetTaskLabelsAsync(string userId, string taskId);
     Task<ServiceResponse<ProjectGuidelineResponse>> GetTaskGuidelineAsync(string userId, string taskId);
-    Task<ServiceResponse<TaskItemDataItemStorageResponse>> GetTaskItemDataItemStorageAsync(string userId, string taskItemId, CancellationToken cancellationToken);
-    Task<ServiceResponse<List<AnnotatorAnnotationResponse>>> GetTaskItemAnnotationsAsync(string userId, string taskItemId);
-    Task<ServiceResponse<bool>> SaveTaskItemAnnotationsDraftAsync(string userId, string taskItemId, UpsertTaskItemAnnotationsRequest request);
-    Task<ServiceResponse<bool>> SubmitTaskItemAnnotationsAsync(string userId, string taskItemId, UpsertTaskItemAnnotationsRequest request);
+    Task<ServiceResponse<TaskDataItemStorageResponse>> GetTaskDataItemStorageAsync(string userId, string taskId, CancellationToken cancellationToken);
+    Task<ServiceResponse<List<AnnotatorAnnotationResponse>>> GetTaskAnnotationsAsync(string userId, string taskId);
+    Task<ServiceResponse<bool>> SaveTaskAnnotationsDraftAsync(string userId, string taskId, UpsertTaskItemAnnotationsRequest request);
+    Task<ServiceResponse<bool>> SubmitTaskAnnotationsAsync(string userId, string taskId, UpsertTaskItemAnnotationsRequest request);
 }

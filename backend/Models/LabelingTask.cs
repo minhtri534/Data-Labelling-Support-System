@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DataLabellingSupportSystem.Api.Models;
 
@@ -14,32 +15,31 @@ public class LabelingTask
 
     public Project? Project { get; set; }
 
-    [MaxLength(24)]
-    public string? DatasetId { get; set; }
-
-    public Dataset? Dataset { get; set; }
-
     [Required]
-    [MaxLength(200)]
-    public string Name { get; set; } = string.Empty;
+    [MaxLength(24)]
+    public string DataItemId { get; set; } = string.Empty;
+
+    [ForeignKey(nameof(DataItemId))]
+    public DataItem? DataItem { get; set; }
 
     [Required]
     [MaxLength(24)]
-    public string AssignedToUserId { get; set; } = string.Empty;
+    public string AnnotatorId { get; set; } = string.Empty;
 
-    public User? AssignedToUser { get; set; }
+    [ForeignKey(nameof(AnnotatorId))]
+    public User? Annotator { get; set; }
 
-    public LabelingTaskStatus Status { get; set; }
+    [MaxLength(24)]
+    public string? AssignedByUserId { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    [ForeignKey(nameof(AssignedByUserId))]
+    public User? AssignedByUser { get; set; }
 
-    public DateTime UpdatedAt { get; set; }
+    [Required]
+    [MaxLength(20)]
+    public string Status { get; set; } = "Assigned";
 
     public DateTime? AssignedAt { get; set; }
 
-    public DateTime? StartedAt { get; set; }
-
-    public DateTime? SubmittedAt { get; set; }
-
-    public DateTime? DueAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
 }

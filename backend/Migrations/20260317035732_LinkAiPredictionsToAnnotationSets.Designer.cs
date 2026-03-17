@@ -4,6 +4,7 @@ using DataLabellingSupportSystem.Api.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,13 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLabellingSupportSystem.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260317035732_LinkAiPredictionsToAnnotationSets")]
+    partial class LinkAiPredictionsToAnnotationSets
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.2")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -140,31 +143,25 @@ namespace DataLabellingSupportSystem.Api.Migrations
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.AnnotationSet", b =>
                 {
                     b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(24)
-                        .HasColumnType("varchar(24)")
-                        .HasColumnName("Id");
+                        .HasColumnType("nvarchar(24)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreatedAt");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedByUserId")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("varchar(24)")
-                        .HasColumnName("CreatedByUserId");
+                        .HasColumnType("varchar(24)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("Status");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TaskId")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("varchar(24)")
-                        .HasColumnName("TaskId");
+                        .HasColumnType("varchar(24)");
 
                     b.HasKey("Id");
 
@@ -172,7 +169,7 @@ namespace DataLabellingSupportSystem.Api.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("AnnotationSets", (string)null);
+                    b.ToTable("AnnotationSets");
                 });
 
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.DataItem", b =>
@@ -564,7 +561,7 @@ namespace DataLabellingSupportSystem.Api.Migrations
                     b.Property<string>("AnnotationSetId")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("varchar(24)");
+                        .HasColumnType("nvarchar(24)");
 
                     b.Property<string>("Comment")
                         .HasColumnType("nvarchar(max)");
@@ -912,7 +909,7 @@ namespace DataLabellingSupportSystem.Api.Migrations
                     b.HasOne("DataLabellingSupportSystem.Api.Models.User", "Reviewer")
                         .WithMany()
                         .HasForeignKey("ReviewerId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("AnnotationSet");

@@ -20,8 +20,13 @@ public class AppDbContext : DbContext
     public DbSet<DataItem> DataItems { get; set; } = default!;
     public DbSet<Label> Labels { get; set; } = default!;
     public DbSet<LabelingTask> LabelingTasks { get; set; } = default!;
-    public DbSet<LabelingTaskItem> LabelingTaskItems { get; set; } = default!;
+    public DbSet<AnnotationSet> AnnotationSets { get; set; } = default!;
     public DbSet<Annotation> Annotations { get; set; } = default!;
+    public DbSet<TaskHistory> TaskHistories { get; set; } = default!;
+    public DbSet<AiPrediction> AiPredictions { get; set; } = default!;
+    public DbSet<Review> Reviews { get; set; } = default!;
+    public DbSet<ReviewError> ReviewErrors { get; set; } = default!;
+    public DbSet<ErrorType> ErrorTypes { get; set; } = default!;
 
     public override int SaveChanges()
     {
@@ -147,37 +152,9 @@ public class AppDbContext : DbContext
 
         foreach (var entry in ChangeTracker.Entries<LabelingTask>())
         {
-            if (entry.State == EntityState.Added)
+            if (entry.State == EntityState.Added && string.IsNullOrWhiteSpace(entry.Entity.Id))
             {
-                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
-                {
-                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
-                }
-
-                entry.Entity.CreatedAt = now;
-                entry.Entity.UpdatedAt = now;
-            }
-            else if (entry.State == EntityState.Modified)
-            {
-                entry.Entity.UpdatedAt = now;
-            }
-        }
-
-        foreach (var entry in ChangeTracker.Entries<LabelingTaskItem>())
-        {
-            if (entry.State == EntityState.Added)
-            {
-                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
-                {
-                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
-                }
-
-                entry.Entity.CreatedAt = now;
-                entry.Entity.UpdatedAt = now;
-            }
-            else if (entry.State == EntityState.Modified)
-            {
-                entry.Entity.UpdatedAt = now;
+                entry.Entity.Id = Utils.ObjectId.NewObjectId();
             }
         }
 
@@ -198,12 +175,69 @@ public class AppDbContext : DbContext
                 entry.Entity.UpdatedAt = now;
             }
         }
+
+        foreach (var entry in ChangeTracker.Entries<AnnotationSet>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                entry.Entity.CreatedAt = now;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<TaskHistory>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                if (entry.Entity.ChangedAt == default)
+                {
+                    entry.Entity.ChangedAt = now;
+                }
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<AiPrediction>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                entry.Entity.CreatedAt = now;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<Review>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                if (entry.Entity.ReviewedAt == default)
+                {
+                    entry.Entity.ReviewedAt = now;
+                }
+            }
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }

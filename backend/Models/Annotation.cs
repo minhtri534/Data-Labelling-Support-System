@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DataLabellingSupportSystem.Api.Models;
 
@@ -10,15 +11,10 @@ public class Annotation
 
     [Required]
     [MaxLength(24)]
-    public string TaskItemId { get; set; } = string.Empty;
+    public string AnnotationSetId { get; set; } = string.Empty;
 
-    public LabelingTaskItem? TaskItem { get; set; }
-
-    [Required]
-    [MaxLength(24)]
-    public string DataItemId { get; set; } = string.Empty;
-
-    public DataItem? DataItem { get; set; }
+    [ForeignKey(nameof(AnnotationSetId))]
+    public AnnotationSet? AnnotationSet { get; set; }
 
     [Required]
     [MaxLength(24)]
@@ -27,19 +23,15 @@ public class Annotation
     public Label? Label { get; set; }
 
     [Required]
-    public string GeometryData { get; set; } = string.Empty;
+    [MaxLength(50)]
+    public string AnnotationType { get; set; } = "bbox";
 
     [Required]
-    [MaxLength(24)]
-    public string CreatedByUserId { get; set; } = string.Empty;
+    public string GeometryData { get; set; } = string.Empty;
 
-    public User? CreatedByUser { get; set; }
-
-    public bool IsDraft { get; set; }
+    public int Version { get; set; } = 1;
 
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
-
-    public DateTime? SubmittedAt { get; set; }
 }
