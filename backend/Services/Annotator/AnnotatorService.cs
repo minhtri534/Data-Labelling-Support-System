@@ -227,51 +227,42 @@ public sealed class AnnotatorService(AppDbContext dbContext) : IAnnotatorService
 
     public async Task<ServiceResponse<TaskDataItemStorageResponse>> GetTaskDataItemStorageAsync(
         string userId,
-        string taskId,
+        string itemId, // Đây là ID của DataItem
         CancellationToken cancellationToken)
     {
         var uid = (userId ?? string.Empty).Trim();
-        var id = (taskId ?? string.Empty).Trim();
+        var id = (itemId ?? string.Empty).Trim();
 
         if (string.IsNullOrWhiteSpace(uid))
-        {
             return ServiceResponse<TaskDataItemStorageResponse>.Failure(ErrorMessages.Unauthorized, ["Missing user id"]);
-        }
 
         if (string.IsNullOrWhiteSpace(id))
-        {
-            return ServiceResponse<TaskDataItemStorageResponse>.Failure("Invalid task", ["Task id is required"]);
-        }
+            return ServiceResponse<TaskDataItemStorageResponse>.Failure("Invalid item", ["Item id is required"]);
 
-        var item = await dbContext.LabelingTasks
+        var item = await dbContext.DataItems
             .AsNoTracking()
             .Where(x => x.Id == id)
             .Select(x => new
             {
-                AnnotatorId = x.AnnotatorId,
-                StorageProvider = x.DataItem != null ? x.DataItem.StorageProvider : null,
-                ObjectKey = x.DataItem != null ? x.DataItem.ObjectKey : null
+                x.StorageProvider,
+                x.ObjectKey,
+                // Check quyền: User phải có Task nào đó trỏ tới ItemId này
+                IsAssigned = dbContext.LabelingTasks.Any(t => t.DataItemId == x.Id && t.AnnotatorId == uid)
             })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (item is null)
-        {
-            return ServiceResponse<TaskDataItemStorageResponse>.Failure(ErrorMessages.NotFound, ["Task not found"]);
-        }
+            return ServiceResponse<TaskDataItemStorageResponse>.Failure(ErrorMessages.NotFound, ["Data item not found in database"]);
 
-        if (!string.Equals(item.AnnotatorId, uid, StringComparison.Ordinal))
-        {
-            return ServiceResponse<TaskDataItemStorageResponse>.Failure(ErrorMessages.Forbidden, ["Task is not assigned to you"]);
-        }
+        if (!item.IsAssigned)
+            return ServiceResponse<TaskDataItemStorageResponse>.Failure(ErrorMessages.Forbidden, ["You do not have permission to access this image"]);
 
         if (string.IsNullOrWhiteSpace(item.StorageProvider) || string.IsNullOrWhiteSpace(item.ObjectKey))
-        {
-            return ServiceResponse<TaskDataItemStorageResponse>.Failure(ErrorMessages.NotFound, ["Data item not found"]);
-        }
+            return ServiceResponse<TaskDataItemStorageResponse>.Failure(ErrorMessages.NotFound, ["Image path (ObjectKey) is missing"]);
 
         return ServiceResponse<TaskDataItemStorageResponse>.Success(
             new TaskDataItemStorageResponse(item.StorageProvider, item.ObjectKey),
-            "OK");
+            "Success");
     }
 
     public async Task<ServiceResponse<List<AnnotatorAnnotationResponse>>> GetTaskAnnotationsAsync(string userId, string taskId)

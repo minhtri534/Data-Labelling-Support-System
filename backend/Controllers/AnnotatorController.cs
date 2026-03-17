@@ -81,31 +81,25 @@ public sealed class AnnotatorController(IAnnotatorService annotatorService, ISto
         return this.ToOkOrStatusCode(result, StatusCodes.Status403Forbidden);
     }
 
-    [HttpGet("tasks/{taskId}/data-item/content")]
-    public async Task<IActionResult> OpenDataItemContent([FromRoute] string taskId, CancellationToken cancellationToken)
+    [HttpGet("items/{itemId}/content")] 
+    public async Task<IActionResult> OpenDataItemContent([FromRoute] string itemId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            return Unauthorized();
-        }
+        if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
 
-        var dataItemResult = await annotatorService.GetTaskDataItemStorageAsync(userId, taskId, cancellationToken);
+        var dataItemResult = await annotatorService.GetTaskDataItemStorageAsync(userId, itemId, cancellationToken);
+        
         if (!dataItemResult.IsSuccess)
         {
-            return string.Equals(dataItemResult.Message, ErrorMessages.NotFound, StringComparison.Ordinal)
-                ? NotFound()
-                : StatusCode(StatusCodes.Status403Forbidden);
+            return dataItemResult.Message == ErrorMessages.NotFound ? NotFound() : Forbid();
         }
 
         var opened = await storageService.OpenReadAsync(
             dataItemResult.Data!.StorageProvider,
             dataItemResult.Data!.ObjectKey,
             cancellationToken);
-        if (opened is null)
-        {
-            return NotFound();
-        }
+
+        if (opened is null) return NotFound();
 
         return File(opened.Value.Stream, opened.Value.ContentType, opened.Value.FileName);
     }
