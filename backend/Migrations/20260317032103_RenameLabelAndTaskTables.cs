@@ -279,7 +279,7 @@ namespace DataLabellingSupportSystem.Api.Migrations
                 name: "AnnotationSets",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(24)", maxLength: 24, nullable: false),
+                    Id = table.Column<string>(type: "varchar(24)", maxLength: 24, nullable: false),
                     TaskId = table.Column<string>(type: "varchar(24)", maxLength: 24, nullable: false),
                     CreatedByUserId = table.Column<string>(type: "varchar(24)", maxLength: 24, nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -348,7 +348,7 @@ namespace DataLabellingSupportSystem.Api.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(24)", maxLength: 24, nullable: false),
-                    AnnotationSetId = table.Column<string>(type: "nvarchar(24)", maxLength: 24, nullable: false),
+                    AnnotationSetId = table.Column<string>(type: "varchar(24)", maxLength: 24, nullable: false),
                     ReviewerId = table.Column<string>(type: "varchar(24)", maxLength: 24, nullable: false),
                     Result = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Score = table.Column<int>(type: "int", nullable: false),
@@ -369,7 +369,7 @@ namespace DataLabellingSupportSystem.Api.Migrations
                         column: x => x.ReviewerId,
                         principalTable: "Users",
                         principalColumn: "_id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.NoAction);
                 });
 
             migrationBuilder.CreateTable(
