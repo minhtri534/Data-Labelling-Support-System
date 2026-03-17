@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "../../utils/cn";
 
 type Variant = "primary" | "secondary" | "outline" | "gradient" | "ghost";
-type Size = "sm" | "md" | "lg";
+type Size = "sm" | "md" | "lg" | "icon";
 
 type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
@@ -26,7 +26,8 @@ const variants: Record<Variant, string> = {
 const sizes: Record<Size, string> = {
   sm: "h-9 px-3 text-sm",
   md: "h-11 px-4 text-sm",
-  lg: "h-12 px-6 text-base"
+  lg: "h-12 px-6 text-base",
+  icon: "h-10 w-10",
 };
 
 export function Button({
