@@ -16,9 +16,8 @@ export default function AnnotatorReturnedTasksPage() {
       try {
         const res = await annotatorService.getMyTasks();
         if (res.isSuccess) {
-          // Lọc các task bị Rejected (3) hoặc các trạng thái cần sửa lại
-          const returnedTasks = res.data.filter((t: any) => 
-            t.status === 3 || t.status === "Returned" || t.status === "Rejected"
+          const returnedTasks = (res.data || []).filter((t) =>
+            ["Returned", "Rejected", "NeedsRevision"].includes(t.status)
           );
           setTasks(returnedTasks);
         }
@@ -87,13 +86,13 @@ export default function AnnotatorReturnedTasksPage() {
                       </span>
                       <span className="text-xs text-gray-400 flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5" />
-                        Last updated: {new Date(task.updatedAt).toLocaleDateString()}
+                        Last updated: {new Date(task.completedAt || task.assignedAt || Date.now()).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className="text-[10px] font-black uppercase px-2.5 py-1 bg-red-600 text-white rounded shadow-sm">
-                      {task.status === 3 ? "REJECTED" : "RETURNED"}
+                      {task.status?.toUpperCase() || "RETURNED"}
                     </span>
                   </div>
                 </div>

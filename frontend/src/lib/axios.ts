@@ -52,7 +52,10 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && originalRequest.url !== '/auth/refresh-token') {
+    // Only attempt token refresh for non-auth endpoints with 401
+    // Auth endpoints (login, register, etc.) return 401 for invalid credentials, not token expiry
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/');
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       if (originalRequest._retry) {
         return Promise.reject(error);
       }

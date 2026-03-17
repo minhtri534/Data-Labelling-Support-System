@@ -69,7 +69,7 @@ export default function AnnotatorReworkPage() {
           // Tải annotations cũ cho từng item
           const initialAnns: Record<number, Box[]> = {};
           await Promise.all(items.map(async (item: any, index: number) => {
-            const annRes = await annotatorService.getAnnotations(item.id);
+            const annRes = await annotatorService.getAnnotations(item.taskId);
             if (annRes.isSuccess && annRes.data) {
               initialAnns[index] = annRes.data.map((ann: any) => {
                 try {
@@ -99,7 +99,7 @@ export default function AnnotatorReworkPage() {
     const fetchImage = async () => {
       if (!currentItem) return;
       try {
-        const blob = await annotatorService.getImageSecure(currentItem.id);
+        const blob = await annotatorService.getImageSecure(currentItem.taskId);
         objectUrl = URL.createObjectURL(blob);
         setSecureImageUrl(objectUrl);
       } catch (error) {
@@ -155,15 +155,15 @@ export default function AnnotatorReworkPage() {
       const payload = {
         objects: boxes.map(b => ({
           labelId: b.labelId || labels[0]?.id,
-          geometryData: JSON.stringify({
+          geometryData: {
+            type: "bbox",
             x: Math.round(b.x), y: Math.round(b.y),
             width: Math.round(b.width), height: Math.round(b.height)
-          })
+          }
         })),
-        comment: comment // Gửi feedback cho reviewer
       };
 
-      const res = await annotatorService.submit(currentItem.id, payload);
+      const res = await annotatorService.submit(currentItem.taskId, payload);
       if (res.isSuccess) {
         if (current === taskItems.length - 1) {
           navigate("/annotator/returned");
