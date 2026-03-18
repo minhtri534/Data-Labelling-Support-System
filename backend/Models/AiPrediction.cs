@@ -14,10 +14,8 @@ public class AiPrediction
     public string DataItemId { get; set; } = string.Empty;
 
     [MaxLength(24)]
-    public string? TaskId { get; set; }
-
     [ForeignKey(nameof(DataItemId))]
-    public DataItem? DataItem { get; set; }
+    public string? TaskId { get; set; }
 
     [Required]
     public string ModelName { get; set; } = string.Empty;
@@ -37,10 +35,8 @@ public class AiPrediction
     public string? AppliedAnnotationSetId { get; set; }
 
     [MaxLength(24)]
-    public string? AcceptedByUserId { get; set; }
-
     [ForeignKey(nameof(AcceptedByUserId))]
-    public User? AcceptedByUser { get; set; }
+    public string? AcceptedByUserId { get; set; }
 
     public DateTime? AcceptedAt { get; set; }
 

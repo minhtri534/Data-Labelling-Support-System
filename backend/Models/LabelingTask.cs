@@ -13,27 +13,19 @@ public class LabelingTask
     [MaxLength(24)]
     public string ProjectId { get; set; } = string.Empty;
 
-    public Project? Project { get; set; }
-
     [Required]
     [MaxLength(24)]
+    [ForeignKey(nameof(DataItemId))]
     public string DataItemId { get; set; } = string.Empty;
 
-    [ForeignKey(nameof(DataItemId))]
-    public DataItem? DataItem { get; set; }
-
     [Required]
     [MaxLength(24)]
+    [ForeignKey(nameof(AnnotatorId))]
     public string AnnotatorId { get; set; } = string.Empty;
 
-    [ForeignKey(nameof(AnnotatorId))]
-    public User? Annotator { get; set; }
-
     [MaxLength(24)]
-    public string? AssignedByUserId { get; set; }
-
     [ForeignKey(nameof(AssignedByUserId))]
-    public User? AssignedByUser { get; set; }
+    public string? AssignedByUserId { get; set; }
 
     [Required]
     [MaxLength(20)]

@@ -11,16 +11,12 @@ public class Annotation
 
     [Required]
     [MaxLength(24)]
-    public string AnnotationSetId { get; set; } = string.Empty;
-
     [ForeignKey(nameof(AnnotationSetId))]
-    public AnnotationSet? AnnotationSet { get; set; }
+    public string AnnotationSetId { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(24)]
     public string LabelId { get; set; } = string.Empty;
-
-    public Label? Label { get; set; }
 
     [Required]
     [MaxLength(50)]

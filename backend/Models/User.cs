@@ -39,8 +39,6 @@ public class User
     [MaxLength(24)]
     public string RoleId { get; set; } = string.Empty;
 
-    public Role? Role { get; set; }
-
     public int Status { get; set; }
 
     public DateTime CreatedAt { get; set; }

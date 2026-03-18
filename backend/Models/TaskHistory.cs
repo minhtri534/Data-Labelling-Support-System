@@ -11,20 +11,16 @@ public class TaskHistory
 
     [Required]
     [MaxLength(24)]
-    public string TaskId { get; set; } = string.Empty;
-
     [ForeignKey(nameof(TaskId))]
-    public LabelingTask? Task { get; set; }
+    public string TaskId { get; set; } = string.Empty;
 
     public string? OldStatus { get; set; }
 
     public string? NewStatus { get; set; }
 
     [MaxLength(24)]
-    public string ChangedByUserId { get; set; } = string.Empty;
-
     [ForeignKey(nameof(ChangedByUserId))]
-    public User? ChangedByUser { get; set; }
+    public string ChangedByUserId { get; set; } = string.Empty;
 
     public DateTime ChangedAt { get; set; }
 }

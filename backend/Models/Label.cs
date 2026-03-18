@@ -12,8 +12,6 @@ public class Label
     [MaxLength(24)]
     public string ProjectId { get; set; } = string.Empty;
 
-    public Project? Project { get; set; }
-
     [Required]
     [MaxLength(100)]
     public string Name { get; set; } = string.Empty;

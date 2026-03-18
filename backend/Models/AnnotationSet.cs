@@ -11,23 +11,16 @@ public class AnnotationSet
 
     [Required]
     [MaxLength(24)]
-    public string TaskId { get; set; } = string.Empty;
-
     [ForeignKey(nameof(TaskId))]
-    public LabelingTask? Task { get; set; }
+    public string TaskId { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(24)]
-    public string CreatedByUserId { get; set; } = string.Empty;
-
     [ForeignKey(nameof(CreatedByUserId))]
-    public User? CreatedByUser { get; set; }
+    public string CreatedByUserId { get; set; } = string.Empty;
 
     [Required]
     public string Status { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }
-
-    // Navigation property
-    public ICollection<Annotation> Annotations { get; set; } = new List<Annotation>();
 }
