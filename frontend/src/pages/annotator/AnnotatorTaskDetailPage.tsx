@@ -10,7 +10,7 @@ import type { AnnotatorTaskSummary } from "../../types/annotator";
 const AnnotatorTaskDetailPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const [task, setTask] = useState<AnnotatorTaskSummary | null>(null);
-  const [guideline, setGuideline] = useState<string>("Đang tải guideline...");
+  const [guideline, setGuideline] = useState<string>("Loading guideline...");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const AnnotatorTaskDetailPage: React.FC = () => {
         }
 
         if (guidelineRes.isSuccess) {
-          setGuideline(guidelineRes.data?.guideline || "Chưa có guideline cho project này.");
+          setGuideline(guidelineRes.data?.guideline || "No guideline available for this project.");
         }
       } finally {
         setLoading(false);
@@ -56,7 +56,7 @@ const AnnotatorTaskDetailPage: React.FC = () => {
       <DashboardLayout>
         <div className="h-96 flex items-center justify-center gap-3 text-gray-600">
           <Loader2 className="h-5 w-5 animate-spin" />
-          Đang tải task...
+          Loading task...
         </div>
       </DashboardLayout>
     );
@@ -66,7 +66,7 @@ const AnnotatorTaskDetailPage: React.FC = () => {
     return (
       <DashboardLayout>
         <div className="max-w-4xl mx-auto">
-          <Card className="p-8 text-center text-gray-600">Không tìm thấy task hoặc bạn không có quyền truy cập.</Card>
+          <Card className="p-8 text-center text-gray-600">Task not found or you do not have permission to access it.</Card>
         </div>
       </DashboardLayout>
     );
@@ -85,13 +85,13 @@ const AnnotatorTaskDetailPage: React.FC = () => {
             </Link>
             <div>
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Task {task.id.slice(-6)}</h1>
-              <p className="text-gray-500 mt-1">Chi tiết công việc gán nhãn.</p>
+              <p className="text-gray-500 mt-1">Labeling task details.</p>
             </div>
           </div>
           <Link to={`/annotator/task/${taskId}/label`}>
             <Button variant="primary">
               <PlayCircle className="h-4 w-4 mr-2" />
-              Bắt đầu gán nhãn
+              Start Labeling
             </Button>
           </Link>
         </div>
@@ -100,18 +100,18 @@ const AnnotatorTaskDetailPage: React.FC = () => {
           {/* Task Info */}
           <Card variant="glass" className="p-6 col-span-2 space-y-6">
             <div>
-              <h3 className="text-lg font-semibold mb-2">Mô tả</h3>
-              <p className="text-gray-600">Task thuộc project {task.projectId} với data item {task.dataItemId}.</p>
+              <h3 className="text-lg font-semibold mb-2">Description</h3>
+              <p className="text-gray-600">Task belongs to project {task.projectId} with data item {task.dataItemId}.</p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-2">Hướng dẫn</h3>
+              <h3 className="text-lg font-semibold mb-2">Instructions</h3>
               <div className="bg-blue-50 p-4 rounded-md border border-blue-100 text-blue-800">
                 <FileText className="h-5 w-5 inline-block mr-2" />
                 {guideline}
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-2">Tiến độ</h3>
+              <h3 className="text-lg font-semibold mb-2">Progress</h3>
               <div className="w-full bg-gray-200 rounded-full h-4">
                 <div
                   className="bg-blue-600 h-4 rounded-full"
@@ -119,7 +119,7 @@ const AnnotatorTaskDetailPage: React.FC = () => {
                 ></div>
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Trạng thái hiện tại: {statusLabel}
+                Current Status: {statusLabel}
               </p>
             </div>
           </Card>
@@ -128,7 +128,7 @@ const AnnotatorTaskDetailPage: React.FC = () => {
           <Card variant="glass" className="p-6 space-y-6 h-fit">
             <div>
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
-                Trạng thái
+                Status
               </h3>
               <div className="flex items-center gap-2 text-green-600 font-semibold">
                 <CheckCircle className="h-5 w-5" />

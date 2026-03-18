@@ -69,7 +69,7 @@ const LoginPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm text-gray-500">Chào mừng trở lại</div>
-            <h2 className="text-xl font-semibold text-gray-900">Đăng nhập</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Đăng nhập New</h2>
           </div>
         </div>
 

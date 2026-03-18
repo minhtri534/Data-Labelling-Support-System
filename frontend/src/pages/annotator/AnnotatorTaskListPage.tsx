@@ -70,8 +70,8 @@ const AnnotatorTaskListPage: React.FC = () => {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Công việc của tôi</h1>
-          <p className="text-gray-500 mt-1">Danh sách các công việc gán nhãn được giao cho bạn.</p>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">My Tasks</h1>
+          <p className="text-gray-500 mt-1">List of labeling tasks assigned to you.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -93,12 +93,12 @@ const AnnotatorTaskListPage: React.FC = () => {
           {loading ? (
             <div className="py-14 flex items-center justify-center text-gray-600 gap-3">
               <Loader2 className="w-5 h-5 animate-spin" />
-              Đang tải công việc...
+              Loading tasks...
             </div>
           ) : (
             <div className="space-y-4">
               {tasks.length === 0 && (
-                <Card className="p-8 text-center text-gray-500 border-dashed">Bạn chưa có task nào được giao.</Card>
+                <Card className="p-8 text-center text-gray-500 border-dashed">No tasks have been assigned to you yet.</Card>
               )}
               {tasks.map((task) => (
                 <Card key={task.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
@@ -117,17 +117,17 @@ const AnnotatorTaskListPage: React.FC = () => {
                   <div className="flex items-center gap-3">
                     {getStatusBadge(task.status)}
                     <Link to={`/annotator/task/${task.id}`}>
-                      <Button variant="outline">Chi tiết</Button>
+                      <Button variant="outline">Details</Button>
                     </Link>
                     {task.status === "Submitted" ? (
                       <Button variant="secondary" disabled>
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Đã nộp
+                        Submitted
                       </Button>
                     ) : (
                       <Button variant="primary" onClick={() => handleStart(task.id)}>
                         <PlayCircle className="h-4 w-4 mr-2" />
-                        Bắt đầu
+                        Start
                       </Button>
                     )}
                   </div>
