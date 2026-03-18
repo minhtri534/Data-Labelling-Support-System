@@ -36,12 +36,17 @@ const NAV_BY_ROLE = {
   ],
 
   annotator: [
-    { label: 'Returned Tasks', icon: History, path: '/annotator/returned' },
+    { label: 'Task List', icon: ClipboardList, path: '/annotator/tasks' }, 
     { label: 'AI Labeling', icon: Sparkles, path: '/annotator/ai-label' },
+    { label: 'Returned Tasks', icon: History, path: '/annotator/returned' },
     { label: 'Earnings', icon: History, path: '/annotator/earnings' },
   ],
 
   manager: [
+    { label: 'Projects', icon: ClipboardList, path: '/manager/projects' }, 
+    { label: 'Datasets', icon: ShieldCheck, path: '/manager/datasets' }, 
+    { label: 'Label Config', icon: Settings, path: '/manager/label-config' }, 
+    { label: 'Guidelines', icon: MessageSquare, path: '/manager/guidelines' }, 
     { label: 'Project Budget', icon: LayoutDashboard, path: '/manager/budget' },
     { label: 'Approve Cost', icon: CheckSquare, path: '/manager/approve-cost' },
     { label: 'Expense Report', icon: History, path: '/manager/expense-report' },
@@ -54,8 +59,8 @@ const NAV_BY_ROLE = {
     { label: 'Dispute', icon: MessageSquare, path: '/admin/dispute' },
     { label: 'System Config', icon: Settings, path: '/admin/system-config' },
     { label: 'System Health', icon: ShieldCheck, path: '/admin/system-health' },
-    { label: 'Logs', icon: History, path: '/admin/logs' },
     { label: 'Payment Verification', icon: CheckSquare, path: '/admin/payment-verification' },
+    { label: 'Logs', icon: History, path: '/admin/logs' },
   ],
 };
 
