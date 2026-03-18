@@ -12,8 +12,19 @@ interface FailedRequest {
   reject: (error: any) => void;
 }
 
+// Get API base URL from environment or use default
+const getApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    // Check window config (injected at runtime)
+    const windowConfig = (window as any).__APP_CONFIG__;
+    if (windowConfig?.API_URL) return windowConfig.API_URL;
+  }
+  // Use env variable or default to localhost
+  return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+};
+
 const api: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:5000/api', 
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
