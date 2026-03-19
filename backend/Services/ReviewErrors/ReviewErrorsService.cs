@@ -3,7 +3,7 @@ using DataLabellingSupportSystem.Api.Repository;
 
 namespace DataLabellingSupportSystem.Api.Services.ReviewErrors;
 
-public class ReviewsService(ReviewErrorsRepository repo) : IReviewErrorsService
+public class ReviewErrorsService(ReviewErrorsRepository repo) : IReviewErrorsService
 {
     private readonly ReviewErrorsRepository _repo = repo;
 

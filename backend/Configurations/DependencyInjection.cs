@@ -16,6 +16,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using DataLabellingSupportSystem.Api.Services.Reviews;
 using DataLabellingSupportSystem.Api.Repository;
+using DataLabellingSupportSystem.Api.Services.ErrorTypes;
+using DataLabellingSupportSystem.Api.Services.ReviewErrors;
 
 namespace DataLabellingSupportSystem.Api.Configurations;
 
@@ -72,6 +74,10 @@ public static class DependencyInjection
         services.AddScoped<IExportService, ExportService>();
         services.AddScoped<ReviewsRepository>();
         services.AddScoped<IReviewsService, ReviewsService>();
+        services.AddScoped<ReviewErrorsRepository>();
+        services.AddScoped<IReviewErrorsService, IReviewErrorsService>();
+        services.AddScoped<ErrorTypesRepository>();
+        services.AddScoped<IErrorTypesService, ErrorTypesService>();
         services.AddHostedService<DevSeedHostedService>();
         return services;
     }

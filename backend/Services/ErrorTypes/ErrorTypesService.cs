@@ -1,8 +1,7 @@
 using DataLabellingSupportSystem.Api.Models;
 using DataLabellingSupportSystem.Api.Repository;
-using DataLabellingSupportSystem.Api.Services.ErrorTypes;
 
-namespace DataLabellingSupportSystem.Api.Services.Reviews;
+namespace DataLabellingSupportSystem.Api.Services.ErrorTypes;
 
 public class ErrorTypesService(ErrorTypesRepository repo) : IErrorTypesService
 {
