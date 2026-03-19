@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using DataLabellingSupportSystem.Api.Services.Reviews;
+using DataLabellingSupportSystem.Api.Repository;
 
 namespace DataLabellingSupportSystem.Api.Configurations;
 
@@ -68,6 +70,8 @@ public static class DependencyInjection
         services.AddScoped<IAnnotatorService, AnnotatorService>();
         services.AddScoped<IAiAssistService, AiAssistService>();
         services.AddScoped<IExportService, ExportService>();
+        services.AddScoped<ReviewsRepository>();
+        services.AddScoped<IReviewsService, ReviewsService>();
         services.AddHostedService<DevSeedHostedService>();
         return services;
     }
