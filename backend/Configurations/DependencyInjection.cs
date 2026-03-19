@@ -18,6 +18,7 @@ using DataLabellingSupportSystem.Api.Services.Reviews;
 using DataLabellingSupportSystem.Api.Repository;
 using DataLabellingSupportSystem.Api.Services.ErrorTypes;
 using DataLabellingSupportSystem.Api.Services.ReviewErrors;
+using DataLabellingSupportSystem.Api.Services.LabelingTasks;
 
 namespace DataLabellingSupportSystem.Api.Configurations;
 
@@ -75,9 +76,11 @@ public static class DependencyInjection
         services.AddScoped<ReviewsRepository>();
         services.AddScoped<IReviewsService, ReviewsService>();
         services.AddScoped<ReviewErrorsRepository>();
-        services.AddScoped<IReviewErrorsService, IReviewErrorsService>();
+        services.AddScoped<IReviewErrorsService, ReviewErrorsService>();
         services.AddScoped<ErrorTypesRepository>();
         services.AddScoped<IErrorTypesService, ErrorTypesService>();
+        services.AddScoped<LabelingTasksRepository>();
+        services.AddScoped<ILabelingTasksService, LabelingTasksService>();
         services.AddHostedService<DevSeedHostedService>();
         return services;
     }
