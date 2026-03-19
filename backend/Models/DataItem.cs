@@ -13,6 +13,8 @@ public class DataItem
     [MaxLength(24)]
     public string DatasetId { get; set; } = string.Empty;
 
+    public Dataset? Dataset { get; set; }
+
     [Required]
     [MaxLength(20)]
     public string StorageProvider { get; set; } = "Local";
@@ -35,8 +37,10 @@ public class DataItem
     public string Status { get; set; } = "Active";
 
     [MaxLength(24)]
-    [ForeignKey(nameof(UploadedByUserId))]
     public string? UploadedByUserId { get; set; }
+
+    [ForeignKey(nameof(UploadedByUserId))]
+    public User? UploadedByUser { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

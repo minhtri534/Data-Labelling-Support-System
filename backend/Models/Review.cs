@@ -11,13 +11,17 @@ public class Review
 
     [Required]
     [MaxLength(24)]
-    [ForeignKey(nameof(AnnotationSetId))]
     public string AnnotationSetId { get; set; } = string.Empty;
+
+    [ForeignKey(nameof(AnnotationSetId))]
+    public AnnotationSet? AnnotationSet { get; set; }
 
     [Required]
     [MaxLength(24)]
-    [ForeignKey(nameof(ReviewerId))]
     public string ReviewerId { get; set; } = string.Empty;
+
+    [ForeignKey(nameof(ReviewerId))]
+    public User? Reviewer { get; set; }
 
     [Required]
     public string Result { get; set; } = string.Empty;
@@ -27,4 +31,7 @@ public class Review
     public string? Comment { get; set; }
 
     public DateTime ReviewedAt { get; set; }
+
+    // Navigation for errors
+    public ICollection<ReviewError> ReviewErrors { get; set; } = new List<ReviewError>();
 }

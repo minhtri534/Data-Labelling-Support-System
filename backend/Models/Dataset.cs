@@ -12,6 +12,8 @@ public class Dataset
     [MaxLength(24)]
     public string ProjectId { get; set; } = string.Empty;
 
+    public Project? Project { get; set; }
+
     [Required]
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;

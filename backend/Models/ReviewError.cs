@@ -12,6 +12,8 @@ public class ReviewError
     public string ReviewId { get; set; } = string.Empty;
 
     [MaxLength(24)]
-    [ForeignKey(nameof(ErrorTypeId))]
     public string ErrorTypeId { get; set; } = string.Empty;
+
+    [ForeignKey(nameof(ErrorTypeId))]
+    public ErrorType? ErrorType { get; set; }
 }

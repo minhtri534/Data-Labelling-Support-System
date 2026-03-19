@@ -8,6 +8,8 @@ public class PasswordResetToken
 
     public string UserId { get; set; } = string.Empty;
 
+    public User? User { get; set; }
+
     public DateTime ExpiresAt { get; set; }
 
     public DateTime CreatedAt { get; set; }
