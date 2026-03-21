@@ -8,10 +8,8 @@ namespace DataLabellingSupportSystem.Api.Models;
 public class ReviewError
 {
     [MaxLength(24)]
-    public string ReviewId { get; set; } = string.Empty;
-
     [ForeignKey(nameof(ReviewId))]
-    public Review? Review { get; set; }
+    public string ReviewId { get; set; } = string.Empty;
 
     [MaxLength(24)]
     public string ErrorTypeId { get; set; } = string.Empty;
