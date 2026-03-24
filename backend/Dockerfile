@@ -1,10 +1,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /app
 
-COPY ["DataLabellingSupportSystem.Api.csproj", "./"]
+COPY ["backend/DataLabellingSupportSystem.Api.csproj", "./"]
 RUN dotnet restore
 
-COPY . .
+COPY backend/ . 
 RUN dotnet publish DataLabellingSupportSystem.Api.csproj -c Release -o /out
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
