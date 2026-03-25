@@ -22,7 +22,7 @@ public class LabelingTasksService(LabelingTasksRepository repo) : ILabelingTasks
         await _repo.Update(task);
     }
 
-    public async Task<LabelingTask> GetLabelingTaskById(string id)
+    public async Task<LabelingTask?> GetLabelingTaskById(string id)
     {
         return await _repo.GetById(id);
     }

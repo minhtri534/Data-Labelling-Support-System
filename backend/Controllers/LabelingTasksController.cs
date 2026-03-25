@@ -23,6 +23,11 @@ public sealed class LabelingTasksController(ILabelingTasksService service) : Con
     public async Task<IActionResult> GetById(string id)
     {
         var result = await service.GetLabelingTaskById(id);
+        if (result is null)
+        {
+            return NotFound();
+        }
+
         return Ok(result);
     }
 

@@ -37,6 +37,28 @@ public sealed class LabelConfiguration : IEntityTypeConfiguration<Label>
             .HasMaxLength(100)
             .IsRequired();
 
+        builder.Property(x => x.CategoryId)
+            .HasColumnName("categoryId")
+            .HasColumnType("varchar(24)")
+            .HasMaxLength(24);
+
+        builder.HasOne(x => x.Category)
+            .WithMany()
+            .HasForeignKey(x => x.CategoryId)
+            .HasPrincipalKey(x => x.Id)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.Property(x => x.AnnotationTypeId)
+            .HasColumnName("annotationTypeId")
+            .HasColumnType("varchar(24)")
+            .HasMaxLength(24);
+
+        builder.HasOne(x => x.AnnotationType)
+            .WithMany()
+            .HasForeignKey(x => x.AnnotationTypeId)
+            .HasPrincipalKey(x => x.Id)
+            .OnDelete(DeleteBehavior.NoAction);
+
         builder.HasIndex(x => new { x.ProjectId, x.Name })
             .IsUnique();
 

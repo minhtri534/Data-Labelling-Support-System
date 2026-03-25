@@ -1,18 +1,19 @@
+# syntax=docker/dockerfile:1
+
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-COPY ["backend/DataLabellingSupportSystem.Api.csproj", "backend/"]
-RUN dotnet restore "backend/DataLabellingSupportSystem.Api.csproj"
+COPY DataLabellingSupportSystem.Api.csproj ./
+RUN dotnet restore DataLabellingSupportSystem.Api.csproj
 
-COPY backend/ ./backend/
-WORKDIR "/src/backend"
-RUN dotnet publish "DataLabellingSupportSystem.Api.csproj" -c Release -o /out
+COPY . .
+RUN dotnet publish DataLabellingSupportSystem.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
-COPY --from=build /out .
 
-ENV ASPNETCORE_URLS=http://0.0.0.0:5000
-EXPOSE 5000
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
 
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "DataLabellingSupportSystem.Api.dll"]
