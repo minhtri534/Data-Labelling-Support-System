@@ -1,86 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-<<<<<<< Updated upstream
-import { ArrowLeft, Edit, Trash2, Archive, AlertCircle, Loader } from "lucide-react";
-import DashboardLayout from "../../../layouts/DashboardLayout";
-import { Card } from "../../../components/ui/Card";
-import { Button } from "../../../components/ui/Button";
-import { managerService } from "../../../services/managerService";
-import type { ProjectResponse } from "../../../types/manager";
-
-const ManagerProjectDetailPage: React.FC = () => {
-  const { projectId } = useParams<{ projectId: string }>();
-  const navigate = useNavigate();
-  const [project, setProject] = useState<ProjectResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  useEffect(() => {
-    const fetchProject = async () => {
-      if (!projectId) {
-        setError("Project ID is missing");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const response = await managerService.project.getProjectById(projectId);
-        if (response.isSuccess && response.data) {
-          setProject(response.data);
-        } else {
-          setError(response.message || "Failed to fetch project");
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch project");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProject();
-  }, [projectId]);
-
-  const handleDelete = async () => {
-    if (!projectId || !window.confirm("Are you sure you want to delete this project?")) return;
-
-    try {
-      setDeleting(true);
-      const response = await managerService.project.deleteProject(projectId);
-      if (response.isSuccess) {
-        navigate("/manager/projects");
-      } else {
-        setError(response.message || "Failed to delete project");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete project");
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const handleArchive = async () => {
-    if (!projectId) return;
-
-    try {
-      const response = await managerService.project.archiveProject(projectId);
-      if (response.isSuccess && response.data) {
-        setProject(response.data);
-      } else {
-        setError(response.message || "Failed to archive project");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to archive project");
-    }
-  };
-
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center py-12">
-          <Loader className="h-6 w-6 animate-spin text-blue-600" />
-=======
 import { 
   ArrowLeft, Edit, Trash2, Archive, PlayCircle, PauseCircle, Users, 
   Calendar, FileText, CheckCircle, Clock, Loader2, Plus, Upload, Tag, List
@@ -175,38 +94,12 @@ const ProjectDetailPage: React.FC = () => {
         <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
           <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
           <p>Đang tải thông tin dự án...</p>
->>>>>>> Stashed changes
         </div>
       </DashboardLayout>
     );
   }
 
-<<<<<<< Updated upstream
-  if (error || !project) {
-    return (
-      <DashboardLayout>
-        <div className="max-w-6xl mx-auto">
-          <Card variant="glass" className="p-4 bg-red-50 border border-red-200">
-            <div className="flex items-center gap-2 text-red-800">
-              <AlertCircle className="h-5 w-5" />
-              <span>{error || "Project not found"}</span>
-            </div>
-          </Card>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  const statusMap: Record<number, string> = {
-    0: "Sắp bắt đầu",
-    1: "Đang hoạt động",
-    2: "Tạm dừng",
-    3: "Hoàn thành",
-    9: "Lưu trữ",
-  };
-=======
   if (!project) return null;
->>>>>>> Stashed changes
 
   return (
     <DashboardLayout>
@@ -228,69 +121,18 @@ const ProjectDetailPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-<<<<<<< Updated upstream
-            <Link to={`/manager/projects/${projectId}/edit`} className="inline-block">
-              <Button variant="outline" disabled={loading}><Edit className="h-4 w-4 mr-2"/> Chỉnh sửa</Button>
-            </Link>
-            <Button 
-              variant="outline" 
-              className="text-red-600 border-red-600 hover:bg-red-50"
-              onClick={handleDelete}
-              disabled={deleting || loading}
-            >
-              <Trash2 className="h-4 w-4 mr-2"/> Xóa
-            </Button>
-            <Button 
-              variant="secondary"
-              onClick={handleArchive}
-              disabled={loading}
-            >
-=======
             <Button variant="outline"><Edit className="h-4 w-4 mr-2"/> Sửa</Button>
             <Button variant="secondary" onClick={handleArchive} disabled={project.status !== 0}>
->>>>>>> Stashed changes
               <Archive className="h-4 w-4 mr-2"/> Lưu trữ
             </Button>
           </div>
         </div>
 
-<<<<<<< Updated upstream
-        {error && (
-          <Card variant="glass" className="p-4 bg-red-50 border border-red-200">
-            <div className="flex items-center gap-2 text-red-800">
-              <AlertCircle className="h-5 w-5" />
-              <span>{error}</span>
-            </div>
-          </Card>
-        )}
-
-        {/* Main Content */}
-=======
         {/* Main Content Grid */}
->>>>>>> Stashed changes
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Left Columns: Details & Management */}
           <div className="lg:col-span-2 space-y-8">
-<<<<<<< Updated upstream
-            <Card variant="glass" className="p-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Chi tiết dự án</h2>
-              {project.guideline && (
-                <p className="text-gray-600 mb-6">{project.guideline}</p>
-              )}
-              
-              <div className="grid grid-cols-2 gap-6 text-sm">
-                <div className="flex items-start gap-3">
-                  <div>
-                    <div className="text-gray-500">Trạng thái</div>
-                    <div className="font-medium text-gray-800">{statusMap[project.status]}</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div>
-                    <div className="text-gray-500">Ngày tạo</div>
-                    <div className="font-medium text-gray-800">{new Date(project.createdAt).toLocaleDateString('vi-VN')}</div>
-=======
             
             {/* Project Info */}
             <Card className="p-6">
@@ -315,18 +157,11 @@ const ProjectDetailPage: React.FC = () => {
                   <div>
                     <div className="text-gray-500">Cập nhật cuối</div>
                     <div className="font-semibold">{new Date(project.updatedAt).toLocaleDateString('vi-VN')}</div>
->>>>>>> Stashed changes
                   </div>
                 </div>
               </div>
             </Card>
 
-<<<<<<< Updated upstream
-            {/* Task Progress - Placeholder */}
-            <Card variant="glass" className="p-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Tiến độ công việc</h2>
-              <p className="text-center text-gray-500 py-8">Các tab dữ liệu, nhãn, công việc sẽ được hiển thị ở đây.</p>
-=======
             {/* Dataset Management */}
             <Card className="p-6">
               <div className="flex justify-between items-center mb-6">
@@ -372,25 +207,11 @@ const ProjectDetailPage: React.FC = () => {
                   )}
                 </div>
               </div>
->>>>>>> Stashed changes
             </Card>
           </div>
 
           {/* Right Column: Labels & Monitoring */}
           <div className="space-y-8">
-<<<<<<< Updated upstream
-            <Card variant="glass" className="p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Thông tin</h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <div className="text-gray-500">Trạng thái</div>
-                  <div className="font-semibold text-gray-800 mt-1">{statusMap[project.status]}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Cập nhật lúc</div>
-                  <div className="font-semibold text-gray-800 mt-1">{new Date(project.updatedAt).toLocaleDateString('vi-VN')}</div>
-                </div>
-=======
             
             {/* Label Management */}
             <Card className="p-6">
@@ -438,7 +259,6 @@ const ProjectDetailPage: React.FC = () => {
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Kiểm tra chất lượng
                 </Button>
->>>>>>> Stashed changes
               </div>
             </Card>
 
@@ -461,13 +281,9 @@ const ProjectDetailPage: React.FC = () => {
   );
 };
 
-<<<<<<< Updated upstream
-export default ManagerProjectDetailPage;
-=======
 // Internal icon for consistency
 const FolderClosed = ({ className }: { className?: string }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
 );
 
 export default ProjectDetailPage;
->>>>>>> Stashed changes

@@ -41,7 +41,7 @@ const ManagerCreateProjectPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await managerService.project.createProject(formData);
+      const response = await managerService.createProject(formData);
       
       if (response.isSuccess) {
         setSuccess(true);
