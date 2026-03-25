@@ -71,17 +71,8 @@ const ManagerCreateProjectPage: React.FC = () => {
               Create New Project
             </h1>
             <p className="text-gray-500 mt-1">Enter the details to create a new labeling project.</p>
-          </Card>
-        )}
-
-        {error && (
-          <Card variant="glass" className="p-4 bg-red-50 border border-red-200">
-            <div className="flex items-center gap-2 text-red-800">
-              <AlertCircle className="h-5 w-5" />
-              <span>{error}</span>
-            </div>
-          </Card>
-        )}
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <Card variant="glass" className="p-8 space-y-8">
