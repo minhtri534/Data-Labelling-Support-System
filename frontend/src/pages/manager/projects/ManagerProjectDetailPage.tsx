@@ -1,27 +1,111 @@
-import React from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Edit, Trash2, Archive, PlayCircle, PauseCircle, Users, Calendar, DollarSign, FileText, CheckCircle, Clock } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Edit, Trash2, Archive, AlertCircle, Loader } from "lucide-react";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
+import { managerService } from "../../../services/managerService";
+import type { ProjectResponse } from "../../../types/manager";
 
-// Mock data for a single project
-const project = {
-  id: "PROJ-001",
-  name: "Phân tích cảm xúc bình luận sản phẩm",
-  description: "Dự án này nhằm mục đích phân loại các bình luận của khách hàng về sản phẩm mới ra mắt thành các loại tích cực, tiêu cực hoặc trung tính. Kết quả sẽ được sử dụng để cải thiện sản phẩm và chiến lược marketing.",
-  status: "Đang hoạt động",
-  annotators: 15,
-  progress: 75,
-  startDate: "2024-01-15",
-  endDate: "2024-04-15",
-  budget: 5000,
-  dataset: "Dataset A - Customer Reviews",
-  labelCategory: "Sentiment Analysis (Positive/Negative)",
-};
-
-const ProjectDetailPage: React.FC = () => {
+const ManagerProjectDetailPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  const [project, setProject] = useState<ProjectResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      if (!projectId) {
+        setError("Project ID is missing");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await managerService.project.getProjectById(projectId);
+        if (response.isSuccess && response.data) {
+          setProject(response.data);
+        } else {
+          setError(response.message || "Failed to fetch project");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch project");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProject();
+  }, [projectId]);
+
+  const handleDelete = async () => {
+    if (!projectId || !window.confirm("Are you sure you want to delete this project?")) return;
+
+    try {
+      setDeleting(true);
+      const response = await managerService.project.deleteProject(projectId);
+      if (response.isSuccess) {
+        navigate("/manager/projects");
+      } else {
+        setError(response.message || "Failed to delete project");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete project");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleArchive = async () => {
+    if (!projectId) return;
+
+    try {
+      const response = await managerService.project.archiveProject(projectId);
+      if (response.isSuccess && response.data) {
+        setProject(response.data);
+      } else {
+        setError(response.message || "Failed to archive project");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to archive project");
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-12">
+          <Loader className="h-6 w-6 animate-spin text-blue-600" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !project) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-6xl mx-auto">
+          <Card variant="glass" className="p-4 bg-red-50 border border-red-200">
+            <div className="flex items-center gap-2 text-red-800">
+              <AlertCircle className="h-5 w-5" />
+              <span>{error || "Project not found"}</span>
+            </div>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const statusMap: Record<number, string> = {
+    0: "Sắp bắt đầu",
+    1: "Đang hoạt động",
+    2: "Tạm dừng",
+    3: "Hoàn thành",
+    9: "Lưu trữ",
+  };
 
   return (
     <DashboardLayout>
@@ -38,11 +122,35 @@ const ProjectDetailPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline"><Edit className="h-4 w-4 mr-2"/> Chỉnh sửa</Button>
-            <Button variant="outline" className="text-red-600 border-red-600 hover:bg-red-50"><Trash2 className="h-4 w-4 mr-2"/> Xóa</Button>
-            <Button variant="secondary"><Archive className="h-4 w-4 mr-2"/> Lưu trữ</Button>
+            <Link to={`/manager/projects/${projectId}/edit`} className="inline-block">
+              <Button variant="outline" disabled={loading}><Edit className="h-4 w-4 mr-2"/> Chỉnh sửa</Button>
+            </Link>
+            <Button 
+              variant="outline" 
+              className="text-red-600 border-red-600 hover:bg-red-50"
+              onClick={handleDelete}
+              disabled={deleting || loading}
+            >
+              <Trash2 className="h-4 w-4 mr-2"/> Xóa
+            </Button>
+            <Button 
+              variant="secondary"
+              onClick={handleArchive}
+              disabled={loading}
+            >
+              <Archive className="h-4 w-4 mr-2"/> Lưu trữ
+            </Button>
           </div>
         </div>
+
+        {error && (
+          <Card variant="glass" className="p-4 bg-red-50 border border-red-200">
+            <div className="flex items-center gap-2 text-red-800">
+              <AlertCircle className="h-5 w-5" />
+              <span>{error}</span>
+            </div>
+          </Card>
+        )}
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -50,66 +158,59 @@ const ProjectDetailPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-8">
             <Card variant="glass" className="p-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Chi tiết dự án</h2>
-              <p className="text-gray-600 mb-6">{project.description}</p>
+              {project.guideline && (
+                <p className="text-gray-600 mb-6">{project.guideline}</p>
+              )}
               
               <div className="grid grid-cols-2 gap-6 text-sm">
                 <div className="flex items-start gap-3">
-                  <FileText className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <div className="text-gray-500">Dataset</div>
-                    <div className="font-medium text-gray-800">{project.dataset}</div>
-                  </div>
-                </div>
-                 <div className="flex items-start gap-3">
-                  <Users className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <div className="text-gray-500">Số người tham gia</div>
-                    <div className="font-medium text-gray-800">{project.annotators} người</div>
+                    <div className="text-gray-500">Trạng thái</div>
+                    <div className="font-medium text-gray-800">{statusMap[project.status]}</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <div className="text-gray-500">Thời gian</div>
-                    <div className="font-medium text-gray-800">{project.startDate} - {project.endDate}</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <DollarSign className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <div className="text-gray-500">Ngân sách</div>
-                    <div className="font-medium text-gray-800">${project.budget.toLocaleString()}</div>
+                    <div className="text-gray-500">Ngày tạo</div>
+                    <div className="font-medium text-gray-800">{new Date(project.createdAt).toLocaleDateString('vi-VN')}</div>
                   </div>
                 </div>
               </div>
             </Card>
 
-             {/* Task Progress - Placeholder */}
+            {/* Task Progress - Placeholder */}
             <Card variant="glass" className="p-8">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Tiến độ công việc</h2>
-                <p className="text-center text-gray-500 py-8">Biểu đồ và danh sách công việc sẽ được hiển thị ở đây.</p>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Tiến độ công việc</h2>
+              <p className="text-center text-gray-500 py-8">Các tab dữ liệu, nhãn, công việc sẽ được hiển thị ở đây.</p>
             </Card>
           </div>
 
           {/* Right Column: Status & Actions */}
           <div className="space-y-8">
             <Card variant="glass" className="p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Trạng thái</h3>
-              <div className="flex items-center gap-2 text-blue-600 font-semibold text-lg">
-                <Clock className="h-6 w-6" />
-                <span>{project.status}</span>
-              </div>
-              <div className="mt-4">
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${project.progress}%` }}></div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Thông tin</h3>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <div className="text-gray-500">Trạng thái</div>
+                  <div className="font-semibold text-gray-800 mt-1">{statusMap[project.status]}</div>
                 </div>
-                <p className="text-right text-sm text-gray-500 mt-1">Hoàn thành {project.progress}%</p>
+                <div>
+                  <div className="text-gray-500">Cập nhật lúc</div>
+                  <div className="font-semibold text-gray-800 mt-1">{new Date(project.updatedAt).toLocaleDateString('vi-VN')}</div>
+                </div>
               </div>
-              <div className="mt-6 space-y-3">
-                <Button fullWidth variant="secondary"><PauseCircle className="h-4 w-4 mr-2"/> Tạm dừng dự án</Button>
-                <Button fullWidth variant="secondary"><PlayCircle className="h-4 w-4 mr-2"/> Tiếp tục dự án</Button>
-                  <Button fullWidth variant="outline"><CheckCircle className="h-4 w-4 mr-2"/> Đánh dấu hoàn thành</Button>
-              </div>
+            </Card>
+
+            <Card variant="glass" className="p-6 space-y-3">
+              <Link to={`/manager/projects/${projectId}/datasets`} className="block">
+                <Button fullWidth variant="secondary">Quản lý Datasets</Button>
+              </Link>
+              <Link to={`/manager/projects/${projectId}/labels`} className="block">
+                <Button fullWidth variant="secondary">Quản lý Nhãn</Button>
+              </Link>
+              <Link to={`/manager/projects/${projectId}/tasks`} className="block">
+                <Button fullWidth variant="secondary">Quản lý Công việc</Button>
+              </Link>
             </Card>
           </div>
         </div>
@@ -118,4 +219,4 @@ const ProjectDetailPage: React.FC = () => {
   );
 };
 
-export default ProjectDetailPage;
+export default ManagerProjectDetailPage;
