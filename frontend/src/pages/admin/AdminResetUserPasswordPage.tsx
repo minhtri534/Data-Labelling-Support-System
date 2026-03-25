@@ -10,17 +10,17 @@ const AdminResetUserPasswordPage: React.FC = () => {
     <DashboardLayout>
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Reset Mật khẩu Người dùng</h1>
-          <p className="text-gray-500 mt-1">Tìm kiếm và cấp lại mật khẩu cho bất kỳ tài khoản nào trong hệ thống.</p>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Reset User Password</h1>
+          <p className="text-gray-500 mt-1">Search and reset password for any account within the system.</p>
         </div>
 
         <Card variant="glass" className="p-8 space-y-6">
           {/* Search User */}
           <div className="space-y-2">
-            <label htmlFor="user-search" className="font-medium">Tìm người dùng</label>
+            <label htmlFor="user-search" className="font-medium">Find User</label>
             <div className="flex gap-2">
-              <Input id="user-search" placeholder="Nhập email, username, hoặc ID..." />
-              <Button variant="outline"><Search className="h-4 w-4 mr-2"/> Tìm kiếm</Button>
+              <Input id="user-search" placeholder="Enter email, username, or ID..." />
+              <Button variant="outline"><Search className="h-4 w-4 mr-2"/> Search</Button>
             </div>
           </div>
 
@@ -33,7 +33,7 @@ const AdminResetUserPasswordPage: React.FC = () => {
                 </div>
                 <Button variant="secondary" className="bg-red-500 text-white hover:bg-red-600">
                     <KeyRound className="h-4 w-4 mr-2"/>
-                    Reset Mật khẩu
+                    Reset Password
                 </Button>
             </div>
           </div>

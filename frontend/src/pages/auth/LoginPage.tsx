@@ -25,7 +25,7 @@ const LoginPage: React.FC = () => {
       handleLoginSuccess(response);
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.response?.data?.message || "Email hoặc mật khẩu không chính xác");
+      setError(err.response?.data?.message || "Invalid email or password");
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ const LoginPage: React.FC = () => {
       
       navigate(DEFAULT_ROUTE_BY_ROLE[role]);
     } else {
-      setError(response.message || "Đăng nhập thất bại");
+      setError(response.message || "Login failed");
     }
   };
 
@@ -61,15 +61,15 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <AuthLayout title="Đăng nhập để tiếp tục" subtitle="Truy cập dự án, tác vụ và phân tích tại một nơi.">
+    <AuthLayout title="Sign in to continue" subtitle="Access projects, tasks, and analytics in one place.">
       <Card className="w-full max-w-md p-8">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center">
             <LogIn className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <div className="text-sm text-gray-500">Chào mừng trở lại</div>
-            <h2 className="text-xl font-semibold text-gray-900">Đăng nhập New</h2>
+            <div className="text-sm text-gray-500">Welcome back</div>
+            <h2 className="text-xl font-semibold text-gray-900">Sign in</h2>
           </div>
         </div>
 
@@ -95,7 +95,7 @@ const LoginPage: React.FC = () => {
             />
           </div>
           <div>
-            <Label htmlFor="password">Mật khẩu</Label>
+            <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               name="password"
@@ -110,14 +110,14 @@ const LoginPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <input id="remember" type="checkbox" className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-              <span className="text-sm text-gray-700">Ghi nhớ đăng nhập</span>
+              <span className="text-sm text-gray-700">Remember me</span>
             </div>
             <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
-              Quên mật khẩu?
+              Forgot password?
             </Link>
           </div>
           <Button type="submit" fullWidth variant="gradient" disabled={loading}>
-            {loading ? "Đang xử lý..." : "Đăng nhập"}
+            {loading ? "Processing..." : "Sign In"}
           </Button>
 
           <div className="relative my-6">
@@ -125,7 +125,7 @@ const LoginPage: React.FC = () => {
               <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Hoặc đăng nhập với</span>
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
             </div>
           </div>
 
@@ -135,13 +135,13 @@ const LoginPage: React.FC = () => {
             className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-gray-300 rounded-xl bg-white text-gray-700 font-medium hover:bg-gray-50 transition-colors"
           >
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-            Tiếp tục với Google
+            Continue with Google
           </button>
 
           <div className="text-center mt-6 text-sm text-gray-600">
-            Bạn chưa có tài khoản?{" "}
+            Don't have an account?{" "}
             <Link to="/register" className="text-blue-600 hover:text-blue-700">
-              Tạo tài khoản ngay
+              Create one now
             </Link>
           </div>
         </form>
