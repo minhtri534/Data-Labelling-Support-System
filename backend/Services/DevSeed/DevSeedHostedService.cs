@@ -14,7 +14,10 @@ public sealed class DevSeedHostedService(
     IOptions<DevSeedOptions> options,
     ILogger<DevSeedHostedService> logger) : IHostedService
 {
+    private const string AdminRoleId = "000000000000000000000001";
+    private const string ManagerRoleId = "000000000000000000000002";
     private const string AnnotatorRoleId = "000000000000000000000003";
+    private const string ReviewerRoleId = "000000000000000000000004";
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -37,6 +40,77 @@ public sealed class DevSeedHostedService(
 
             await dbContext.Database.MigrateAsync(cancellationToken);
 
+            // 0. Seed Roles
+            var roles = new[]
+            {
+                new Role { Id = AdminRoleId, Name = "Admin" },
+                new Role { Id = ManagerRoleId, Name = "Manager" },
+                new Role { Id = AnnotatorRoleId, Name = "Annotator" },
+                new Role { Id = ReviewerRoleId, Name = "Reviewer" }
+            };
+
+            foreach (var r in roles)
+            {
+                var exists = await dbContext.Roles.AnyAsync(x => x.Id == r.Id, cancellationToken);
+                if (!exists)
+                {
+                    dbContext.Roles.Add(r);
+                }
+            }
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            // 1. Seed Admin
+            var adminEmail = (opt.AdminEmail ?? "admin@demo.local").Trim().ToLowerInvariant();
+            var admin = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == adminEmail, cancellationToken);
+            if (admin is null)
+            {
+                admin = new User
+                {
+                    FullName = (opt.AdminFullName ?? "System Administrator").Trim(),
+                    Email = adminEmail,
+                    PasswordHash = passwordHasher.Hash(opt.AdminPassword ?? "Password123!"),
+                    RoleId = AdminRoleId,
+                    Status = 0
+                };
+                dbContext.Users.Add(admin);
+                logger.LogInformation("Seeding Admin user: {Email}", adminEmail);
+            }
+
+            // 2. Seed Manager
+            var managerEmail = (opt.ManagerEmail ?? "manager@demo.local").Trim().ToLowerInvariant();
+            var manager = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == managerEmail, cancellationToken);
+            if (manager is null)
+            {
+                manager = new User
+                {
+                    FullName = (opt.ManagerFullName ?? "Demo Manager").Trim(),
+                    Email = managerEmail,
+                    PasswordHash = passwordHasher.Hash(opt.ManagerPassword ?? "Password123!"),
+                    RoleId = ManagerRoleId,
+                    Status = 0
+                };
+                dbContext.Users.Add(manager);
+                logger.LogInformation("Seeding Manager user: {Email}", managerEmail);
+            }
+
+            // 3. Seed Reviewer
+            var reviewerEmail = (opt.ReviewerEmail ?? "reviewer@demo.local").Trim().ToLowerInvariant();
+            var reviewer = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == reviewerEmail, cancellationToken);
+            if (reviewer is null)
+            {
+                reviewer = new User
+                {
+                    FullName = (opt.ReviewerFullName ?? "Demo Reviewer").Trim(),
+                    Email = reviewerEmail,
+                    PasswordHash = passwordHasher.Hash(opt.ReviewerPassword ?? "Password123!"),
+                    RoleId = ReviewerRoleId,
+                    Status = 0
+                };
+                dbContext.Users.Add(reviewer);
+                logger.LogInformation("Seeding Reviewer user: {Email}", reviewerEmail);
+            }
+
+            // 4. Seed Annotator
             var normalizedEmail = (opt.AnnotatorEmail ?? string.Empty).Trim().ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(normalizedEmail))
             {
@@ -57,17 +131,10 @@ public sealed class DevSeedHostedService(
                 };
 
                 dbContext.Users.Add(annotator);
-                await dbContext.SaveChangesAsync(cancellationToken);
+                logger.LogInformation("Seeding Annotator user: {Email}", normalizedEmail);
             }
 
-            // Idempotency guard: if the demo annotator already has any task, don't create more demo tasks.
-            var hasAnyTask = await dbContext.LabelingTasks
-                .AsNoTracking()
-                .AnyAsync(x => x.AnnotatorId == annotator.Id, cancellationToken);
-            if (hasAnyTask)
-            {
-                return;
-            }
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             var projectName = (opt.ProjectName ?? "Demo Project").Trim();
             var project = await dbContext.Projects
@@ -89,6 +156,41 @@ public sealed class DevSeedHostedService(
             {
                 project.Guideline = "Demo guideline:\n- Draw tight bounding boxes around the object.\n- If partially occluded, box the visible part only.\n- Ignore objects smaller than 20x20 px.";
                 await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            // Assign Roles to Project
+            var projectRoles = new[]
+            {
+                new { UserId = annotator.Id, RoleId = AnnotatorRoleId },
+                new { UserId = reviewer.Id, RoleId = ReviewerRoleId },
+                new { UserId = manager.Id, RoleId = ManagerRoleId }
+            };
+
+            foreach (var pr in projectRoles)
+            {
+                var exists = await dbContext.UserProjectRoles
+                    .AsNoTracking()
+                    .AnyAsync(x => x.UserId == pr.UserId && x.ProjectId == project.Id && x.RoleId == pr.RoleId, cancellationToken);
+
+                if (!exists)
+                {
+                    dbContext.UserProjectRoles.Add(new UserProjectRole
+                    {
+                        UserId = pr.UserId,
+                        ProjectId = project.Id,
+                        RoleId = pr.RoleId
+                    });
+                }
+            }
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            // Idempotency guard: if the demo annotator already has any task, don't create more demo tasks.
+            var hasAnyTask = await dbContext.LabelingTasks
+                .AsNoTracking()
+                .AnyAsync(x => x.AnnotatorId == annotator.Id, cancellationToken);
+            if (hasAnyTask)
+            {
+                return;
             }
 
             var datasetName = (opt.DatasetName ?? "Demo Dataset").Trim();

@@ -1,13 +1,15 @@
 namespace DataLabellingSupportSystem.Api.DTOs.Responses.Reviews;
 
 public sealed record ReviewerSubmittedTaskResponse(
-    string TaskId,
+    string Id,
     string ProjectId,
-    string DataItemId,
+    string ProjectName,
     string AnnotatorId,
+    string AnnotatorName,
     string AnnotationSetId,
     DateTime SubmittedAt,
-    int AnnotationCount);
+    int AnnotationCount,
+    string Status = "Submitted");
 
 public sealed record ReviewerAnnotationItemResponse(
     string AnnotationId,

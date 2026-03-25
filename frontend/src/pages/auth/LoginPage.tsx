@@ -35,20 +35,21 @@ const LoginPage: React.FC = () => {
     if (response.isSuccess && response.data) {
       localStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("refreshToken", response.data.refreshToken);
-      localStorage.setItem("userId", response.data.userId);
-      localStorage.setItem("fullName", response.data.fullName);
+      localStorage.setItem("userId", response.data.user.id);
+      localStorage.setItem("fullName", response.data.user.fullName);
+      localStorage.setItem("email", response.data.user.email);
       
-      const role = "annotator"; 
+      const role = (response.data.user.roleName || "Annotator").toLowerCase(); 
       localStorage.setItem("role", role);
 
       const DEFAULT_ROUTE_BY_ROLE: Record<string, string> = {
         reviewer: "/reviewer",
-        annotator: "/annotator/returned",
-        manager: "/manager/budget",
+        annotator: "/annotator/tasks",
+        manager: "/manager/projects",
         admin: "/admin/users",
       };
       
-      navigate(DEFAULT_ROUTE_BY_ROLE[role]);
+      navigate(DEFAULT_ROUTE_BY_ROLE[role] || "/annotator/tasks");
     } else {
       setError(response.message || "Login failed");
     }

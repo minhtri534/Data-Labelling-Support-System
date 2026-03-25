@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { INITIAL_USERS } from '../../data/mockData';
-import type { User } from '../../data/mockData';
+import { userService, type UserResponse } from '../../services/userService';
+import { roleService, type RoleResponse } from '../../services/roleService';
+import { adminService } from '../../services/adminService';
 import {
   Users,
   Search,
@@ -13,75 +14,137 @@ import {
   RefreshCw,
   Trash2,
   Edit,
-  Shield
+  Shield,
+  Loader2,
+  Badge
 } from 'lucide-react';
 
 const AdminUserManagement: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  const [users, setUsers] = useState<UserResponse[]>([]);
+  const [roles, setRoles] = useState<RoleResponse[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserRole, setNewUserRole] = useState<User['role']>('annotator');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('');
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [userRes, roleRes] = await Promise.all([
+        userService.getAll(),
+        roleService.getAll()
+      ]);
+      if (userRes.isSuccess) setUsers(userRes.data);
+      if (roleRes.isSuccess) {
+        setRoles(roleRes.data);
+        if (roleRes.data.length > 0) setNewUserRole(roleRes.data[0].id);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // =============================
   // CREATE USER (UC-99)
   // =============================
-  const handleCreateUser = () => {
-    const newUser: User = {
-      id: Date.now().toString(),
-      name: newUserName,
-      email: newUserEmail,
-      role: newUserRole,
-      status: 'active',
-      lastActive: 'Just now'
-    };
+  const handleCreateUser = async () => {
+    if (!newUserName || !newUserEmail || !newUserPassword || !newUserRole) {
+      alert('Vui lòng điền đầy đủ các thông tin: Tên, Email, Mật khẩu và Vai trò.');
+      return;
+    }
 
-    setUsers([...users, newUser]);
-    setNewUserName('');
-    setNewUserEmail('');
-    alert('User created successfully');
+    const res = await userService.create({
+      fullName: newUserName,
+      email: newUserEmail,
+      password: newUserPassword,
+      roleId: newUserRole,
+      status: 0
+    });
+
+    if (res.isSuccess) {
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPassword('');
+      alert('Tạo người dùng mới thành công!');
+      fetchData();
+    } else {
+      alert(res.message || 'Lỗi khi tạo người dùng.');
+    }
   };
 
   // =============================
   // UPDATE ROLE (UC-101 + UC-105)
   // =============================
-  const handleChangeRole = (id: string, role: User['role']) => {
-    setUsers(users.map(u =>
-      u.id === id ? { ...u, role } : u
-    ));
+  const handleChangeRole = async (userId: string, roleId: string) => {
+    const res = await adminService.assignRole(userId, { roleId });
+    if (res.isSuccess) {
+      alert('Cập nhật vai trò thành công!');
+      fetchData();
+    } else {
+      alert(res.message || 'Lỗi khi cập nhật vai trò.');
+    }
   };
 
   // =============================
   // DISABLE USER (UC-102)
   // =============================
-  const handleDisableUser = (id: string) => {
-    setUsers(users.map(u =>
-      u.id === id ? { ...u, status: 'inactive' } : u
-    ));
+  const handleDisableUser = async (userId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn vô hiệu hóa người dùng này không?')) return;
+    
+    const res = await adminService.disableUser(userId);
+    if (res.isSuccess) {
+      alert('Đã vô hiệu hóa người dùng.');
+      fetchData();
+    } else {
+      alert(res.message || 'Lỗi khi vô hiệu hóa người dùng.');
+    }
   };
 
   // =============================
   // DELETE USER (UC-103)
   // =============================
-  const handleDeleteUser = (id: string) => {
-    setUsers(users.filter(u => u.id !== id));
+  const handleDeleteUser = async (id: string) => {
+    if (!confirm('Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa người dùng này?')) return;
+
+    const res = await userService.delete(id);
+    if (res.isSuccess) {
+      alert('Đã xóa người dùng khỏi hệ thống.');
+      fetchData();
+    } else {
+      alert(res.message || 'Lỗi khi xóa người dùng.');
+    }
   };
 
   // =============================
   // RESET PASSWORD
   // =============================
-  const handleResetPassword = (userId: string) => {
+  const handleResetPassword = async (userId: string) => {
+    const newPassword = prompt('Nhập mật khẩu mới cho người dùng này:');
+    if (!newPassword) return;
+
     setResettingId(userId);
-    setTimeout(() => {
+    try {
+      const res = await adminService.resetUserPassword(userId, { newPassword });
+      if (res.isSuccess) {
+        alert('Đặt lại mật khẩu thành công!');
+      } else {
+        alert(res.message || 'Lỗi khi đặt lại mật khẩu.');
+      }
+    } finally {
       setResettingId(null);
-      alert('Password reset link sent');
-    }, 1000);
+    }
   };
 
   return (
@@ -90,17 +153,20 @@ const AdminUserManagement: React.FC = () => {
 
         {/* HEADER */}
         <div>
-          <h1 className="text-3xl font-bold">Admin User Management</h1>
-          <p className="text-gray-500">Manage users, roles & permissions</p>
+          <h1 className="text-3xl font-bold">Quản lý người dùng (Admin)</h1>
+          <p className="text-gray-500">Quản lý tài khoản, phân quyền và trạng thái hoạt động</p>
         </div>
 
         {/* CREATE USER FORM */}
-        <div className="bg-white p-6 rounded-xl shadow space-y-4">
-          <h2 className="font-semibold">Create New User</h2>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+          <h2 className="font-semibold text-gray-700 flex items-center gap-2">
+            <Users className="h-5 w-5 text-blue-600" />
+            Tạo tài khoản mới
+          </h2>
 
-          <div className="flex gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <Input
-              placeholder="Name"
+              placeholder="Họ và tên"
               value={newUserName}
               onChange={(e) => setNewUserName(e.target.value)}
             />
@@ -109,118 +175,142 @@ const AdminUserManagement: React.FC = () => {
               value={newUserEmail}
               onChange={(e) => setNewUserEmail(e.target.value)}
             />
+            <Input
+              type="password"
+              placeholder="Mật khẩu"
+              value={newUserPassword}
+              onChange={(e) => setNewUserPassword(e.target.value)}
+            />
             <select
-              className="border rounded px-3"
+              className="border border-gray-200 rounded-lg px-3 h-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               value={newUserRole}
-              onChange={(e) => setNewUserRole(e.target.value as User['role'])}
+              onChange={(e) => setNewUserRole(e.target.value)}
             >
-              <option value="annotator">Annotator</option>
-              <option value="reviewer">Reviewer</option>
-              <option value="admin">Admin</option>
+              {roles.map(role => (
+                <option key={role.id} value={role.id}>{role.name}</option>
+              ))}
             </select>
 
-            <Button onClick={handleCreateUser}>
-              <Users className="h-4 w-4 mr-2" />
-              Create
+            <Button onClick={handleCreateUser} className="bg-blue-600 hover:bg-blue-700">
+              Xác nhận tạo
             </Button>
           </div>
         </div>
 
         {/* SEARCH */}
-        <div className="flex gap-4">
-          <Search className="h-5 w-5 text-gray-400 mt-2" />
+        <div className="flex gap-4 items-center bg-white p-2 rounded-lg shadow-sm border border-gray-100">
+          <Search className="h-5 w-5 text-gray-400 ml-2" />
           <Input
-            placeholder="Search user..."
+            className="border-none focus:ring-0 shadow-none"
+            placeholder="Tìm kiếm theo tên hoặc email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
         {/* USER TABLE */}
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="p-4">User</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredUsers.map(user => (
-                <tr key={user.id} className="border-t">
-                  <td className="p-4">
-                    <div className="font-medium">{user.name}</div>
-                    <div className="text-gray-500 text-xs">{user.email}</div>
-                  </td>
-
-                  <td>
-                    <select
-                      className="border rounded px-2 py-1"
-                      value={user.role}
-                      onChange={(e) =>
-                        handleChangeRole(user.id, e.target.value as User['role'])
-                      }
-                    >
-                      <option value="annotator">Annotator</option>
-                      <option value="reviewer">Reviewer</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </td>
-
-                  <td>
-                    {user.status === 'active' ? (
-                      <span className="text-green-600 flex items-center gap-1">
-                        <CheckCircle size={14} /> Active
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 flex items-center gap-1">
-                        <XCircle size={14} /> Inactive
-                      </span>
-                    )}
-                  </td>
-
-                  <td className="flex gap-2 p-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleResetPassword(user.id)}
-                      disabled={resettingId === user.id}
-                    >
-                      {resettingId === user.id ? (
-                        <RefreshCw className="animate-spin h-4 w-4" />
-                      ) : (
-                        <Key className="h-4 w-4" />
-                      )}
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDisableUser(user.id)}
-                    >
-                      <Shield className="h-4 w-4 text-yellow-500" />
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteUser(user.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {filteredUsers.length === 0 && (
-            <div className="p-6 text-center text-gray-500">
-              No users found.
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          {loading ? (
+            <div className="p-12 flex flex-col items-center justify-center gap-3 text-gray-500">
+              <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
+              <p>Đang tải danh sách người dùng...</p>
             </div>
+          ) : (
+            <>
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-bold">
+                  <tr>
+                    <th className="p-4">Thông tin người dùng</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th className="p-4 text-center">Thao tác</th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-gray-100">
+                  {filteredUsers.map(user => (
+                    <tr key={user.id} className="hover:bg-blue-50/30 transition-colors">
+                      <td className="p-4">
+                        <div className="font-semibold text-gray-900">{user.fullName}</div>
+                        <div className="text-gray-500 text-xs">{user.email}</div>
+                      </td>
+
+                      <td>
+                        <select
+                          className="border border-gray-200 rounded px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-blue-500 outline-none"
+                          value={user.roleId}
+                          onChange={(e) =>
+                            handleChangeRole(user.id, e.target.value)
+                          }
+                        >
+                          {roles.map(role => (
+                            <option key={role.id} value={role.id}>{role.name}</option>
+                          ))}
+                        </select>
+                      </td>
+
+                      <td>
+                        {user.status === 0 ? (
+                          <Badge className="gap-1 bg-green-100 text-green-800">
+                            <CheckCircle size={12} /> Đang hoạt động
+                          </Badge>
+                        ) : (
+                          <Badge className="gap-1 bg-gray-100 text-gray-800">
+                            <XCircle size={12} /> Đã khóa
+                          </Badge>
+                        )}
+                      </td>
+
+                      <td className="p-4">
+                        <div className="flex justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Đặt lại mật khẩu"
+                            className="text-blue-600 hover:bg-blue-100"
+                            onClick={() => handleResetPassword(user.id)}
+                            disabled={resettingId === user.id}
+                          >
+                            {resettingId === user.id ? (
+                              <RefreshCw className="animate-spin h-4 w-4" />
+                            ) : (
+                              <Key className="h-4 w-4" />
+                            )}
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Vô hiệu hóa"
+                            className={`${user.status === 0 ? 'text-yellow-600 hover:bg-yellow-100' : 'text-gray-300'}`}
+                            onClick={() => handleDisableUser(user.id)}
+                            disabled={user.status !== 0}
+                          >
+                            <Shield className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Xóa người dùng"
+                            className="text-red-600 hover:bg-red-100"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {filteredUsers.length === 0 && (
+                <div className="p-12 text-center text-gray-400 italic">
+                  Không tìm thấy người dùng nào phù hợp.
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/ui/Card';
@@ -13,20 +13,30 @@ import {
   Camera, 
   Save, 
   Shield, 
-  Lock
+  Lock,
+  Badge
 } from 'lucide-react';
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: 'John Doe',
-    email: 'john.doe@company.com',
-    phone: '+1 (555) 123-4567',
-    location: 'San Francisco, CA',
-    bio: 'Senior Data Reviewer with 5 years of experience in computer vision datasets. Specialized in autonomous driving and medical imaging.',
-    role: 'Senior Reviewer',
-    department: 'Quality Assurance'
+    fullName: localStorage.getItem("fullName") || 'Người dùng',
+    email: localStorage.getItem("email") || 'user@example.com',
+    phone: '+84 (000) 000-000',
+    location: 'Việt Nam',
+    bio: 'Chuyên viên tại hệ thống DLSS.',
+    role: (localStorage.getItem("role") || 'Annotator').toUpperCase(),
+    department: 'Phòng khảo sát dữ liệu'
   });
+
+  const initials = useMemo(() => {
+    return formData.fullName
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  }, [formData.fullName]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -38,63 +48,64 @@ export default function ProfilePage() {
     setIsEditing(false);
     // Here you would typically handle the API call to update profile
     console.log('Profile updated:', formData);
+    alert("Đã cập nhật thông tin cá nhân thành công!");
   };
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 max-w-6xl mx-auto">
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-brand to-palette-violet tracking-tight">
-            Personal Profile
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            Hồ sơ cá nhân
           </h1>
-          <p className="text-gray-500 mt-1">Manage your personal information and account settings.</p>
+          <p className="text-gray-500 mt-1">Quản lý thông tin cá nhân và cài đặt tài khoản của bạn.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Profile Card */}
           <div className="space-y-6">
-            <Card variant="glass" className="p-6 flex flex-col items-center text-center">
+            <Card className="p-6 flex flex-col items-center text-center border-none shadow-sm">
               <div className="relative group">
-                <div className="h-32 w-32 rounded-full bg-gradient-to-tr from-brand to-palette-violet flex items-center justify-center text-white text-4xl font-bold shadow-xl shadow-brand/20 mb-4">
-                  JD
+                <div className="h-32 w-32 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-4xl font-bold shadow-xl mb-4">
+                  {initials}
                 </div>
-                <button className="absolute bottom-4 right-0 p-2 bg-white rounded-full shadow-lg border border-gray-100 text-gray-600 hover:text-brand transition-colors">
+                <button className="absolute bottom-4 right-0 p-2 bg-white rounded-full shadow-lg border border-gray-100 text-gray-600 hover:text-blue-600 transition-colors">
                   <Camera className="h-4 w-4" />
                 </button>
               </div>
               
-              <h2 className="text-xl font-bold text-gray-900">{formData.fullName}</h2>
-              <p className="text-brand font-medium">{formData.role}</p>
+              <h2 className="text-2xl font-bold text-gray-900">{formData.fullName}</h2>
+              <Badge className="mt-1 px-4 py-1 bg-blue-50 text-blue-600 border border-blue-600">{formData.role}</Badge>
               
-              <div className="mt-6 w-full space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/50 border border-white/40">
-                  <span className="text-sm text-gray-500">Reviews</span>
-                  <span className="text-sm font-bold text-gray-900">1,248</span>
+              <div className="mt-8 w-full space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+                  <span className="text-sm text-gray-500">Hoạt động</span>
+                  <span className="text-sm font-bold text-gray-900">Ổn định</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/50 border border-white/40">
-                  <span className="text-sm text-gray-500">Accuracy</span>
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+                  <span className="text-sm text-gray-500">Độ tin cậy</span>
                   <span className="text-sm font-bold text-green-600">99.2%</span>
                 </div>
               </div>
             </Card>
 
-            <Card variant="glass" className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Shield className="h-5 w-5 text-brand" />
-                Account Status
+            <Card className="p-6 border-none shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-blue-600" />
+                Trạng thái tài khoản
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-sm">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-gray-600">Email Verified</span>
+                  <span className="text-gray-600 font-medium">Email đã xác minh</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-gray-600">2FA Enabled</span>
+                  <span className="text-gray-600 font-medium">Bảo mật 2 lớp: Tắt</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-gray-600">Active Status</span>
+                  <span className="text-gray-600 font-medium">Đang hoạt động</span>
                 </div>
               </div>
 
@@ -102,7 +113,7 @@ export default function ProfilePage() {
                 <Link to="/change-password">
                   <Button variant="outline" className="w-full justify-center">
                     <Lock className="h-4 w-4 mr-2" />
-                    Change Password
+                    Đổi mật khẩu
                   </Button>
                 </Link>
               </div>
@@ -111,33 +122,33 @@ export default function ProfilePage() {
 
           {/* Right Column: Edit Form */}
           <div className="lg:col-span-2">
-            <Card variant="glass" className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">Profile Details</h3>
+            <Card className="p-8 border-none shadow-sm">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-bold text-gray-900">Chi tiết thông tin</h3>
                 <Button 
-                  variant={isEditing ? "ghost" : "gradient"} 
+                  variant={isEditing ? "ghost" : "primary"} 
                   onClick={() => !isEditing && setIsEditing(true)}
-                  className={isEditing ? "text-gray-500" : ""}
+                  className={isEditing ? "text-gray-500" : "bg-blue-600 hover:bg-blue-700"}
                 >
-                  {isEditing ? 'Cancel' : 'Edit Profile'}
+                  {isEditing ? 'Hủy bỏ' : 'Chỉnh sửa hồ sơ'}
                 </Button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="fullName">Full Name</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Họ và tên</Label>
                     <Input
                       id="fullName"
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleChange}
                       disabled={!isEditing}
-                      leadingIcon={<User className="h-4 w-4" />}
+                      className="bg-gray-50/50"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="email">Email Address</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Địa chỉ Email</Label>
                     <Input
                       id="email"
                       name="email"
@@ -145,35 +156,35 @@ export default function ProfilePage() {
                       value={formData.email}
                       onChange={handleChange}
                       disabled={!isEditing}
-                      leadingIcon={<Mail className="h-4 w-4" />}
+                      className="bg-gray-50/50"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="phone">Phone Number</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Số điện thoại</Label>
                     <Input
                       id="phone"
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
                       disabled={!isEditing}
-                      leadingIcon={<Phone className="h-4 w-4" />}
+                      className="bg-gray-50/50"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="location">Location</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Địa chỉ</Label>
                     <Input
                       id="location"
                       name="location"
                       value={formData.location}
                       onChange={handleChange}
                       disabled={!isEditing}
-                      leadingIcon={<MapPin className="h-4 w-4" />}
+                      className="bg-gray-50/50"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="bio">Bio</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Giới thiệu bản thân</Label>
                   <textarea
                     id="bio"
                     name="bio"
@@ -181,15 +192,15 @@ export default function ProfilePage() {
                     value={formData.bio}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    className="w-full mt-1 rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:bg-gray-50 disabled:text-gray-500 transition-colors"
+                    className="w-full mt-1 rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-500 transition-all"
                   />
                 </div>
 
                 {isEditing && (
-                  <div className="flex justify-end pt-4 border-t border-gray-100">
-                    <Button type="submit" variant="gradient">
+                  <div className="flex justify-end pt-6 border-t border-gray-100">
+                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700 px-8">
                       <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      Lưu thay đổi
                     </Button>
                   </div>
                 )}

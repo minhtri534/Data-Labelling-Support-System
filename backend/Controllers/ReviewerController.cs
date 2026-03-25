@@ -4,6 +4,7 @@ using DataLabellingSupportSystem.Api.Common.Results;
 using DataLabellingSupportSystem.Api.DTOs.Requests.Reviews;
 using DataLabellingSupportSystem.Api.DTOs.Responses.Reviews;
 using DataLabellingSupportSystem.Api.Services.Reviews;
+using DataLabellingSupportSystem.Api.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -38,6 +39,30 @@ public sealed class ReviewerController(IReviewerWorkflowService reviewerWorkflow
 
         var result = await reviewerWorkflowService.OpenLabeledDataAsync(userId, taskId);
         return this.ToOkOrBadRequest(result);
+    }
+
+    [HttpGet("tasks/{taskId}/content")]
+    public async Task<IActionResult> OpenDataItemContent([FromRoute] string taskId, [FromServices] IStorageService storageService, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await reviewerWorkflowService.GetTaskDataItemStorageAsync(userId, taskId, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return result.Message == ErrorMessages.NotFound ? NotFound() : StatusCode(StatusCodes.Status403Forbidden);
+        }
+
+        var opened = await storageService.OpenReadAsync(result.Data!.StorageProvider, result.Data!.ObjectKey, cancellationToken);
+        if (opened is null)
+        {
+            return NotFound();
+        }
+
+        return File(opened.Value.Stream, opened.Value.ContentType, opened.Value.FileName);
     }
 
     [HttpGet("tasks/{taskId}/guideline-comparison")]

@@ -3,8 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
 import { annotatorService } from "../../services/annotatorService";
-import type { AnnotatorTaskSummary, LabelResponse, UpsertTaskAnnotationsPayload } from "../../types/annotator";
+import type { 
+  AnnotatorTaskSummary, 
+  LabelResponse, 
+  UpsertTaskAnnotationsPayload,
+  AnnotatorReviewFeedbackResponse,
+  AiAssistSuggestResponse
+} from "../../types/annotator";
 import {
   Bot,
   ChevronLeft,
@@ -16,14 +23,22 @@ import {
   Trash,
   ZoomIn,
   ZoomOut,
+  AlertCircle,
+  MessageSquare,
+  Check,
+  X,
 } from "lucide-react";
 
 interface Box {
+  id?: string;
   x: number;
   y: number;
   width: number;
   height: number;
   labelId: string;
+  isAiSuggestion?: boolean;
+  predictionId?: string;
+  confidence?: number;
 }
 
 const FALLBACK_IMAGE =
@@ -37,6 +52,7 @@ export default function AnnotatorAILabelPage() {
   const [task, setTask] = useState<AnnotatorTaskSummary | null>(null);
   const [labels, setLabels] = useState<LabelResponse[]>([]);
   const [guideline, setGuideline] = useState<string>("");
+  const [reviewFeedback, setReviewFeedback] = useState<AnnotatorReviewFeedbackResponse | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -51,69 +67,83 @@ export default function AnnotatorAILabelPage() {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [selectedLabelId, setSelectedLabelId] = useState<string>("");
   const [secureImageUrl, setSecureImageUrl] = useState<string>("");
+  const [reworkComment, setReworkComment] = useState("");
 
   const currentTaskId = task?.id || "";
 
   const loadTaskContext = async (taskId: string) => {
-    const [taskRes, labelsRes, guidelineRes, annRes] = await Promise.all([
-      annotatorService.getMyTasks(),
-      annotatorService.getLabels(taskId),
-      annotatorService.getGuideline(taskId),
-      annotatorService.getAnnotations(taskId),
-    ]);
+    try {
+      const taskRes = await annotatorService.getMyTasks();
+      let currentTask: AnnotatorTaskSummary | null = null;
 
-    if (taskRes.isSuccess) {
-      const found = (taskRes.data || []).find((x) => x.id === taskId) || null;
-      setTask(found);
-    }
-
-    if (labelsRes.isSuccess) {
-      const labelData = labelsRes.data || [];
-      setLabels(labelData);
-      if (!selectedLabelId && labelData.length > 0) {
-        setSelectedLabelId(labelData[0].id);
+      if (taskRes.isSuccess) {
+        currentTask = (taskRes.data || []).find((x) => x.id === taskId) || null;
+        setTask(currentTask);
       }
-    }
 
-    if (guidelineRes.isSuccess) {
-      setGuideline(guidelineRes.data?.guideline || "");
-    }
+      // Only fetch feedback if the task status indicates it might have one
+      const needsFeedback = currentTask && ["Returned", "Rejected", "Submitted"].includes(currentTask.status);
+      const feedbackPromise = needsFeedback 
+        ? annotatorService.getReviewFeedback(taskId).catch(() => ({ isSuccess: false, data: null }))
+        : Promise.resolve({ isSuccess: false, data: null });
 
-    if (annRes.isSuccess) {
-      const parsed = (annRes.data || [])
-        .map((ann) => {
-          try {
-            const geo = JSON.parse(ann.geometryData) as {
-              x?: number;
-              y?: number;
-              width?: number;
-              height?: number;
-            };
-            if (
-              typeof geo.x !== "number" ||
-              typeof geo.y !== "number" ||
-              typeof geo.width !== "number" ||
-              typeof geo.height !== "number"
-            ) {
+      const [labelsRes, guidelineRes, annRes, feedbackRes] = await Promise.all([
+        annotatorService.getLabels(taskId),
+        annotatorService.getGuideline(taskId),
+        annotatorService.getAnnotations(taskId),
+        feedbackPromise,
+      ]);
+
+      if (labelsRes.isSuccess) {
+        const labelData = labelsRes.data || [];
+        setLabels(labelData);
+        if (labelData.length > 0) {
+          setSelectedLabelId(labelData[0].id);
+        }
+      }
+
+      if (guidelineRes.isSuccess) {
+        setGuideline(guidelineRes.data?.guideline || "");
+      }
+
+      if (annRes.isSuccess) {
+        const parsed = (annRes.data || [])
+          .map((ann) => {
+            try {
+              let geo: any = ann.geometryData;
+              if (typeof geo === 'string') geo = JSON.parse(geo);
+              
+              if (
+                typeof geo.x !== "number" ||
+                typeof geo.y !== "number" ||
+                typeof geo.width !== "number" ||
+                typeof geo.height !== "number"
+              ) {
+                return null;
+              }
+
+              return {
+                id: ann.id,
+                x: geo.x,
+                y: geo.y,
+                width: geo.width,
+                height: geo.height,
+                labelId: ann.labelId,
+              } as Box;
+            } catch {
               return null;
             }
+          })
+          .filter((x): x is Box => x !== null);
 
-            return {
-              x: geo.x,
-              y: geo.y,
-              width: geo.width,
-              height: geo.height,
-              labelId: ann.labelId,
-            } as Box;
-          } catch {
-            return null;
-          }
-        })
-        .filter((x): x is Box => x !== null);
+        setBoxes(parsed);
+      }
 
-      setBoxes(parsed);
-    } else {
-      setBoxes([]);
+      if (feedbackRes.isSuccess) {
+        setReviewFeedback(feedbackRes.data);
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải dữ liệu công việc:", err);
     }
   };
 
@@ -187,16 +217,27 @@ export default function AnnotatorAILabelPage() {
   );
 
   const handleSave = async (isSubmit: boolean) => {
-    if (!currentTaskId || savePayload.objects.length === 0) return;
+    if (!currentTaskId) return;
+    if (isSubmit && boxes.length === 0) {
+      alert("Vui lòng dán ít nhất một nhãn trước khi nộp.");
+      return;
+    }
 
     setSaving(true);
     try {
+      if (isSubmit && reviewFeedback && reworkComment) {
+        await annotatorService.addCommentToReviewer(reviewFeedback.id, reworkComment);
+      }
+
       const res = isSubmit
         ? await annotatorService.submit(currentTaskId, savePayload)
         : await annotatorService.saveDraft(currentTaskId, savePayload);
 
-      if (res.isSuccess && isSubmit) {
-        navigate("/annotator/tasks");
+      if (res.isSuccess) {
+        alert(isSubmit ? "Đã nộp bài thành công!" : "Đã lưu bản nháp.");
+        if (isSubmit) navigate("/annotator/tasks");
+      } else {
+        alert(res.message || "Lỗi khi lưu dữ liệu.");
       }
     } finally {
       setSaving(false);
@@ -209,17 +250,16 @@ export default function AnnotatorAILabelPage() {
     setAiLoading(true);
     try {
       const res = await annotatorService.suggestAi(currentTaskId, false);
-      if (!res.isSuccess || !res.data) return;
+      if (!res.isSuccess || !res.data) {
+        alert("AI không tìm thấy gợi ý nào hoặc Service AI đang tắt.");
+        return;
+      }
 
       const aiBoxes = res.data.objects
         .map((obj) => {
           try {
-            const geo = JSON.parse(obj.geometryData) as {
-              x?: number;
-              y?: number;
-              width?: number;
-              height?: number;
-            };
+            let geo: any = obj.geometryData;
+            if (typeof geo === 'string') geo = JSON.parse(geo);
 
             if (
               typeof geo.x !== "number" ||
@@ -236,6 +276,9 @@ export default function AnnotatorAILabelPage() {
               width: geo.width,
               height: geo.height,
               labelId: obj.labelId,
+              isAiSuggestion: true,
+              predictionId: res.data.runId, // Using runId as predictionId for now
+              confidence: obj.confidence,
             } as Box;
           } catch {
             return null;
@@ -244,10 +287,47 @@ export default function AnnotatorAILabelPage() {
         .filter((x): x is Box => x !== null);
 
       if (aiBoxes.length > 0) {
-        setBoxes(aiBoxes);
+        setBoxes((prev) => [...prev, ...aiBoxes]);
+        alert(`Đã thêm ${aiBoxes.length} gợi ý từ AI. Bạn có thể Chấp nhận hoặc Từ chối từng nhãn.`);
+      } else {
+        alert("AI không tìm thấy đối tượng nào.");
       }
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  const handleAcceptAi = async (boxIndex: number) => {
+    const box = boxes[boxIndex];
+    if (!box.predictionId) return;
+
+    try {
+      const res = await annotatorService.acceptAiSuggestion(currentTaskId, box.predictionId);
+      if (res.isSuccess) {
+        setBoxes(prev => prev.map((b, i) => i === boxIndex ? { ...b, isAiSuggestion: false } : b));
+      }
+    } catch (err) {
+      console.error("Lỗi khi chấp nhận AI:", err);
+    }
+  };
+
+  const handleRejectAi = async (boxIndex: number) => {
+    const box = boxes[boxIndex];
+    if (!box.predictionId) {
+      setBoxes(prev => prev.filter((_, i) => i !== boxIndex));
+      return;
+    }
+
+    const reason = prompt("Lý do từ chối gợi ý này?");
+    if (reason === null) return;
+
+    try {
+      const res = await annotatorService.rejectAiSuggestion(currentTaskId, box.predictionId, reason || "Không chính xác");
+      if (res.isSuccess) {
+        setBoxes(prev => prev.filter((_, i) => i !== boxIndex));
+      }
+    } catch (err) {
+      console.error("Lỗi khi từ chối AI:", err);
     }
   };
 
@@ -293,9 +373,12 @@ export default function AnnotatorAILabelPage() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="animate-spin w-10 h-10 text-blue-600" />
-      </div>
+      <DashboardLayout>
+        <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+          <p className="font-medium">Đang thiết lập không gian làm việc...</p>
+        </div>
+      </DashboardLayout>
     );
   }
 
@@ -307,85 +390,145 @@ export default function AnnotatorAILabelPage() {
     );
   }
 
+  const isRework = task.status === "Returned" || task.status === "Rejected";
+
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-4 pb-10">
-        <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-          <div>
-            <h1 className="text-xl font-bold text-slate-800">Annotation Workspace</h1>
-            <p className="text-xs text-slate-500">Task: {task.id} | DataItem: {task.dataItemId}</p>
-          </div>
-          <div className="bg-blue-600 text-white px-4 py-1.5 rounded-lg font-bold">1 / 1</div>
-        </div>
-
-        <Card className="p-4 flex gap-4 bg-white border-none shadow-lg">
-          <div className="w-60 flex-shrink-0 space-y-4 border-r pr-4">
-            <div>
-              <p className="text-sm font-semibold text-slate-700 mb-2">Labels</p>
-              <div className="space-y-2">
-                {labels.map((label) => (
-                  <Button
-                    key={label.id}
-                    variant={selectedLabelId === label.id ? "primary" : "outline"}
-                    className="w-full justify-start"
-                    onClick={() => setSelectedLabelId(label.id)}
-                  >
-                    {label.name}
-                  </Button>
+      <div className="h-[calc(100vh-120px)] flex flex-col gap-4">
+        {/* Review Feedback Banner */}
+        {isRework && reviewFeedback && (
+          <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex items-start gap-3 shadow-sm">
+            <AlertCircle className="text-amber-600 h-5 w-5 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-amber-900 text-sm">Yêu cầu sửa đổi từ Reviewer</span>
+                <span className="bg-amber-200 text-amber-800 text-[10px] px-2 py-0.5 rounded font-bold">Điểm: {reviewFeedback.score}/100</span>
+              </div>
+              <p className="text-sm text-amber-800 italic mt-1">"{reviewFeedback.comment || "Vui lòng kiểm tra lại độ chính xác."}"</p>
+              <div className="flex gap-2 mt-2">
+                {reviewFeedback.categories.map(c => (
+                  <span key={c.errorTypeId} className="bg-white/60 border border-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded">
+                    {c.errorName}
+                  </span>
                 ))}
               </div>
             </div>
-
-            <div>
-              <p className="text-sm font-semibold text-slate-700 mb-2">Guideline</p>
-              <div className="text-xs bg-blue-50 border border-blue-100 text-blue-900 rounded-lg p-3 whitespace-pre-wrap">
-                {guideline || "Chưa có guideline"}
-              </div>
+            <div className="flex flex-col gap-2 min-w-[200px]">
+              <Input 
+                size={3}
+                placeholder="Phản hồi cho Reviewer..." 
+                value={reworkComment} 
+                onChange={(e) => setReworkComment(e.target.value)}
+                className="bg-white/80 text-xs h-8"
+              />
             </div>
+          </div>
+        )}
 
-            <div className="grid grid-cols-3 gap-2">
-              <Button variant={drawMode ? "gradient" : "outline"} size="icon" onClick={() => setDrawMode((x) => !x)}>
-                <Pencil className="w-5 h-5" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={() => setZoom((z) => Math.min(3, z + 0.2))}>
-                <ZoomIn className="w-5 h-5" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={() => setZoom((z) => Math.max(0.5, z - 0.2))}>
-                <ZoomOut className="w-5 h-5" />
-              </Button>
-              <Button variant="outline" size="icon" className="col-span-3" onClick={() => setBoxes([])}>
-                <Trash className="w-5 h-5 text-red-500" />
-              </Button>
+        {/* Toolbar Top */}
+        <div className="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/annotator/tasks")}>
+              <ChevronLeft size={18} className="mr-1" /> Quay lại
+            </Button>
+            <div className="h-6 w-[1px] bg-gray-200" />
+            <h2 className="font-bold text-gray-900">Task #{currentTaskId.slice(-6)}</h2>
+            <div className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+              isRework ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
+            }`}>
+              {task?.status === "InProgress" ? "Đang thực hiện" : 
+               task?.status === "Returned" ? "Cần sửa lại" : task?.status}
             </div>
           </div>
 
-          <div className="flex-1 bg-slate-900 rounded-2xl p-4 flex items-center justify-center relative min-h-[500px] shadow-inner">
-            <Button variant="ghost" className="text-white hover:bg-white/10 absolute left-2 z-10" disabled>
-              <ChevronLeft className="w-8 h-8" />
+          <div className="flex items-center gap-2">
+            <div className="flex bg-gray-100 p-1 rounded-lg mr-4">
+              <Button
+                variant={!drawMode ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => setDrawMode(false)}
+                className="h-8 px-3"
+              >
+                Xem
+              </Button>
+              <Button
+                variant={drawMode ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => setDrawMode(true)}
+                className="h-8 px-3"
+              >
+                <Pencil size={14} className="mr-1" /> Vẽ nhãn
+              </Button>
+            </div>
+
+            <Button variant="outline" size="sm" onClick={() => setZoom((z) => Math.max(0.5, z - 0.2))}>
+              <ZoomOut size={16} />
+            </Button>
+            <span className="text-xs font-mono w-12 text-center">{Math.round(zoom * 100)}%</span>
+            <Button variant="outline" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.2))}>
+              <ZoomIn size={16} />
             </Button>
 
+            <div className="h-6 w-[1px] bg-gray-200 mx-2" />
+
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleAiSuggest}
+              disabled={aiLoading}
+              className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
+            >
+              {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Bot size={16} className="mr-1" />}
+              AI Gợi ý
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving}>
+              <Save size={16} className="mr-1" /> Lưu nháp
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => handleSave(true)} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+              <Send size={16} className="mr-1" /> {isRework ? "Gửi lại bài" : "Nộp bài"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex-1 flex gap-4 overflow-hidden">
+          {/* Main Canvas Area */}
+          <Card className="flex-1 bg-gray-900 relative overflow-auto custom-scrollbar flex items-center justify-center p-8">
             <div
               ref={containerRef}
-              className="relative bg-black overflow-hidden border-2 border-slate-700"
-              style={{ width: "700px", height: "500px", cursor: drawMode ? "crosshair" : "default" }}
+              className="relative shadow-2xl transition-transform duration-200"
+              style={{
+                width: "fit-content",
+                height: "fit-content",
+                cursor: drawMode ? "crosshair" : "default",
+              }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
             >
-              {secureImageUrl && (
-                <img
-                  src={secureImageUrl}
-                  alt="Current Frame"
-                  draggable={false}
-                  className="max-w-none select-none transition-transform duration-100"
-                  style={{ transform: `scale(${zoom})`, transformOrigin: "0 0" }}
-                />
-              )}
+              <img
+                src={secureImageUrl}
+                alt="Dữ liệu dán nhãn"
+                draggable={false}
+                style={{
+                  width: 800 * zoom,
+                  height: "auto",
+                  display: "block",
+                  userSelect: "none",
+                }}
+              />
 
+              {/* Existing Boxes */}
               {boxes.map((box, i) => (
                 <div
                   key={`${box.labelId}-${i}`}
-                  className="absolute border-2 border-emerald-400 bg-emerald-400/20"
+                  className={`absolute border-2 group cursor-pointer transition-all ${
+                    box.isAiSuggestion 
+                      ? "border-amber-400 bg-amber-400/20" 
+                      : "border-emerald-400 bg-emerald-400/20"
+                  }`}
                   style={{
                     left: box.x * zoom,
                     top: box.y * zoom,
@@ -394,14 +537,45 @@ export default function AnnotatorAILabelPage() {
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setBoxes((prev) => prev.filter((_, idx) => idx !== i));
+                    if (!box.isAiSuggestion) {
+                      setBoxes((prev) => prev.filter((_, idx) => idx !== i));
+                    }
                   }}
-                />
+                >
+                  <div className={`absolute -top-6 left-0 text-white text-[10px] px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap flex items-center gap-1 ${
+                    box.isAiSuggestion ? "bg-amber-500" : "bg-emerald-500"
+                  }`}>
+                    {box.isAiSuggestion && <Bot size={10} />}
+                    {labels.find(l => l.id === box.labelId)?.name || "Unknown"}
+                    {box.confidence && ` (${Math.round(box.confidence * 100)}%)`}
+                  </div>
+
+                  {/* AI Suggestion Actions */}
+                  {box.isAiSuggestion && (
+                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleAcceptAi(i); }}
+                        className="p-1 bg-emerald-500 text-white rounded hover:bg-emerald-600 shadow-lg"
+                        title="Chấp nhận"
+                      >
+                        <Check size={12} />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleRejectAi(i); }}
+                        className="p-1 bg-red-500 text-white rounded hover:bg-red-600 shadow-lg"
+                        title="Từ chối"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
 
+              {/* Preview Box while drawing */}
               {previewBox && (
                 <div
-                  className="absolute border-2 border-blue-400 border-dashed bg-blue-400/10"
+                  className="absolute border-2 border-blue-400 bg-blue-400/20"
                   style={{
                     left: previewBox.x * zoom,
                     top: previewBox.y * zoom,
@@ -411,31 +585,56 @@ export default function AnnotatorAILabelPage() {
                 />
               )}
             </div>
+          </Card>
 
-            <Button variant="ghost" className="text-white hover:bg-white/10 absolute right-2 z-10" disabled>
-              <ChevronRight className="w-8 h-8" />
-            </Button>
-          </div>
-        </Card>
+          {/* Sidebar Tools */}
+          <div className="w-72 flex flex-col gap-4">
+            {/* Label Selection */}
+            <Card className="p-4 flex flex-col gap-3">
+              <h3 className="font-bold text-sm text-gray-700 uppercase tracking-wider">Chọn nhãn</h3>
+              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                {labels.map((lbl) => (
+                  <button
+                    key={lbl.id}
+                    onClick={() => setSelectedLabelId(lbl.id)}
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                      selectedLabelId === lbl.id
+                        ? "bg-blue-600 border-blue-600 text-white shadow-md"
+                        : "bg-gray-50 border-gray-100 text-gray-600 hover:border-blue-300"
+                    }`}
+                  >
+                    <span className="font-bold text-sm">{lbl.name}</span>
+                    <span className="text-[10px] opacity-70">ID: {lbl.yoloClassId}</span>
+                  </button>
+                ))}
+                {labels.length === 0 && <p className="text-xs text-gray-400 italic">Đang tải danh sách nhãn...</p>}
+              </div>
+            </Card>
 
-        <div className="flex justify-between gap-3 mt-4">
-          <Button variant="outline" size="lg" onClick={handleAiSuggest} disabled={aiLoading}>
-            {aiLoading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Bot className="w-4 h-4 mr-2" />}
-            AI Suggest
-          </Button>
+            {/* Guideline Summary */}
+            <Card className="flex-1 p-4 overflow-hidden flex flex-col">
+              <h3 className="font-bold text-sm text-gray-700 uppercase tracking-wider mb-3">Hướng dẫn</h3>
+              <div className="flex-1 overflow-y-auto custom-scrollbar text-sm text-gray-500 italic leading-relaxed bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                {guideline || "Không có hướng dẫn cụ thể cho bước này."}
+              </div>
+            </Card>
 
-          <div className="flex gap-3">
-            <Button variant="outline" size="lg" onClick={() => handleSave(false)} disabled={saving || boxes.length === 0}>
-              {saving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              Save Draft
-            </Button>
-            <Button variant="gradient" size="lg" onClick={() => handleSave(true)} disabled={saving || boxes.length === 0}>
-              <Send className="w-4 h-4 mr-2" />
-              Submit Task
-            </Button>
+            {/* Stats */}
+            <Card className="p-4 bg-gray-50 border-none">
+              <div className="flex justify-between items-center text-xs font-bold text-gray-400 uppercase">
+                <span>Tổng số nhãn</span>
+                <span className="text-blue-600 text-lg">{boxes.length}</span>
+              </div>
+              {boxes.some(b => b.isAiSuggestion) && (
+                <div className="mt-2 text-[10px] text-amber-600 flex items-center gap-1 font-medium">
+                  <Bot size={12} /> Có {boxes.filter(b => b.isAiSuggestion).length} gợi ý AI cần xử lý
+                </div>
+              )}
+            </Card>
           </div>
         </div>
       </div>
     </DashboardLayout>
   );
 }
+

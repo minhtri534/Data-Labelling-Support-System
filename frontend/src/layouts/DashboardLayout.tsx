@@ -29,55 +29,58 @@ type Props = {
 
 const NAV_BY_ROLE = {
   reviewer: [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/reviewer' },
-    { label: 'Review Queue', icon: CheckSquare, path: '/review' },
-    { label: 'Quality Report', icon: ClipboardList, path: '/quality-report' },
-    { label: 'My Earnings', icon: History, path: '/reviewer/earnings' },
+    { label: 'Bảng điều khiển', icon: LayoutDashboard, path: '/reviewer' },
+    { label: 'Hàng đợi kiểm duyệt', icon: CheckSquare, path: '/review' },
+    { label: 'Báo cáo chất lượng', icon: ClipboardList, path: '/quality-report' },
+    { label: 'Thu nhập của tôi', icon: History, path: '/reviewer/earnings' },
   ],
 
   annotator: [
-    { label: 'Task List', icon: ClipboardList, path: '/annotator/tasks' }, 
-    { label: 'AI Labeling', icon: Sparkles, path: '/annotator/ai-label' },
-    { label: 'Returned Tasks', icon: History, path: '/annotator/returned' },
-    { label: 'Earnings', icon: History, path: '/annotator/earnings' },
+    { label: 'Danh sách công việc', icon: ClipboardList, path: '/annotator/tasks' }, 
+    { label: 'Dán nhãn AI', icon: Sparkles, path: '/annotator/ai-label' },
+    { label: 'Việc cần sửa lại', icon: History, path: '/annotator/returned' },
+    { label: 'Thu nhập', icon: History, path: '/annotator/earnings' },
   ],
 
   manager: [
-    { label: 'Projects', icon: ClipboardList, path: '/manager/projects' }, 
-    { label: 'Datasets', icon: ShieldCheck, path: '/manager/datasets' }, 
-    { label: 'Label Config', icon: Settings, path: '/manager/label-config' }, 
-    { label: 'Guidelines', icon: MessageSquare, path: '/manager/guidelines' }, 
-    { label: 'Project Budget', icon: LayoutDashboard, path: '/manager/budget' },
-    { label: 'Approve Cost', icon: CheckSquare, path: '/manager/approve-cost' },
-    { label: 'Expense Report', icon: History, path: '/manager/expense-report' },
-    { label: 'Payment', icon: History, path: '/manager/payment' },
+    { label: 'Dự án dán nhãn', icon: ClipboardList, path: '/manager/projects' }, 
+    { label: 'Bộ dữ liệu (Datasets)', icon: ShieldCheck, path: '/manager/datasets' }, 
+    { label: 'Cấu hình nhãn', icon: Settings, path: '/manager/label-config' }, 
+    { label: 'Hướng dẫn (Guideline)', icon: MessageSquare, path: '/manager/guidelines' }, 
+    { label: 'Ngân sách dự án', icon: LayoutDashboard, path: '/manager/budget' },
+    { label: 'Duyệt chi phí', icon: CheckSquare, path: '/manager/approve-cost' },
+    { label: 'Báo cáo chi tiêu', icon: History, path: '/manager/expense-report' },
+    { label: 'Thanh toán', icon: History, path: '/manager/payment' },
   ],
 
   admin: [
-    { label: 'User Management', icon: Users, path: '/admin/users' },
-    { label: 'Workforce Payment', icon: CheckSquare, path: '/admin/workforce-payment' },
-    { label: 'Dispute', icon: MessageSquare, path: '/admin/dispute' },
-    { label: 'System Config', icon: Settings, path: '/admin/system-config' },
-    { label: 'System Health', icon: ShieldCheck, path: '/admin/system-health' },
-    { label: 'Payment Verification', icon: CheckSquare, path: '/admin/payment-verification' },
-    { label: 'Logs', icon: History, path: '/admin/logs' },
+    { label: 'Quản lý người dùng', icon: Users, path: '/admin/users' },
+    { label: 'Thanh toán nhân sự', icon: CheckSquare, path: '/admin/workforce-payment' },
+    { label: 'Tranh chấp', icon: MessageSquare, path: '/admin/dispute' },
+    { label: 'Cấu hình hệ thống', icon: Settings, path: '/admin/system-config' },
+    { label: 'Sức khỏe hệ thống', icon: ShieldCheck, path: '/admin/system-health' },
+    { label: 'Xác minh thanh toán', icon: CheckSquare, path: '/admin/payment-verification' },
+    { label: 'Nhật ký hệ thống', icon: History, path: '/admin/logs' },
   ],
 };
 
 type UserRole = keyof typeof NAV_BY_ROLE;
 
 export default function DashboardLayout({ children }: Props) {
-  const [role] = useState<UserRole>(() => {
-    const storedRole = localStorage.getItem("role");
-    return storedRole && storedRole in NAV_BY_ROLE
-      ? (storedRole as UserRole)
-      : "reviewer";
-  });
-  const NAV_ITEMS = NAV_BY_ROLE[role];
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
+  };
+
+  const currentRole = (localStorage.getItem("role") || "reviewer").toLowerCase();
+  const userName = localStorage.getItem("fullName") || "Người dùng";
+  const navItems = NAV_BY_ROLE[currentRole as keyof typeof NAV_BY_ROLE] || [];
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showNotificationPreview, setShowNotificationPreview] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
   const unreadCount = INITIAL_NOTIFICATIONS.filter(n => !n.isRead).length;
   const latestUnread = INITIAL_NOTIFICATIONS.find(n => !n.isRead);
   
@@ -122,7 +125,7 @@ export default function DashboardLayout({ children }: Props) {
 
           {/* Navigation */}
           <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
@@ -147,21 +150,17 @@ export default function DashboardLayout({ children }: Props) {
           <div className="p-4 border-t border-white/10 bg-white/30">
             <Link to="/profile" className="flex items-center gap-3 mb-4 px-2 hover:bg-white/50 p-2 rounded-lg transition-colors group">
               <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-brand to-palette-violet flex items-center justify-center text-white text-sm font-semibold shadow-lg shadow-brand/20 group-hover:scale-105 transition-transform">
-                JD
+                {userName.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">John Doe</p>
-                <p className="text-xs text-gray-500 truncate">Senior Reviewer</p>
+                <p className="text-sm font-medium text-gray-900 truncate">{userName}</p>
+                <p className="text-xs text-gray-500 truncate capitalize">{currentRole}</p>
               </div>
             </Link>
             <Button 
               variant="ghost" 
               className="w-full justify-start text-gray-500 hover:text-red-600 hover:bg-red-50/50"
-              onClick={() => {
-              localStorage.removeItem("role"); // xóa role
-              localStorage.removeItem("token"); // nếu có token
-              navigate("/login"); // chuyển về login
-            }}
+              onClick={handleLogout}
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sign out

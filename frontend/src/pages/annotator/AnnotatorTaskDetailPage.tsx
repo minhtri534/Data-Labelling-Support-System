@@ -10,7 +10,7 @@ import type { AnnotatorTaskSummary } from "../../types/annotator";
 const AnnotatorTaskDetailPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const [task, setTask] = useState<AnnotatorTaskSummary | null>(null);
-  const [guideline, setGuideline] = useState<string>("Loading guideline...");
+  const [guideline, setGuideline] = useState<string>("Đang tải hướng dẫn...");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const AnnotatorTaskDetailPage: React.FC = () => {
         }
 
         if (guidelineRes.isSuccess) {
-          setGuideline(guidelineRes.data?.guideline || "No guideline available for this project.");
+          setGuideline(guidelineRes.data?.guideline || "Không có hướng dẫn cụ thể cho dự án này.");
         }
       } finally {
         setLoading(false);
@@ -44,19 +44,20 @@ const AnnotatorTaskDetailPage: React.FC = () => {
   }, [taskId]);
 
   const statusLabel = useMemo(() => {
-    if (!task) return "Unknown";
-    if (task.status === "InProgress") return "In Progress";
-    if (task.status === "Assigned") return "Assigned";
-    if (task.status === "Submitted") return "Submitted";
+    if (!task) return "Không xác định";
+    if (task.status === "InProgress") return "Đang thực hiện";
+    if (task.status === "Assigned") return "Đã giao";
+    if (task.status === "Submitted") return "Đã nộp";
+    if (task.status === "Returned") return "Cần sửa lại";
     return task.status;
   }, [task]);
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="h-96 flex items-center justify-center gap-3 text-gray-600">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Loading task...
+        <div className="h-96 flex flex-col items-center justify-center gap-3 text-gray-600">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+          <p>Đang tải chi tiết công việc...</p>
         </div>
       </DashboardLayout>
     );
@@ -65,8 +66,10 @@ const AnnotatorTaskDetailPage: React.FC = () => {
   if (!task) {
     return (
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto">
-          <Card className="p-8 text-center text-gray-600">Task not found or you do not have permission to access it.</Card>
+        <div className="max-w-4xl mx-auto py-20">
+          <Card className="p-12 text-center text-gray-500 border-dashed">
+            Không tìm thấy thông tin công việc hoặc bạn không có quyền truy cập.
+          </Card>
         </div>
       </DashboardLayout>
     );
@@ -74,77 +77,111 @@ const AnnotatorTaskDetailPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to="/annotator/tasks">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+                <ArrowLeft className="h-6 w-6" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Task {task.id.slice(-6)}</h1>
-              <p className="text-gray-500 mt-1">Labeling task details.</p>
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Chi tiết Task #{task.id.slice(-6)}</h1>
+              <p className="text-gray-500 mt-1">Thông tin chi tiết và hướng dẫn thực hiện.</p>
             </div>
           </div>
-          <Link to={`/annotator/task/${taskId}/label`}>
-            <Button variant="primary">
-              <PlayCircle className="h-4 w-4 mr-2" />
-              Start Labeling
-            </Button>
-          </Link>
+          {task.status !== "Submitted" && (
+            <Link to={`/annotator/ai-label/${taskId}`}>
+              <Button variant="primary" className="bg-blue-600 hover:bg-blue-700 px-6">
+                <PlayCircle className="h-4 w-4 mr-2" />
+                Bắt đầu dán nhãn
+              </Button>
+            </Link>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Task Info */}
-          <Card variant="glass" className="p-6 col-span-2 space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Description</h3>
-              <p className="text-gray-600">Task belongs to project {task.projectId} with data item {task.dataItemId}.</p>
+          <Card className="p-8 col-span-2 space-y-8 border-none shadow-sm">
+            <div className="space-y-3">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <FileText className="text-blue-600 h-5 w-5" />
+                Mô tả công việc
+              </h3>
+              <div className="p-4 bg-gray-50 rounded-xl text-gray-600 border border-gray-100">
+                Công việc thuộc dự án <span className="font-semibold text-gray-900">{task.projectId}</span>. 
+                Bạn cần thực hiện dán nhãn cho mục dữ liệu <span className="font-semibold text-gray-900">{task.dataItemId}</span> 
+                theo đúng quy chuẩn của dự án.
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Instructions</h3>
-              <div className="bg-blue-50 p-4 rounded-md border border-blue-100 text-blue-800">
-                <FileText className="h-5 w-5 inline-block mr-2" />
+
+            <div className="space-y-3">
+              <h3 className="text-xl font-bold text-gray-800">Hướng dẫn thực hiện</h3>
+              <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-100 text-blue-900 whitespace-pre-wrap italic">
                 {guideline}
               </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Progress</h3>
-              <div className="w-full bg-gray-200 rounded-full h-4">
-                <div
-                  className="bg-blue-600 h-4 rounded-full"
-                  style={{ width: `${task.status === "Submitted" ? 100 : task.status === "InProgress" ? 50 : 10}%` }}
-                ></div>
+
+            <div className="pt-6 border-t border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Tiến độ hiện tại</h3>
+              <div className="max-w-md mx-auto">
+                <div className="w-full bg-gray-100 rounded-full h-3">
+                  <div
+                    className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${task.status === "Submitted" ? 100 : task.status === "InProgress" ? 50 : 10}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between items-center mt-3 text-sm">
+                  <span className="text-gray-500">Trạng thái: <span className="font-bold text-blue-600 uppercase tracking-wide ml-1">{statusLabel}</span></span>
+                  <span className="text-gray-400 font-medium">{task.status === "Submitted" ? "100%" : task.status === "InProgress" ? "50%" : "0%"}</span>
+                </div>
               </div>
-              <p className="text-sm text-gray-500 mt-1">
-                Current Status: {statusLabel}
-              </p>
             </div>
           </Card>
 
           {/* Sidebar Info */}
-          <Card variant="glass" className="p-6 space-y-6 h-fit">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
-                Status
-              </h3>
-              <div className="flex items-center gap-2 text-green-600 font-semibold">
-                <CheckCircle className="h-5 w-5" />
-                {statusLabel}
+          <div className="space-y-6">
+            <Card className="p-6 space-y-6 h-fit border-none shadow-sm">
+              <div>
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                  Trạng thái
+                </h3>
+                <div className="flex items-center gap-2 text-green-600 font-bold text-lg">
+                  <CheckCircle className="h-6 w-6" />
+                  {statusLabel}
+                </div>
               </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
-                Assigned At
-              </h3>
-              <div className="flex items-center gap-2 text-gray-700">
-                <Clock className="h-5 w-5" />
-                {task.assignedAt ? new Date(task.assignedAt).toLocaleString() : "-"}
+              
+              <div className="pt-6 border-t border-gray-50">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                  Thời gian giao
+                </h3>
+                <div className="flex items-center gap-2 text-gray-700 font-medium">
+                  <Clock className="h-5 w-5 text-gray-400" />
+                  {task.assignedAt ? new Date(task.assignedAt).toLocaleString('vi-VN') : "-"}
+                </div>
               </div>
-            </div>
-          </Card>
+
+              {task.status === "Returned" && (
+                <div className="pt-6 border-t border-red-50">
+                  <h3 className="text-xs font-bold text-red-400 uppercase tracking-widest mb-3">
+                    Phản hồi từ Reviewer
+                  </h3>
+                  <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm italic">
+                    Vui lòng kiểm tra lại các nhãn đã dán theo phản hồi của người kiểm duyệt.
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            <Card className="p-6 bg-gray-900 text-white border-none shadow-xl">
+              <h3 className="font-bold mb-2">Cần hỗ trợ?</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Nếu bạn gặp khó khăn trong quá trình dán nhãn, hãy liên hệ với Quản lý dự án hoặc tham khảo lại Guideline.
+              </p>
+            </Card>
+          </div>
         </div>
       </div>
     </DashboardLayout>

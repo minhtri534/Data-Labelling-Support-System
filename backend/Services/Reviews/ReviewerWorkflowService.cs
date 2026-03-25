@@ -3,6 +3,7 @@ using DataLabellingSupportSystem.Api.Common.Constants;
 using DataLabellingSupportSystem.Api.Common.Results;
 using DataLabellingSupportSystem.Api.Database;
 using DataLabellingSupportSystem.Api.DTOs.Requests.Reviews;
+using DataLabellingSupportSystem.Api.DTOs.Responses.Annotator;
 using DataLabellingSupportSystem.Api.DTOs.Responses.Reviews;
 using DataLabellingSupportSystem.Api.Models;
 using DataLabellingSupportSystem.Api.Utils;
@@ -28,7 +29,7 @@ public sealed class ReviewerWorkflowService(AppDbContext dbContext) : IReviewerW
                 .Where(x =>
                     x.UserId == reviewerId
                     && x.Role != null
-                    && string.Equals(x.Role.Name, "Reviewer", StringComparison.OrdinalIgnoreCase))
+                    && x.Role.Name == "Reviewer")
                 .Select(x => x.ProjectId)
                 .Distinct()
                 .ToListAsync();
@@ -41,7 +42,15 @@ public sealed class ReviewerWorkflowService(AppDbContext dbContext) : IReviewerW
         var eligibleTasks = await dbContext.LabelingTasks
             .AsNoTracking()
             .Where(x => isAdmin || accessibleReviewerProjectIds.Contains(x.ProjectId))
-            .Select(x => new { x.Id, x.ProjectId, x.DataItemId, x.AnnotatorId })
+            .Select(x => new 
+            { 
+                x.Id, 
+                x.ProjectId, 
+                ProjectName = x.Project != null ? x.Project.Name : string.Empty,
+                x.DataItemId, 
+                x.AnnotatorId,
+                AnnotatorName = x.Annotator != null ? x.Annotator.FullName : string.Empty
+            })
             .ToListAsync();
 
         if (eligibleTasks.Count == 0)
@@ -71,16 +80,20 @@ public sealed class ReviewerWorkflowService(AppDbContext dbContext) : IReviewerW
             .GroupBy(x => x.Id)
             .ToDictionary(x => x.Key, x => x.First(), StringComparer.Ordinal);
 
-        var annotationCounts = await dbContext.Annotations
+        var submittedSetIds = submittedSets.Select(s => s.Id).ToList();
+
+        var counts = await dbContext.Annotations
             .AsNoTracking()
-            .Where(x => submittedSets.Select(s => s.Id).Contains(x.AnnotationSetId))
+            .Where(x => submittedSetIds.Contains(x.AnnotationSetId))
             .GroupBy(x => x.AnnotationSetId)
             .Select(g => new { AnnotationSetId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.AnnotationSetId, x => x.Count, StringComparer.Ordinal);
+            .ToListAsync();
+
+        var annotationCounts = counts.ToDictionary(x => x.AnnotationSetId, x => x.Count, StringComparer.Ordinal);
 
         var reviewsBySetId = await dbContext.Reviews
             .AsNoTracking()
-            .Where(x => submittedSets.Select(s => s.Id).Contains(x.AnnotationSetId))
+            .Where(x => submittedSetIds.Contains(x.AnnotationSetId))
             .Select(x => x.AnnotationSetId)
             .Distinct()
             .ToListAsync();
@@ -96,11 +109,13 @@ public sealed class ReviewerWorkflowService(AppDbContext dbContext) : IReviewerW
                 return new ReviewerSubmittedTaskResponse(
                     task.Id,
                     task.ProjectId,
-                    task.DataItemId,
+                    task.ProjectName,
                     task.AnnotatorId,
+                    task.AnnotatorName,
                     x.Id,
                     x.CreatedAt,
-                    annotationCounts.TryGetValue(x.Id, out var count) ? count : 0);
+                    annotationCounts.TryGetValue(x.Id, out var count) ? count : 0,
+                    "Submitted");
             })
             .OrderByDescending(x => x.SubmittedAt)
             .ToList();
@@ -165,6 +180,39 @@ public sealed class ReviewerWorkflowService(AppDbContext dbContext) : IReviewerW
                 taskData.StorageProvider,
                 taskData.ObjectKey,
                 annotations),
+            "OK");
+    }
+
+    public async Task<ServiceResponse<TaskDataItemStorageResponse>> GetTaskDataItemStorageAsync(string reviewerUserId, string taskId, CancellationToken cancellationToken)
+    {
+        if (!IsValidUserId(reviewerUserId))
+        {
+            return ServiceResponse<TaskDataItemStorageResponse>.Failure(ErrorMessages.Unauthorized, ["Missing reviewer user id"]);
+        }
+
+        var access = await EnsureReviewerTaskAccessAsync(reviewerUserId, taskId);
+        if (access is not null)
+        {
+            return ServiceResponse<TaskDataItemStorageResponse>.Failure(access.Message, access.Errors);
+        }
+
+        var item = await dbContext.LabelingTasks
+            .AsNoTracking()
+            .Where(x => x.Id == taskId)
+            .Select(x => new
+            {
+                StorageProvider = x.DataItem != null ? x.DataItem.StorageProvider : null,
+                ObjectKey = x.DataItem != null ? x.DataItem.ObjectKey : null
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (item is null || string.IsNullOrWhiteSpace(item.StorageProvider) || string.IsNullOrWhiteSpace(item.ObjectKey))
+        {
+            return ServiceResponse<TaskDataItemStorageResponse>.Failure(ErrorMessages.NotFound, ["Data item not found"]);
+        }
+
+        return ServiceResponse<TaskDataItemStorageResponse>.Success(
+            new TaskDataItemStorageResponse(item.StorageProvider, item.ObjectKey),
             "OK");
     }
 
@@ -707,8 +755,8 @@ public sealed class ReviewerWorkflowService(AppDbContext dbContext) : IReviewerW
             .AnyAsync(x =>
                 x.UserId == uid
                 && x.ProjectId == pid
-                && x.Role != null
-                && string.Equals(x.Role.Name, "Reviewer", StringComparison.OrdinalIgnoreCase));
+                 && x.Role != null
+                && x.Role.Name == "Reviewer");
 
         if (hasAccess)
         {
@@ -732,7 +780,7 @@ public sealed class ReviewerWorkflowService(AppDbContext dbContext) : IReviewerW
             .Select(x => x.Role != null ? x.Role.Name : string.Empty)
             .FirstOrDefaultAsync();
 
-        return string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase);
+        return roleName == "Admin";
     }
 
     private static bool IsValidGeometryJson(string geometryData)

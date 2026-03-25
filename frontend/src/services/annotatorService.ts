@@ -62,4 +62,44 @@ export const annotatorService = {
     const res = await api.get(`/annotator/tasks/${taskId}/data-item/content`, { responseType: "blob" });
     return res.data as Blob;
   },
+
+  async createTaskAnnotation(taskId: string, data: any) {
+    const res = await api.post<ServiceResponse<any>>(`/annotator/tasks/${taskId}/annotations`, data);
+    return res.data;
+  },
+
+  async updateTaskAnnotation(taskId: string, annotationId: string, data: any) {
+    const res = await api.put<ServiceResponse<any>>(`/annotator/tasks/${taskId}/annotations/${annotationId}`, data);
+    return res.data;
+  },
+
+  async deleteTaskAnnotation(taskId: string, annotationId: string) {
+    const res = await api.delete<ServiceResponse<boolean>>(`/annotator/tasks/${taskId}/annotations/${annotationId}`);
+    return res.data;
+  },
+
+  async getReviewFeedback(taskId: string) {
+    const res = await api.get<ServiceResponse<any>>(`/annotator/tasks/${taskId}/review-feedback`);
+    return res.data;
+  },
+
+  async getReviewErrorCategories(reviewId: string) {
+    const res = await api.get<ServiceResponse<any>>(`/annotator/reviews/${reviewId}/error-categories`);
+    return res.data;
+  },
+
+  async addCommentToReviewer(reviewId: string, comment: string) {
+    const res = await api.post<ServiceResponse<boolean>>(`/annotator/reviews/${reviewId}/comment`, { comment });
+    return res.data;
+  },
+
+  async acceptAiSuggestion(taskId: string, predictionId: string) {
+    const res = await api.post<ServiceResponse<boolean>>(`/annotator/tasks/${taskId}/ai-suggestions/${predictionId}/accept`);
+    return res.data;
+  },
+
+  async rejectAiSuggestion(taskId: string, predictionId: string, reason: string) {
+    const res = await api.post<ServiceResponse<boolean>>(`/annotator/tasks/${taskId}/ai-suggestions/${predictionId}/reject`, { reason });
+    return res.data;
+  },
 };

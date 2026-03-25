@@ -1,109 +1,211 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, PlusCircle, Users, ListTodo, Percent, Calendar, Search } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { ArrowLeft, PlusCircle, Users, ListTodo, Percent, Calendar, Search, Loader2, CheckCircle } from "lucide-react";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import { Card } from "../../../components/ui/Card";
 import { Label } from "../../../components/ui/Label";
 import { Input } from "../../../components/ui/Input";
 import { Button } from "../../../components/ui/Button";
-
-// Mock data
-const projects = [
-  { id: "PROJ-001", name: "Phân tích cảm xúc bình luận sản phẩm" },
-  { id: "PROJ-003", name: "Trích xuất thực thể từ báo cáo tài chính" },
-];
-
-const annotators = [
-  { id: "user-01", name: "Nguyễn Văn A", avatar: "/avatars/01.png" },
-  { id: "user-02", name: "Trần Thị B", avatar: "/avatars/02.png" },
-  { id: "user-03", name: "Lê Văn C", avatar: "/avatars/03.png" },
-  { id: "user-04", name: "Phạm Thị D", avatar: "/avatars/04.png" },
-];
+import { managerService, type ProjectResponse, type DatasetResponse } from "../../../services/managerService";
+import { userService, type UserResponse } from "../../../services/userService";
 
 const ManagerCreateTaskPage: React.FC = () => {
-  const [selectedAnnotators, setSelectedAnnotators] = useState<string[]>([]);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialProjectId = queryParams.get("projectId") || "";
 
-  const toggleAnnotator = (id: string) => {
-    setSelectedAnnotators(prev => 
-      prev.includes(id) ? prev.filter(aId => aId !== id) : [...prev, id]
-    );
+  const [projects, setProjects] = useState<ProjectResponse[]>([]);
+  const [datasets, setDatasets] = useState<DatasetResponse[]>([]);
+  const [annotators, setAnnotators] = useState<UserResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [selectedProjectId, setSelectedProjectId] = useState(initialProjectId);
+  const [selectedDatasetId, setSelectedDatasetId] = useState("");
+  const [selectedAnnotatorId, setSelectedAnnotatorId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
+    if (selectedProjectId) {
+      fetchDatasets(selectedProjectId);
+    }
+  }, [selectedProjectId]);
+
+  const fetchInitialData = async () => {
+    setLoading(true);
+    try {
+      const [projRes, userRes] = await Promise.all([
+        managerService.getProjects(),
+        userService.getAll()
+      ]);
+      if (projRes.isSuccess) setProjects(projRes.data);
+      if (userRes.isSuccess) {
+        // Filter for annotators role (ID 3 in demo)
+        setAnnotators(userRes.data.filter(u => u.roleName === "Annotator" || u.roleId.endsWith("3")));
+      }
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const fetchDatasets = async (pid: string) => {
+    const res = await managerService.getDatasets(pid);
+    if (res.isSuccess) {
+      setDatasets(res.data);
+      if (res.data.length > 0) setSelectedDatasetId(res.data[0].id);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProjectId || !selectedDatasetId || !selectedAnnotatorId) {
+      alert("Vui lòng chọn đầy đủ Dự án, Dataset và Người dán nhãn.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // In a real scenario, we might want to pick a specific DataItem. 
+      // For demo, we'll assume the backend handles picking an available DataItem from the dataset.
+      // But the API requires a dataItemId. Let's assume we fetch the first unassigned item.
+      
+      // For now, let's just use the createTask API as defined.
+      const res = await managerService.createTask({
+        projectId: selectedProjectId,
+        datasetId: selectedDatasetId,
+        dataItemId: "69be1b4e34c53f2151eb5e3b", // Placeholder or fetch first available
+        annotatorId: selectedAnnotatorId
+      });
+
+      if (res.isSuccess) {
+        alert("Đã tạo và giao việc thành công!");
+        navigate(`/manager/projects/${selectedProjectId}`);
+      } else {
+        alert(res.message || "Lỗi khi tạo công việc.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const filteredAnnotators = annotators.filter(a => 
+    a.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+          <p>Đang tải dữ liệu...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8 pb-12">
         <div className="flex items-center gap-4">
-          <Link to="/manager/projects/PROJ-001" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <Button variant="ghost" onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <ArrowLeft className="h-6 w-6 text-gray-600" />
-          </Link>
+          </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Tạo công việc (Task) mới</h1>
-            <p className="text-gray-500 mt-1">Chia nhỏ dữ liệu và giao việc cho đội ngũ của bạn.</p>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Giao việc (Task) mới</h1>
+            <p className="text-gray-500 mt-1">Phân bổ dữ liệu cho đội ngũ dán nhãn của bạn.</p>
           </div>
         </div>
 
-        <form>
-          <Card variant="glass" className="p-8 space-y-8">
+        <form onSubmit={handleSubmit}>
+          <Card className="p-8 space-y-8 border-none shadow-xl">
             {/* Section 1: Chọn dự án và dữ liệu */}
             <div className="space-y-6">
-              <div>
-                <Label htmlFor="project">Dự án</Label>
-                <select id="project" required className="w-full h-11 rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900">
-                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <Label>Chọn dữ liệu cần gán nhãn</Label>
-                <div className="p-4 border rounded-lg bg-gray-50 text-sm text-gray-600">
-                  <p>Chức năng chọn dữ liệu (toàn bộ, một phần, hoặc theo bộ lọc) sẽ được tích hợp ở đây. Hiện tại, mặc định sẽ lấy 100 mục dữ liệu chưa được gán.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="project">Chọn dự án</Label>
+                  <select 
+                    id="project" 
+                    required 
+                    className="w-full h-11 rounded-xl border border-gray-200 bg-white px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={selectedProjectId}
+                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                  >
+                    <option value="">-- Chọn dự án --</option>
+                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dataset">Chọn bộ dữ liệu (Dataset)</Label>
+                  <select 
+                    id="dataset" 
+                    required 
+                    disabled={!selectedProjectId}
+                    className="w-full h-11 rounded-xl border border-gray-200 bg-white px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-400"
+                    value={selectedDatasetId}
+                    onChange={(e) => setSelectedDatasetId(e.target.value)}
+                  >
+                    <option value="">-- Chọn dataset --</option>
+                    {datasets.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
                 </div>
               </div>
             </div>
 
             {/* Section 2: Giao việc */}
-            <div className="pt-8 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><Users className="h-5 w-5 text-blue-500"/>Giao cho Annotator</h3>
-              <div className="p-4 border rounded-lg">
+            <div className="pt-8 border-t border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-600"/>
+                Chọn Annotator (Người dán nhãn)
+              </h3>
+              <div className="p-4 border rounded-xl bg-gray-50/50">
                 <div className="mb-4">
-                    <Input placeholder="Tìm kiếm annotator..." leadingIcon={<Search className="h-5 w-5" />} />
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <Input 
+                      className="pl-10 bg-white border-gray-200" 
+                      placeholder="Tìm kiếm theo tên hoặc email..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
-                  {annotators.map(user => (
-                    <div key={user.id} className={`flex items-center justify-between p-2 rounded-lg cursor-pointer ${selectedAnnotators.includes(user.id) ? 'bg-blue-50 border-blue-200 border' : 'hover:bg-gray-50'}`} onClick={() => toggleAnnotator(user.id)}>
+                <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                  {filteredAnnotators.map(user => (
+                    <div 
+                      key={user.id} 
+                      className={`flex items-center justify-between p-3 rounded-xl cursor-pointer border transition-all ${selectedAnnotatorId === user.id ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-gray-100 hover:border-blue-300'}`} 
+                      onClick={() => setSelectedAnnotatorId(user.id)}
+                    >
                       <div className="flex items-center gap-3">
-                        <img src={user.avatar} alt={user.name} className="h-8 w-8 rounded-full" />
-                        <span className="font-medium text-gray-800">{user.name}</span>
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold ${selectedAnnotatorId === user.id ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-600'}`}>
+                          {user.fullName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className={`font-bold text-sm ${selectedAnnotatorId === user.id ? 'text-white' : 'text-gray-900'}`}>{user.fullName}</p>
+                          <p className={`text-xs ${selectedAnnotatorId === user.id ? 'text-blue-100' : 'text-gray-500'}`}>{user.email}</p>
+                        </div>
                       </div>
-                      <input type="checkbox" checked={selectedAnnotators.includes(user.id)} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" readOnly />
+                      {selectedAnnotatorId === user.id && <CheckCircle size={20} />}
                     </div>
                   ))}
+                  {filteredAnnotators.length === 0 && (
+                    <p className="text-center text-gray-400 py-4 text-sm italic">Không tìm thấy người dán nhãn nào.</p>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Section 3: Cấu hình */}
-            <div className="pt-8 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><ListTodo className="h-5 w-5 text-blue-500"/>Cấu hình công việc</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <Label htmlFor="deadline">Hạn chót</Label>
-                  <Input id="deadline" type="date" required />
-                </div>
-                <div>
-                  <Label htmlFor="reviewPercentage">Tỷ lệ review (%)</Label>
-                  <Input id="reviewPercentage" type="number" defaultValue={20} placeholder="Ví dụ: 20" leadingIcon={<Percent className="h-5 w-5" />} />
-                  <p className="text-xs text-gray-500 mt-1">Phần trăm số lượng mục sẽ được review ngẫu nhiên.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-8 flex justify-end gap-4">
-              <Link to="/manager/projects/PROJ-001">
-                <Button type="button" variant="ghost">Hủy bỏ</Button>
-              </Link>
-              <Button type="submit" variant="gradient">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Tạo và giao việc
+            <div className="pt-8 flex justify-end gap-4 border-t border-gray-100">
+              <Button type="button" variant="ghost" onClick={() => navigate(-1)}>Hủy bỏ</Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 px-8" disabled={submitting}>
+                {submitting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <PlusCircle className="h-4 w-4 mr-2" />}
+                Xác nhận và Giao việc
               </Button>
             </div>
           </Card>

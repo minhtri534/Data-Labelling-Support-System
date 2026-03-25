@@ -4,25 +4,25 @@ import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { Button } from "../../components/ui/Button";
-import { List, PlayCircle, CheckCircle, Loader2 } from "lucide-react";
+import { List, PlayCircle, CheckCircle, Loader2, Clock } from "lucide-react";
 import { annotatorService } from "../../services/annotatorService";
 import type { AnnotatorTaskSummary } from "../../types/annotator";
 
 const getStatusBadge = (status: string) => {
   if (status === "Assigned") {
-    return <Badge variant="secondary">Assigned</Badge>;
+    return <Badge variant="secondary">Đã giao</Badge>;
   }
 
   if (status === "InProgress") {
-    return <Badge variant="primary">In Progress</Badge>;
+    return <Badge variant="primary">Đang thực hiện</Badge>;
   }
 
   if (status === "Submitted") {
-    return <Badge variant="success">Submitted</Badge>;
+    return <Badge variant="success">Đã nộp</Badge>;
   }
 
   if (status === "Rejected" || status === "Returned") {
-    return <Badge variant="danger">Needs Rework</Badge>;
+    return <Badge variant="danger">Cần sửa lại</Badge>;
   }
 
   switch (status) {
@@ -70,64 +70,73 @@ const AnnotatorTaskListPage: React.FC = () => {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">My Tasks</h1>
-          <p className="text-gray-500 mt-1">List of labeling tasks assigned to you.</p>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Công việc của tôi</h1>
+          <p className="text-gray-500 mt-1">Danh sách các tác vụ dán nhãn được giao cho bạn.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="p-4">
-            <p className="text-sm text-gray-500">Assigned</p>
+          <Card className="p-4 border-l-4 border-l-gray-400">
+            <p className="text-sm text-gray-500 font-medium">Đã giao</p>
             <p className="text-2xl font-bold text-gray-900">{taskStats.assigned}</p>
           </Card>
-          <Card className="p-4">
-            <p className="text-sm text-gray-500">In Progress</p>
+          <Card className="p-4 border-l-4 border-l-blue-600">
+            <p className="text-sm text-gray-500 font-medium">Đang thực hiện</p>
             <p className="text-2xl font-bold text-blue-700">{taskStats.inProgress}</p>
           </Card>
-          <Card className="p-4">
-            <p className="text-sm text-gray-500">Submitted</p>
+          <Card className="p-4 border-l-4 border-l-green-600">
+            <p className="text-sm text-gray-500 font-medium">Đã nộp</p>
             <p className="text-2xl font-bold text-green-700">{taskStats.submitted}</p>
           </Card>
         </div>
 
         <Card variant="glass" className="p-6">
           {loading ? (
-            <div className="py-14 flex items-center justify-center text-gray-600 gap-3">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Loading tasks...
+            <div className="py-14 flex flex-col items-center justify-center text-gray-600 gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              <p>Đang tải danh sách công việc...</p>
             </div>
           ) : (
             <div className="space-y-4">
               {tasks.length === 0 && (
-                <Card className="p-8 text-center text-gray-500 border-dashed">No tasks have been assigned to you yet.</Card>
+                <div className="p-12 text-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                  <List className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">Bạn chưa có công việc nào được giao.</p>
+                </div>
               )}
               {tasks.map((task) => (
-                <Card key={task.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                <Card key={task.id} className="p-5 flex items-center justify-between hover:shadow-md transition-all border border-gray-100">
                   <div className="flex items-center gap-4">
-                    <div className="p-2 bg-gray-100 rounded-md">
-                      <List className="h-6 w-6 text-gray-600" />
+                    <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                      <List className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">Task {task.id.slice(-6)}</h3>
-                      <p className="text-sm text-gray-500">Project: {task.projectId} | DataItem: {task.dataItemId}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Assigned: {task.assignedAt ? new Date(task.assignedAt).toLocaleString() : "-"}
+                      <h3 className="font-bold text-lg text-gray-900">Task #{task.id.slice(-6)}</h3>
+                      <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                        <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-semibold uppercase">Project: {task.projectId.slice(-6)}</span>
+                        <span>•</span>
+                        <span>Dữ liệu: {task.dataItemId.slice(-6)}</span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Giao lúc: {task.assignedAt ? new Date(task.assignedAt).toLocaleString('vi-VN') : "-"}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     {getStatusBadge(task.status)}
+                    <div className="h-8 w-[1px] bg-gray-100 mx-2" />
                     <Link to={`/annotator/task/${task.id}`}>
-                      <Button variant="outline">Details</Button>
+                      <Button variant="ghost" className="text-blue-600 hover:bg-blue-50">Chi tiết</Button>
                     </Link>
                     {task.status === "Submitted" ? (
-                      <Button variant="secondary" disabled>
+                      <Button variant="secondary" disabled className="bg-gray-100 text-gray-400">
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Submitted
+                        Đã hoàn thành
                       </Button>
                     ) : (
-                      <Button variant="primary" onClick={() => handleStart(task.id)}>
+                      <Button variant="primary" onClick={() => handleStart(task.id)} className="bg-blue-600 hover:bg-blue-700">
                         <PlayCircle className="h-4 w-4 mr-2" />
-                        Start
+                        Bắt đầu
                       </Button>
                     )}
                   </div>

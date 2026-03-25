@@ -32,11 +32,35 @@ export interface LabelResponse {
 export interface AnnotatorAnnotation {
   id: string;
   labelId: string;
-  geometryData: string;
+  geometryData: any; // Can be string or object
   isDraft: boolean;
   createdAt: string;
   updatedAt: string;
   submittedAt?: string | null;
+}
+
+export interface AnnotatorReviewErrorCategoryResponse {
+  errorTypeId: string;
+  errorName: string;
+  description?: string | null;
+}
+
+export interface AnnotatorReviewFeedbackResponse {
+  id: string;
+  annotationSetId: string;
+  result: string;
+  score: number;
+  comment?: string | null;
+  reviewedAt: string;
+  categories: AnnotatorReviewErrorCategoryResponse[];
+}
+
+export interface AddReviewerCommentRequest {
+  comment: string;
+}
+
+export interface RejectAiSuggestionRequest {
+  reason: string;
 }
 
 export interface ProjectGuideline {
