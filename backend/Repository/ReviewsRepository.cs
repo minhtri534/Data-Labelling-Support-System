@@ -13,44 +13,8 @@ public class ReviewsRepository(AppDbContext dbContext)
         return await _dbContext.Reviews.ToListAsync();
     }
 
-    public async Task<Review> GetById(string id)
+    public async Task<Review?> GetById(string id)
     {
         return await _dbContext.Reviews.FirstOrDefaultAsync(a => a.Id == id);
-    }
-
-    public async Task Add(Review r)
-    {
-        await _dbContext.Reviews.AddAsync(r);
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task Update(Review r)
-    {
-        var _review = await _dbContext.Reviews.FirstOrDefaultAsync(a => a.Id == r.Id);
-        if (_review != null)
-        {
-            _review.AnnotationSetId = r.AnnotationSetId;
-            _review.Comment = r.Comment;
-            _review.Result = r.Result;
-            _review.ReviewedAt = r.ReviewedAt;
-            _review.ReviewerId = r.ReviewerId;
-            _review.Score = r.Score;
-        }
-        else
-        {
-            throw new Exception("Record not found");
-        }
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task Delete(string id)
-    {
-        var r = await _dbContext.Reviews.FirstOrDefaultAsync(a => a.Id == id);
-        if (r == null)
-        {
-            throw new Exception("Record not found");
-        }
-        _dbContext.Reviews.Remove(r);
-        await _dbContext.SaveChangesAsync();
     }
 }

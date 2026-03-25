@@ -19,6 +19,8 @@ using DataLabellingSupportSystem.Api.Repository;
 using DataLabellingSupportSystem.Api.Services.ErrorTypes;
 using DataLabellingSupportSystem.Api.Services.ReviewErrors;
 using DataLabellingSupportSystem.Api.Services.LabelingTasks;
+using DataLabellingSupportSystem.Api.Services.Manager;
+using DataLabellingSupportSystem.Api.Services.Admin;
 
 namespace DataLabellingSupportSystem.Api.Configurations;
 
@@ -37,6 +39,8 @@ public static class DependencyInjection
     {
         services.AddSwaggerGen(options =>
         {
+            options.CustomSchemaIds(type => BuildSwaggerSchemaId(type));
+
             var bearerScheme = new Microsoft.OpenApi.OpenApiSecurityScheme
             {
                 Name = "Authorization",
@@ -58,6 +62,20 @@ public static class DependencyInjection
         return services;
     }
 
+    private static string BuildSwaggerSchemaId(Type type)
+    {
+        if (!type.IsGenericType)
+        {
+            return (type.FullName ?? type.Name).Replace('+', '.');
+        }
+
+        var genericTypeName = type.GetGenericTypeDefinition().FullName ?? type.Name;
+        genericTypeName = genericTypeName[..genericTypeName.IndexOf('`')].Replace('+', '.');
+        var genericArgNames = string.Join("_", type.GetGenericArguments().Select(BuildSwaggerSchemaId));
+
+        return $"{genericTypeName}_{genericArgNames}";
+    }
+
     public static IServiceCollection AddDlssDatabase(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<AppDbContext>(options =>
@@ -75,12 +93,15 @@ public static class DependencyInjection
         services.AddScoped<IExportService, ExportService>();
         services.AddScoped<ReviewsRepository>();
         services.AddScoped<IReviewsService, ReviewsService>();
+        services.AddScoped<IReviewerWorkflowService, ReviewerWorkflowService>();
         services.AddScoped<ReviewErrorsRepository>();
         services.AddScoped<IReviewErrorsService, ReviewErrorsService>();
         services.AddScoped<ErrorTypesRepository>();
         services.AddScoped<IErrorTypesService, ErrorTypesService>();
         services.AddScoped<LabelingTasksRepository>();
         services.AddScoped<ILabelingTasksService, LabelingTasksService>();
+        services.AddScoped<IManagerService, ManagerService>();
+        services.AddScoped<IAdminService, AdminService>();
         services.AddHostedService<DevSeedHostedService>();
         return services;
     }

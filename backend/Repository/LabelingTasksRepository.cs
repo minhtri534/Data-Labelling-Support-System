@@ -13,7 +13,7 @@ public class LabelingTasksRepository(AppDbContext dbContext)
         return await _dbContext.LabelingTasks.ToListAsync();
     }
 
-    public async Task<LabelingTask> GetById(string id)
+    public async Task<LabelingTask?> GetById(string id)
     {
         return await _dbContext.LabelingTasks.FirstOrDefaultAsync(a => a.Id == id);
     }

@@ -18,6 +18,16 @@ public class Label
     [MaxLength(100)]
     public string Name { get; set; } = string.Empty;
 
+    [MaxLength(24)]
+    public string? CategoryId { get; set; }
+
+    public LabelCategory? Category { get; set; }
+
+    [MaxLength(24)]
+    public string? AnnotationTypeId { get; set; }
+
+    public AnnotationTypeDefinition? AnnotationType { get; set; }
+
     public int YoloClassId { get; set; }
 
     public DateTime CreatedAt { get; set; }

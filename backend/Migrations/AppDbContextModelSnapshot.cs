@@ -22,6 +22,53 @@ namespace DataLabellingSupportSystem.Api.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.ActivityLog", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("log_id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("action");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())");
+
+                    b.Property<string>("TargetId")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("target_id");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("target_type");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("TargetType", "TargetId");
+
+                    b.ToTable("activity_logs", (string)null);
+                });
+
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.AiPrediction", b =>
                 {
                     b.Property<string>("Id")
@@ -175,6 +222,51 @@ namespace DataLabellingSupportSystem.Api.Migrations
                     b.ToTable("AnnotationSets", (string)null);
                 });
 
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.AnnotationTypeDefinition", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("createdAt")
+                        .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("ProjectId")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("projectId");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updatedAt")
+                        .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("annotation_types", (string)null);
+                });
+
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.DataItem", b =>
                 {
                     b.Property<string>("Id")
@@ -299,6 +391,40 @@ namespace DataLabellingSupportSystem.Api.Migrations
                     b.ToTable("Datasets", (string)null);
                 });
 
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.DatasetVersion", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("version_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())");
+
+                    b.Property<string>("DatasetId")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("dataset_id");
+
+                    b.Property<string>("VersionName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("version_name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DatasetId", "VersionName")
+                        .IsUnique();
+
+                    b.ToTable("dataset_versions", (string)null);
+                });
+
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.ErrorType", b =>
                 {
                     b.Property<string>("Id")
@@ -317,6 +443,81 @@ namespace DataLabellingSupportSystem.Api.Migrations
                     b.ToTable("ErrorTypes");
                 });
 
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.Export", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("export_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())");
+
+                    b.Property<string>("ExportPath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("export_path");
+
+                    b.Property<string>("ExportedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("exported_by");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("format");
+
+                    b.Property<string>("ProjectId")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("project_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExportedByUserId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("exports", (string)null);
+                });
+
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.ExportConfig", b =>
+                {
+                    b.Property<string>("ExportId")
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("export_id");
+
+                    b.Property<string>("Filters")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("filters");
+
+                    b.Property<string>("IncludeFields")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("include_fields");
+
+                    b.Property<string>("LabelFormat")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("label_format");
+
+                    b.HasKey("ExportId");
+
+                    b.ToTable("export_configs", (string)null);
+                });
+
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.Label", b =>
                 {
                     b.Property<string>("Id")
@@ -324,6 +525,16 @@ namespace DataLabellingSupportSystem.Api.Migrations
                         .HasMaxLength(24)
                         .HasColumnType("varchar(24)")
                         .HasColumnName("_id");
+
+                    b.Property<string>("AnnotationTypeId")
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("annotationTypeId");
+
+                    b.Property<string>("CategoryId")
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("categoryId");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -357,6 +568,10 @@ namespace DataLabellingSupportSystem.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AnnotationTypeId");
+
+                    b.HasIndex("CategoryId");
+
                     b.HasIndex("ProjectId", "Name")
                         .IsUnique();
 
@@ -364,6 +579,51 @@ namespace DataLabellingSupportSystem.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("label_classes", (string)null);
+                });
+
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.LabelCategory", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("createdAt")
+                        .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("ProjectId")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("projectId");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updatedAt")
+                        .HasDefaultValueSql("DATEADD(HOUR, 7, SYSUTCDATETIME())");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("label_categories", (string)null);
                 });
 
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.LabelingTask", b =>
@@ -750,6 +1010,43 @@ namespace DataLabellingSupportSystem.Api.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.UserProjectRole", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("ProjectId")
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("RoleId")
+                        .HasMaxLength(24)
+                        .HasColumnType("varchar(24)")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("UserId", "ProjectId", "RoleId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("user_project_roles", (string)null);
+                });
+
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.ActivityLog", b =>
+                {
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.AiPrediction", b =>
                 {
                     b.HasOne("DataLabellingSupportSystem.Api.Models.User", "AcceptedByUser")
@@ -805,6 +1102,17 @@ namespace DataLabellingSupportSystem.Api.Migrations
                     b.Navigation("Task");
                 });
 
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.AnnotationTypeDefinition", b =>
+                {
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.DataItem", b =>
                 {
                     b.HasOne("DataLabellingSupportSystem.Api.Models.Dataset", "Dataset")
@@ -834,7 +1142,73 @@ namespace DataLabellingSupportSystem.Api.Migrations
                     b.Navigation("Project");
                 });
 
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.DatasetVersion", b =>
+                {
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.Dataset", "Dataset")
+                        .WithMany()
+                        .HasForeignKey("DatasetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Dataset");
+                });
+
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.Export", b =>
+                {
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.User", "ExportedByUser")
+                        .WithMany()
+                        .HasForeignKey("ExportedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ExportedByUser");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.ExportConfig", b =>
+                {
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.Export", "Export")
+                        .WithOne("ExportConfig")
+                        .HasForeignKey("DataLabellingSupportSystem.Api.Models.ExportConfig", "ExportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Export");
+                });
+
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.Label", b =>
+                {
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.AnnotationTypeDefinition", "AnnotationType")
+                        .WithMany()
+                        .HasForeignKey("AnnotationTypeId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.LabelCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AnnotationType");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.LabelCategory", b =>
                 {
                     b.HasOne("DataLabellingSupportSystem.Api.Models.Project", "Project")
                         .WithMany()
@@ -928,15 +1302,13 @@ namespace DataLabellingSupportSystem.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DataLabellingSupportSystem.Api.Models.Review", "Review")
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.Review", null)
                         .WithMany("ReviewErrors")
                         .HasForeignKey("ReviewId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ErrorType");
-
-                    b.Navigation("Review");
                 });
 
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.TaskHistory", b =>
@@ -969,9 +1341,41 @@ namespace DataLabellingSupportSystem.Api.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.UserProjectRole", b =>
+                {
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DataLabellingSupportSystem.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.AnnotationSet", b =>
                 {
                     b.Navigation("Annotations");
+                });
+
+            modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.Export", b =>
+                {
+                    b.Navigation("ExportConfig");
                 });
 
             modelBuilder.Entity("DataLabellingSupportSystem.Api.Models.Review", b =>
