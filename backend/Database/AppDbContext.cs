@@ -27,6 +27,13 @@ public class AppDbContext : DbContext
     public DbSet<Review> Reviews { get; set; } = default!;
     public DbSet<ReviewError> ReviewErrors { get; set; } = default!;
     public DbSet<ErrorType> ErrorTypes { get; set; } = default!;
+    public DbSet<LabelCategory> LabelCategories { get; set; } = default!;
+    public DbSet<AnnotationTypeDefinition> AnnotationTypeDefinitions { get; set; } = default!;
+    public DbSet<UserProjectRole> UserProjectRoles { get; set; } = default!;
+    public DbSet<DatasetVersion> DatasetVersions { get; set; } = default!;
+    public DbSet<Export> Exports { get; set; } = default!;
+    public DbSet<ExportConfig> ExportConfigs { get; set; } = default!;
+    public DbSet<ActivityLog> ActivityLogs { get; set; } = default!;
 
     public override int SaveChanges()
     {
@@ -150,6 +157,42 @@ public class AppDbContext : DbContext
             }
         }
 
+        foreach (var entry in ChangeTracker.Entries<LabelCategory>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = now;
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<AnnotationTypeDefinition>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = now;
+            }
+        }
+
         foreach (var entry in ChangeTracker.Entries<LabelingTask>())
         {
             if (entry.State == EntityState.Added && string.IsNullOrWhiteSpace(entry.Entity.Id))
@@ -230,6 +273,54 @@ public class AppDbContext : DbContext
                 if (entry.Entity.ReviewedAt == default)
                 {
                     entry.Entity.ReviewedAt = now;
+                }
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<DatasetVersion>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                if (entry.Entity.CreatedAt == default)
+                {
+                    entry.Entity.CreatedAt = now;
+                }
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<Export>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                if (entry.Entity.CreatedAt == default)
+                {
+                    entry.Entity.CreatedAt = now;
+                }
+            }
+        }
+
+        foreach (var entry in ChangeTracker.Entries<ActivityLog>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Entity.Id))
+                {
+                    entry.Entity.Id = Utils.ObjectId.NewObjectId();
+                }
+
+                if (entry.Entity.CreatedAt == default)
+                {
+                    entry.Entity.CreatedAt = now;
                 }
             }
         }

@@ -1,6 +1,7 @@
 using DataLabellingSupportSystem.Api.DTOs.Requests.Reviews;
 using DataLabellingSupportSystem.Api.Models;
 using DataLabellingSupportSystem.Api.Services.ErrorTypes;
+using DataLabellingSupportSystem.Api.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,7 @@ namespace DataLabellingSupportSystem.Api.Controllers;
 
 [ApiController]
 [Route("api/error_type")]
-[Authorize]
+[Authorize(Roles = "Admin,Reviewer")]
 public sealed class ErrorTypeController(IErrorTypesService service) : ControllerBase
 {
     [HttpGet]
@@ -22,14 +23,21 @@ public sealed class ErrorTypeController(IErrorTypesService service) : Controller
     public async Task<IActionResult> GetById(string id)
     {
         var result = await service.GetErrorTypeById(id);
+        if (result is null)
+        {
+            return NotFound();
+        }
+
         return Ok(result);
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AddReview([FromBody] UpdateErrorTypeRequest r)
     {
         var errorType = new ErrorType
         {
+            Id = ObjectId.NewObjectId(),
             Description = r.Description,
             ErrorName = r.ErrorName
         };
@@ -38,6 +46,7 @@ public sealed class ErrorTypeController(IErrorTypesService service) : Controller
     }
 
     [HttpPut]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateReview([FromBody] UpdateErrorTypeRequest r)
     {
         var errorType = new ErrorType
@@ -50,6 +59,7 @@ public sealed class ErrorTypeController(IErrorTypesService service) : Controller
     }
 
     [HttpDelete]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteErrorType([FromBody] string id)
     {
         await service.DeleteErrorType(id);

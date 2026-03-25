@@ -22,7 +22,7 @@ public class ErrorTypesService(ErrorTypesRepository repo) : IErrorTypesService
         await _repo.Update(errorType);
     }
 
-    public async Task<ErrorType> GetErrorTypeById(string id)
+    public async Task<ErrorType?> GetErrorTypeById(string id)
     {
         return await _repo.GetById(id);
     }
