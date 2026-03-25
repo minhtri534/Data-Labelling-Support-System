@@ -22,7 +22,7 @@ const ManagerCreateProjectPage: React.FC = () => {
     status: 0,
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.currentTarget;
     setFormData(prev => ({
       ...prev,
