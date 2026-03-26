@@ -6,6 +6,7 @@ namespace DataLabellingSupportSystem.Api.Services.Storage;
 
 public sealed class LocalStorageService(IHostEnvironment env, IOptions<StorageOptions> options) : IStorageService
 {
+    private static readonly HttpClient HttpClient = new();
     private readonly StorageOptions _options = options.Value;
     private readonly FileExtensionContentTypeProvider _contentTypeProvider = new();
 
@@ -66,6 +67,11 @@ public sealed class LocalStorageService(IHostEnvironment env, IOptions<StorageOp
         string objectKey,
         CancellationToken cancellationToken)
     {
+        if (TryGetHttpUri(objectKey, out var remoteUri))
+        {
+            return OpenRemoteAsync(remoteUri, cancellationToken);
+        }
+
         if (!string.Equals(storageProvider, "Local", StringComparison.OrdinalIgnoreCase))
         {
             return Task.FromResult<(Stream, string, string)?>(null);
@@ -108,5 +114,44 @@ public sealed class LocalStorageService(IHostEnvironment env, IOptions<StorageOp
 
         Stream stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
         return Task.FromResult<(Stream, string, string)?>(new(stream, contentType, fileName));
+    }
+
+    private static async Task<(Stream Stream, string ContentType, string FileName)?> OpenRemoteAsync(Uri uri, CancellationToken cancellationToken)
+    {
+        using var response = await HttpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        await using var networkStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var buffer = new MemoryStream();
+        await networkStream.CopyToAsync(buffer, cancellationToken);
+        buffer.Position = 0;
+
+        var contentType = response.Content.Headers.ContentType?.MediaType;
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            contentType = "application/octet-stream";
+        }
+
+        var fileName = Path.GetFileName(uri.LocalPath);
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            fileName = "download.bin";
+        }
+
+        return (buffer, contentType, fileName);
+    }
+
+    private static bool TryGetHttpUri(string value, out Uri uri)
+    {
+        var raw = (value ?? string.Empty).Trim();
+        if (!Uri.TryCreate(raw, UriKind.Absolute, out uri!))
+        {
+            return false;
+        }
+
+        return uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps;
     }
 }
