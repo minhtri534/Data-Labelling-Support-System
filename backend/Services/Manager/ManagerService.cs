@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.IO.Compression;
+using System.Text;
 using DataLabellingSupportSystem.Api.Common.Constants;
 using DataLabellingSupportSystem.Api.Common.Results;
 using DataLabellingSupportSystem.Api.Configurations;
@@ -15,6 +17,7 @@ namespace DataLabellingSupportSystem.Api.Services.Manager;
 public sealed class ManagerService(
     AppDbContext dbContext,
     IHostEnvironment hostEnvironment,
+    ILogger<ManagerService> logger,
     IOptions<StorageOptions> storageOptions) : IManagerService
 {
     public async Task<ServiceResponse<List<ProjectResponse>>> GetProjectsAsync(string actorUserId)
@@ -377,73 +380,97 @@ public sealed class ManagerService(
 
     public async Task<ServiceResponse<ExportResponse>> CreateExportAsync(string currentUserId, CreateExportRequest request)
     {
-        var projectId = (request.ProjectId ?? string.Empty).Trim();
-        var format = (request.Format ?? string.Empty).Trim();
-        var requestedExportPath = (request.ExportPath ?? string.Empty).Trim();
-        var labelFormat = (request.LabelFormat ?? string.Empty).Trim();
-
-        var project = await dbContext.Projects.AsNoTracking().FirstOrDefaultAsync(x => x.Id == projectId);
-        if (project is null)
+        try
         {
-            return ServiceResponse<ExportResponse>.Failure(ErrorMessages.NotFound, ["Project not found"]);
-        }
+            var projectId = (request.ProjectId ?? string.Empty).Trim();
+            var format = (request.Format ?? string.Empty).Trim();
+            var requestedExportPath = (request.ExportPath ?? string.Empty).Trim();
+            var labelFormat = (request.LabelFormat ?? string.Empty).Trim();
 
-        var access = await EnsureProjectAccessAsync(currentUserId, projectId);
-        if (access is not null)
-        {
-            return ServiceResponse<ExportResponse>.Failure(access.Message, access.Errors);
-        }
-
-        var user = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == currentUserId);
-        if (user is null)
-        {
-            return ServiceResponse<ExportResponse>.Failure(ErrorMessages.Unauthorized, ["Current user not found"]);
-        }
-
-        var includeFieldsJson = JsonSerializer.Serialize(request.IncludeFields ?? []);
-        var filtersJson = JsonSerializer.Serialize(request.Filters ?? new Dictionary<string, string>());
-
-        var exportId = ObjectId.NewObjectId();
-        var exportObjectKey = BuildExportObjectKey(projectId, exportId, requestedExportPath);
-        var exportedContent = await BuildApprovedExportJsonAsync(projectId, includeFieldsJson, filtersJson);
-
-        var writeSucceeded = await WriteExportFileAsync(exportObjectKey, exportedContent);
-        if (!writeSucceeded)
-        {
-            return ServiceResponse<ExportResponse>.Failure("Export failed", ["Cannot write export file to local storage"]);
-        }
-
-        var entity = new Export
-        {
-            Id = exportId,
-            ProjectId = projectId,
-            Format = format,
-            ExportedByUserId = currentUserId,
-            ExportPath = exportObjectKey,
-            ExportConfig = new ExportConfig
+            var project = await dbContext.Projects.AsNoTracking().FirstOrDefaultAsync(x => x.Id == projectId);
+            if (project is null)
             {
+                return ServiceResponse<ExportResponse>.Failure(ErrorMessages.NotFound, ["Project not found"]);
+            }
+
+            var access = await EnsureProjectAccessAsync(currentUserId, projectId);
+            if (access is not null)
+            {
+                return ServiceResponse<ExportResponse>.Failure(access.Message, access.Errors);
+            }
+
+            var user = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == currentUserId);
+            if (user is null)
+            {
+                return ServiceResponse<ExportResponse>.Failure(ErrorMessages.Unauthorized, ["Current user not found"]);
+            }
+
+            var includeFieldsJson = JsonSerializer.Serialize(request.IncludeFields ?? []);
+            var filtersJson = JsonSerializer.Serialize(request.Filters ?? new Dictionary<string, string>());
+
+            var exportId = ObjectId.NewObjectId();
+            var exportObjectKey = BuildExportObjectKey(projectId, exportId, requestedExportPath);
+            
+            byte[] exportedContent;
+            if (string.Equals(format, "YOLO", StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogInformation("Building YOLO ZIP export for project {ProjectId}", projectId);
+                exportedContent = await BuildApprovedExportYoloZipAsync(projectId);
+            }
+            else
+            {
+                logger.LogInformation("Building JSON export for project {ProjectId}", projectId);
+                var json = await BuildApprovedExportJsonAsync(projectId, includeFieldsJson, filtersJson);
+                exportedContent = Encoding.UTF8.GetBytes(json);
+            }
+
+            logger.LogInformation("Writing export file to {ObjectKey}", exportObjectKey);
+            var writeSucceeded = await WriteExportFileAsync(exportObjectKey, exportedContent);
+            if (!writeSucceeded)
+            {
+                return ServiceResponse<ExportResponse>.Failure("Export failed", ["Cannot write export file to local storage"]);
+            }
+
+            var entity = new Export
+            {
+                Id = exportId,
+                ProjectId = projectId,
+                Format = format,
+                ExportedByUserId = currentUserId,
+                ExportPath = exportObjectKey
+            };
+
+            entity.ExportConfig = new ExportConfig
+            {
+                ExportId = exportId,
                 LabelFormat = labelFormat,
                 IncludeFields = includeFieldsJson,
                 Filters = filtersJson
-            }
-        };
+            };
 
-        dbContext.Exports.Add(entity);
-        await AddActivityLogAsync(currentUserId, "Manager.CreateExport", "exports", entity.Id);
-        await dbContext.SaveChangesAsync();
+            logger.LogInformation("Saving export entity to database");
+            dbContext.Exports.Add(entity);
+            await AddActivityLogAsync(currentUserId, "Manager.CreateExport", "exports", entity.Id);
+            await dbContext.SaveChangesAsync();
 
-        return ServiceResponse<ExportResponse>.Success(
-            new ExportResponse(
-                entity.Id,
-                entity.ProjectId,
-                project.Name,
-                entity.Format,
-                entity.ExportedByUserId,
-                user.Email,
-                entity.ExportPath,
-                entity.CreatedAt,
-                new ExportConfigResponse(entity.ExportConfig!.LabelFormat, entity.ExportConfig.IncludeFields, entity.ExportConfig.Filters)),
-            "Created");
+            return ServiceResponse<ExportResponse>.Success(
+                new ExportResponse(
+                    entity.Id,
+                    entity.ProjectId,
+                    project.Name,
+                    entity.Format,
+                    entity.ExportedByUserId,
+                    user.Email,
+                    entity.ExportPath,
+                    entity.CreatedAt,
+                    new ExportConfigResponse(entity.ExportConfig!.LabelFormat, entity.ExportConfig.IncludeFields, entity.ExportConfig.Filters)),
+                "Created");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unhandled error in CreateExportAsync for project {ProjectId}", request.ProjectId);
+            return ServiceResponse<ExportResponse>.Failure("Internal Server Error", [ex.Message]);
+        }
     }
 
     public async Task<ServiceResponse<List<ExportResponse>>> GetProjectExportsAsync(string actorUserId, string projectId)
@@ -1707,7 +1734,7 @@ public sealed class ManagerService(
         var item = await dbContext.Exports
             .AsNoTracking()
             .Where(x => x.Id == id)
-            .Select(x => new { x.Id, x.ProjectId, x.ExportPath })
+            .Select(x => new { x.Id, x.ProjectId, x.ExportPath, x.Format })
             .FirstOrDefaultAsync();
 
         if (item is null)
@@ -1722,8 +1749,19 @@ public sealed class ManagerService(
         }
 
         var fileName = Path.GetFileName(item.ExportPath);
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            var ext = string.Equals(item.Format, "YOLO", StringComparison.OrdinalIgnoreCase) ? ".zip" : ".json";
+            fileName = $"export-{item.Id}{ext}";
+        }
+        else if (string.Equals(item.Format, "YOLO", StringComparison.OrdinalIgnoreCase) && !fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            // Fix extension for old records or mismatched paths
+            fileName = Path.ChangeExtension(fileName, ".zip");
+        }
+
         return ServiceResponse<ExportDownloadInfoResponse>.Success(
-            new ExportDownloadInfoResponse(item.Id, "Local", item.ExportPath, string.IsNullOrWhiteSpace(fileName) ? $"export-{item.Id}.json" : fileName),
+            new ExportDownloadInfoResponse(item.Id, "Local", item.ExportPath, fileName),
             "OK");
     }
 
@@ -1851,11 +1889,7 @@ public sealed class ManagerService(
 
         var approvedAnnotationSetIds = await dbContext.Reviews
             .AsNoTracking()
-            .Where(r =>
-                string.Equals(r.Result, "approved", StringComparison.OrdinalIgnoreCase)
-                && r.AnnotationSet != null
-                && r.AnnotationSet.Task != null
-                && r.AnnotationSet.Task.ProjectId == projectId)
+            .Where(r => r.Result == "Approved" && r.AnnotationSet!.Task!.ProjectId == projectId)
             .Select(r => r.AnnotationSetId)
             .Distinct()
             .ToListAsync();
@@ -1863,9 +1897,17 @@ public sealed class ManagerService(
         var payload = new Dictionary<string, object?>
         {
             ["projectId"] = projectId,
-            ["generatedAt"] = DateTime.UtcNow,
-            ["filters"] = JsonSerializer.Deserialize<object>(filtersJson)
+            ["generatedAt"] = DateTime.UtcNow
         };
+
+        try
+        {
+            payload["filters"] = JsonSerializer.Deserialize<object>(filtersJson);
+        }
+        catch
+        {
+            payload["filters"] = new Dictionary<string, string>();
+        }
 
         if (includeFields.Contains("labels", StringComparer.OrdinalIgnoreCase))
         {
@@ -1902,7 +1944,101 @@ public sealed class ManagerService(
         return JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
     }
 
-    private async Task<bool> WriteExportFileAsync(string objectKey, string content)
+    private async Task<byte[]> BuildApprovedExportYoloZipAsync(string projectId)
+    {
+        var approvedAnnotationSetIds = await dbContext.Reviews
+            .AsNoTracking()
+            .Where(r => r.Result == "Approved")
+            .Join(dbContext.AnnotationSets.Where(s => s.Task!.ProjectId == projectId),
+                  r => r.AnnotationSetId,
+                  s => s.Id,
+                  (r, s) => r.AnnotationSetId)
+            .Distinct()
+            .ToListAsync();
+
+        logger.LogInformation("Found {Count} approved annotation sets for project {ProjectId}", approvedAnnotationSetIds.Count, projectId);
+
+        var labels = await dbContext.Labels.AsNoTracking()
+            .Where(x => x.ProjectId == projectId)
+            .OrderBy(x => x.YoloClassId)
+            .Select(x => new { x.Id, x.Name, x.YoloClassId })
+            .ToListAsync();
+
+        var tasks = await dbContext.LabelingTasks.AsNoTracking()
+            .Include(t => t.DataItem)
+            .Where(t => t.ProjectId == projectId && (t.Status == "Completed" || t.Status == "Submitted"))
+            .ToListAsync();
+
+        logger.LogInformation("Processing {Count} tasks for YOLO export", tasks.Count);
+
+        using var memoryStream = new MemoryStream();
+        using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+        {
+            // 1. Create classes.txt
+            var classesEntry = archive.CreateEntry("classes.txt");
+            using (var writer = new StreamWriter(classesEntry.Open()))
+            {
+                foreach (var label in labels)
+                {
+                    await writer.WriteLineAsync(label.Name);
+                }
+            }
+
+            // 2. Create labels for each task
+            int filesWritten = 0;
+            foreach (var task in tasks)
+            {
+                var annotations = await dbContext.Annotations.AsNoTracking()
+                    .Where(a => a.AnnotationSet!.TaskId == task.Id && approvedAnnotationSetIds.Contains(a.AnnotationSetId))
+                    .ToListAsync();
+
+                if (annotations.Count == 0) continue;
+
+                var fileName = Path.GetFileNameWithoutExtension(task.DataItem?.ObjectKey ?? task.Id);
+                var labelEntry = archive.CreateEntry($"labels/{fileName}.txt");
+
+                using var writer = new StreamWriter(labelEntry.Open());
+                foreach (var ann in annotations)
+                {
+                    try
+                    {
+                        var geo = JsonSerializer.Deserialize<JsonElement>(ann.GeometryData);
+                        if (geo.ValueKind == JsonValueKind.Object)
+                        {
+                            var label = labels.FirstOrDefault(l => l.Id == ann.LabelId);
+                            if (label == null) continue;
+
+                            double x = geo.TryGetProperty("x", out var xProp) ? xProp.GetDouble() : 0;
+                            double y = geo.TryGetProperty("y", out var yProp) ? yProp.GetDouble() : 0;
+                            double w = geo.TryGetProperty("width", out var wProp) ? wProp.GetDouble() : 0;
+                            double h = geo.TryGetProperty("height", out var hProp) ? hProp.GetDouble() : 0;
+
+                            double imgW = task.DataItem?.OriginalWidth > 0 ? task.DataItem.OriginalWidth : 800.0;
+                            double imgH = task.DataItem?.OriginalHeight > 0 ? task.DataItem.OriginalHeight : 600.0;
+
+                            // YOLO format: <class_id> <x_center> <y_center> <width> <height> (normalized 0-1)
+                            double xCenter = (x + (w / 2.0)) / imgW;
+                            double yCenter = (y + (h / 2.0)) / imgH;
+                            double wNorm = w / imgW;
+                            double hNorm = h / imgH;
+
+                            await writer.WriteLineAsync($"{label.YoloClassId} {xCenter:F6} {yCenter:F6} {wNorm:F6} {hNorm:F6}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning("Failed to parse geometry for annotation {Id}: {Message}", ann.Id, ex.Message);
+                    }
+                }
+                filesWritten++;
+            }
+            logger.LogInformation("Successfully wrote {Count} label files to ZIP", filesWritten);
+        }
+
+        return memoryStream.ToArray();
+    }
+
+    private async Task<bool> WriteExportFileAsync(string objectKey, byte[] content)
     {
         try
         {
@@ -1931,7 +2067,7 @@ public sealed class ManagerService(
                 Directory.CreateDirectory(dir);
             }
 
-            await File.WriteAllTextAsync(fullPath, content);
+            await File.WriteAllBytesAsync(fullPath, content);
             return true;
         }
         catch

@@ -5,18 +5,18 @@ import { Badge } from "../../components/ui/Badge";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { Button } from "../../components/ui/Button";
 import { List, PlayCircle, Loader2 } from "lucide-react";
-import { reviewService } from "../../services/reviewService";
-import type { ReviewTaskSummary } from "../../types/review";
+import { reviewerService } from "../../services/reviewerService";
+import type { ReviewerSubmittedTaskResponse } from "../../services/reviewerService";
 
 const ReviewerTaskListPage: React.FC = () => {
-  const [tasks, setTasks] = useState<ReviewTaskSummary[]>([]);
+  const [tasks, setTasks] = useState<ReviewerSubmittedTaskResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await reviewService.getTasks();
+        const res = await reviewerService.getSubmittedTasks();
         if (res.isSuccess) {
           setTasks(res.data || []);
         }
@@ -59,9 +59,11 @@ const ReviewerTaskListPage: React.FC = () => {
                     <div>
                       <h3 className="font-bold text-lg text-gray-900">Review Task #{task.id.slice(-6)}</h3>
                       <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
-                        <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-semibold uppercase">Project: {task.projectId.slice(-6)}</span>
+                        <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-semibold uppercase">Project: {task.projectName}</span>
                         <span>•</span>
-                        <span>Data: {task.dataItemId.slice(-6)}</span>
+                        <span>Annotator: {task.annotatorName}</span>
+                        <span>•</span>
+                        <span>Annotations: {task.annotationCount}</span>
                       </div>
                     </div>
                   </div>

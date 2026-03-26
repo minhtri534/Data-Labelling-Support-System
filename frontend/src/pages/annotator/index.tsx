@@ -4,7 +4,6 @@ import AnnotatorTaskListPage from "./AnnotatorTaskListPage";
 import AnnotatorTaskDetailPage from "./AnnotatorTaskDetailPage";
 import AnnotatorAILabelPage from "./AnnotatorAILabelPage";
 import AnnotatorLabelingPage from "./AnnotatorLabelingPage";
-import AnnotatorEarningsPage from "./AnnotatorEarningsPage";
 
 export default function AnnotatorRoutes() {
   return (
@@ -16,7 +15,6 @@ export default function AnnotatorRoutes() {
       <Route path="/ai-label" element={<AnnotatorAILabelPage />} />
       <Route path="/ai-label/:id" element={<AnnotatorAILabelPage />} />
       <Route path="/rework/:id" element={<AnnotatorAILabelPage />} />
-      <Route path="/earnings" element={<AnnotatorEarningsPage />} />
     </Routes>
   );
 }

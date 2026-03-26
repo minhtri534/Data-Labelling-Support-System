@@ -70,6 +70,9 @@ export default function AnnotatorAILabelPage() {
   const [reworkComment, setReworkComment] = useState("");
 
   const currentTaskId = task?.id || "";
+  const isReadOnly = useMemo(() => 
+    task?.status === "Submitted" || task?.status === "Completed"
+  , [task?.status]);
 
   const loadTaskContext = async (taskId: string) => {
     try {
@@ -203,7 +206,7 @@ export default function AnnotatorAILabelPage() {
 
   const savePayload: UpsertTaskAnnotationsPayload = useMemo(
     () => ({
-      annotations: boxes.map((b) => ({
+      objects: boxes.map((b) => ({
         labelId: b.labelId,
         geometryData: {
           type: "bbox",
@@ -455,8 +458,10 @@ export default function AnnotatorAILabelPage() {
               <Button
                 variant={drawMode ? "primary" : "ghost"}
                 size="sm"
-                onClick={() => setDrawMode(true)}
+                onClick={() => !isReadOnly && setDrawMode(true)}
+                disabled={isReadOnly}
                 className="h-8 px-3"
+                title={isReadOnly ? "Task is read-only" : ""}
               >
                 <Pencil size={14} className="mr-1" /> Draw
               </Button>
@@ -476,7 +481,7 @@ export default function AnnotatorAILabelPage() {
               variant="secondary"
               size="sm"
               onClick={handleAiSuggest}
-              disabled={aiLoading}
+              disabled={aiLoading || isReadOnly}
               className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
             >
               {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Bot size={16} className="mr-1" />}
@@ -485,30 +490,40 @@ export default function AnnotatorAILabelPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving}>
-              <Save size={16} className="mr-1" /> Save Draft
-            </Button>
-            <Button variant="primary" size="sm" onClick={() => handleSave(true)} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
-              <Send size={16} className="mr-1" /> {isRework ? "Resubmit" : "Submit"}
-            </Button>
+            {!isReadOnly && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving}>
+                  <Save size={16} className="mr-1" /> Save Draft
+                </Button>
+                <Button variant="primary" size="sm" onClick={() => handleSave(true)} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                  <Send size={16} className="mr-1" /> {isRework ? "Resubmit" : "Submit"}
+                </Button>
+              </>
+            )}
+            {isReadOnly && (
+              <div className="bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                <Check size={18} />
+                Task {task?.status}
+              </div>
+            )}
           </div>
         </div>
 
         <div className="flex-1 flex gap-4 overflow-hidden">
           {/* Main Canvas Area */}
           <Card className="flex-1 bg-gray-900 relative overflow-auto custom-scrollbar flex items-center justify-center p-8">
-            <div
-              ref={containerRef}
-              className="relative shadow-2xl transition-transform duration-200"
-              style={{
-                width: "fit-content",
-                height: "fit-content",
-                cursor: drawMode ? "crosshair" : "default",
-              }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-            >
+              <div
+                ref={containerRef}
+                className="relative shadow-2xl transition-transform duration-200"
+                style={{
+                  width: "fit-content",
+                  height: "fit-content",
+                  cursor: isReadOnly ? "default" : (drawMode ? "crosshair" : "default"),
+                }}
+                onMouseDown={(e) => !isReadOnly && handleMouseDown(e)}
+                onMouseMove={(e) => !isReadOnly && handleMouseMove(e)}
+                onMouseUp={() => !isReadOnly && handleMouseUp()}
+              >
               <img
                 src={secureImageUrl}
                     alt="Labeled Data"
@@ -538,7 +553,7 @@ export default function AnnotatorAILabelPage() {
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!box.isAiSuggestion) {
+                    if (!box.isAiSuggestion && !isReadOnly) {
                       setBoxes((prev) => prev.filter((_, idx) => idx !== i));
                     }
                   }}
@@ -597,12 +612,13 @@ export default function AnnotatorAILabelPage() {
                 {labels.map((lbl) => (
                   <button
                     key={lbl.id}
-                    onClick={() => setSelectedLabelId(lbl.id)}
+                    onClick={() => !isReadOnly && setSelectedLabelId(lbl.id)}
+                    disabled={isReadOnly}
                     className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
                       selectedLabelId === lbl.id
                         ? "bg-blue-600 border-blue-600 text-white shadow-md"
                         : "bg-gray-50 border-gray-100 text-gray-600 hover:border-blue-300"
-                    }`}
+                    } ${isReadOnly ? "cursor-default opacity-80" : ""}`}
                   >
                     <span className="font-bold text-sm">{lbl.name}</span>
                     <span className="text-[10px] opacity-70">ID: {lbl.yoloClassId}</span>

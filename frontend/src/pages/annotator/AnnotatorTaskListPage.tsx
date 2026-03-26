@@ -35,6 +35,7 @@ const AnnotatorTaskListPage: React.FC = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<AnnotatorTaskSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"todo" | "done">("todo");
 
   useEffect(() => {
     const load = async () => {
@@ -54,12 +55,18 @@ const AnnotatorTaskListPage: React.FC = () => {
 
   const taskStats = useMemo(
     () => ({
-      assigned: tasks.filter((t) => t.status === "Assigned").length,
-      inProgress: tasks.filter((t) => t.status === "InProgress").length,
-      submitted: tasks.filter((t) => t.status === "Submitted").length,
+      assigned: tasks.filter((t) => ["Assigned", "InProgress", "Returned", "Rejected"].includes(t.status)).length,
+      done: tasks.filter((t) => ["Submitted", "Completed"].includes(t.status)).length,
     }),
     [tasks]
   );
+
+  const filteredTasks = useMemo(() => {
+    if (activeTab === "todo") {
+      return tasks.filter((t) => ["Assigned", "InProgress", "Returned", "Rejected"].includes(t.status));
+    }
+    return tasks.filter((t) => ["Submitted", "Completed"].includes(t.status));
+  }, [tasks, activeTab]);
 
   const handleStart = async (taskId: string) => {
     await annotatorService.startTask(taskId);
@@ -69,24 +76,34 @@ const AnnotatorTaskListPage: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">My Tasks</h1>
-          <p className="text-gray-500 mt-1">List of labeling tasks assigned to you.</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="p-4 border-l-4 border-l-gray-400">
-            <p className="text-sm text-gray-500 font-medium">Assigned</p>
-            <p className="text-2xl font-bold text-gray-900">{taskStats.assigned}</p>
-          </Card>
-          <Card className="p-4 border-l-4 border-l-blue-600">
-            <p className="text-sm text-gray-500 font-medium">In Progress</p>
-            <p className="text-2xl font-bold text-blue-700">{taskStats.inProgress}</p>
-          </Card>
-          <Card className="p-4 border-l-4 border-l-green-600">
-            <p className="text-sm text-gray-500 font-medium">Submitted</p>
-            <p className="text-2xl font-bold text-green-700">{taskStats.submitted}</p>
-          </Card>
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">My Tasks</h1>
+            <p className="text-gray-500 mt-1">Manage your data labeling assignments.</p>
+          </div>
+          
+          <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+            <button
+              onClick={() => setActiveTab("todo")}
+              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                activeTab === "todo" 
+                  ? "bg-white text-blue-600 shadow-sm" 
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              To Do ({taskStats.assigned})
+            </button>
+            <button
+              onClick={() => setActiveTab("done")}
+              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                activeTab === "done" 
+                  ? "bg-white text-green-600 shadow-sm" 
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Done ({taskStats.done})
+            </button>
+          </div>
         </div>
 
         <Card variant="glass" className="p-6">
@@ -97,16 +114,20 @@ const AnnotatorTaskListPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {tasks.length === 0 && (
+              {filteredTasks.length === 0 && (
                 <div className="p-12 text-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                   <List className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">You have no assigned tasks.</p>
+                  <p className="text-gray-500">
+                    {activeTab === "todo" ? "You have no tasks to do." : "You haven't completed any tasks yet."}
+                  </p>
                 </div>
               )}
-              {tasks.map((task) => (
+              {filteredTasks.map((task) => (
                 <Card key={task.id} className="p-5 flex items-center justify-between hover:shadow-md transition-all border border-gray-100">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                    <div className={`p-3 rounded-lg ${
+                      ["Submitted", "Completed"].includes(task.status) ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"
+                    }`}>
                       <List className="h-6 w-6" />
                     </div>
                     <div>
@@ -118,7 +139,9 @@ const AnnotatorTaskListPage: React.FC = () => {
                       </div>
                         <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        Assigned at: {task.assignedAt ? new Date(task.assignedAt).toLocaleString('en-US') : "-"}
+                        {["Submitted", "Completed"].includes(task.status) 
+                          ? `Finished at: ${task.completedAt ? new Date(task.completedAt).toLocaleString('en-US') : "-"}`
+                          : `Assigned at: ${task.assignedAt ? new Date(task.assignedAt).toLocaleString('en-US') : "-"}`}
                       </p>
                     </div>
                   </div>
@@ -128,15 +151,15 @@ const AnnotatorTaskListPage: React.FC = () => {
                     <Link to={`/annotator/task/${task.id}`}>
                       <Button variant="ghost" className="text-blue-600 hover:bg-blue-50">Details</Button>
                     </Link>
-                    {task.status === "Submitted" ? (
-                      <Button variant="secondary" disabled className="bg-gray-100 text-gray-400">
+                    {["Submitted", "Completed"].includes(task.status) ? (
+                      <Button variant="secondary" disabled className="bg-gray-100 text-gray-400 border-none">
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Completed
                       </Button>
                     ) : (
                       <Button variant="primary" onClick={() => handleStart(task.id)} className="bg-blue-600 hover:bg-blue-700">
                         <PlayCircle className="h-4 w-4 mr-2" />
-                        Start
+                        {task.status === "Returned" || task.status === "Rejected" ? "Revise" : "Start"}
                       </Button>
                     )}
                   </div>

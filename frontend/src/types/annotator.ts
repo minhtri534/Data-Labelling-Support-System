@@ -74,5 +74,6 @@ export interface ProjectGuideline {
 }
 
 export interface UpsertTaskAnnotationsPayload {
-  annotations: Partial<Annotation>[];
+  objects: Partial<Annotation>[];
+  predictionId?: string;
 }

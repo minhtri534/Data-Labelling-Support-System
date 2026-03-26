@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Archive, Calendar, FileText, Clock, Loader2, Plus, Tag, List, Layers, Type,
-  Users, BarChart3, Download, History, Settings, CheckCircle2, AlertCircle, Play, Pause, XCircle
+  Users, BarChart3, Download, History, Settings, CheckCircle2, AlertCircle, Play, Pause, XCircle, Info
 } from "lucide-react";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import { Card } from "../../../components/ui/Card";
@@ -22,6 +22,7 @@ import type {
   TaskProgressResponse,
   QualityReportResponse,
   ExportResponse,
+  CreateExportRequest,
   ActivityLogResponse,
   UserProjectRoleResponse,
   AnnotatorPerformanceResponse
@@ -187,14 +188,53 @@ const ProjectDetailPage: React.FC = () => {
   };
 
   const handleCreateExport = async (format: string) => {
-    if (!projectId) return;
-    setIsActionLoading(true);
-    const res = await managerService.createExport({ projectId, format });
-    if (res.isSuccess) {
-      alert("Export job started.");
-      fetchData();
+    if (!projectId) {
+      alert("Project ID is missing");
+      return;
     }
-    setIsActionLoading(false);
+    
+    setIsActionLoading(true);
+    try {
+      const isYolo = format.toUpperCase() === "YOLO";
+      const ext = isYolo ? "zip" : "json";
+      
+      const payload: CreateExportRequest = { 
+        projectId: projectId, 
+        format: format,
+        exportPath: `exports/${projectId}/export_${new Date().getTime()}.${ext}`,
+        labelFormat: format,
+        includeFields: ["tasks", "annotations", "reviews", "labels"],
+        filters: {}
+      };
+
+      console.log("Sending export request:", payload);
+      
+      const res = await managerService.createExport(payload);
+      
+      if (res.isSuccess) {
+        alert("Export job started.");
+        fetchData();
+      } else {
+        alert(res.message || "Export failed");
+      }
+    } catch (err: any) {
+      console.error("Export error:", err);
+      let errorMsg = err.message || "An unexpected error occurred";
+      
+      // Extract detailed validation errors if available
+      if (err.response?.data?.errors) {
+        const details = Object.entries(err.response.data.errors)
+          .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`)
+          .join('\n');
+        errorMsg = `${err.response.data.message || 'Validation Error'}\n${details}`;
+      } else if (err.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      }
+      
+      alert(`Export failed: ${errorMsg}`);
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const handleValidate = async () => {
@@ -828,6 +868,25 @@ const ProjectDetailPage: React.FC = () => {
                     </div>
                   </div>
 
+                  <div className="mb-8 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                    <h4 className="text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">
+                      <Info className="h-4 w-4" />
+                      What's inside a YOLO export?
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-blue-800/80">
+                      <div className="space-y-1">
+                        <p className="font-bold text-blue-900">Structure:</p>
+                        <p>• <span className="font-mono">classes.txt</span>: List of label names.</p>
+                        <p>• <span className="font-mono">labels/</span>: Folder containing annotation files.</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-bold text-blue-900">Format:</p>
+                        <p>• One <span className="font-mono">.txt</span> file per image.</p>
+                        <p>• Normalized coordinates (0-1) for YOLO training.</p>
+                      </div>
+                    </div>
+                  </div>
+
                   {validationResult && (
                     <div className={`p-4 rounded-xl mb-6 flex items-start gap-3 ${validationResult.isValid ? "bg-green-50 text-green-800 border border-green-100" : "bg-amber-50 text-amber-800 border border-amber-100"}`}>
                       {validationResult.isValid ? <CheckCircle2 className="h-5 w-5 mt-0.5" /> : <AlertCircle className="h-5 w-5 mt-0.5" />}
@@ -846,17 +905,23 @@ const ProjectDetailPage: React.FC = () => {
                     {exports.map(exp => (
                       <div key={exp.id} className="p-4 border border-gray-100 rounded-2xl bg-gray-50 flex items-center justify-between group">
                         <div className="flex items-center gap-4">
-                          <div className="p-2 bg-white rounded-lg border border-gray-100 shadow-sm">
-                            <FileText className="h-5 w-5 text-gray-400" />
+                          <div className={`p-2 rounded-lg border border-gray-100 shadow-sm ${exp.format.toUpperCase() === 'YOLO' ? 'bg-amber-50' : 'bg-blue-50'}`}>
+                            {exp.format.toUpperCase() === 'YOLO' ? <Archive className="h-5 w-5 text-amber-600" /> : <FileText className="h-5 w-5 text-blue-600" />}
                           </div>
                           <div>
                             <p className="font-bold text-gray-900 capitalize">{exp.format} Export</p>
-                            <p className="text-xs text-gray-400">Created {new Date(exp.createdAt).toLocaleString()}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-500 uppercase">{exp.config.labelFormat}</span>
+                              <span className="text-[10px] text-gray-400">•</span>
+                              <p className="text-[10px] text-gray-400">{new Date(exp.createdAt).toLocaleString()}</p>
+                            </div>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={() => managerService.downloadExport(exp.id)}>
-                          Download
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => managerService.downloadExport(exp.id)} className="text-blue-600 hover:bg-blue-50">
+                            <Download size={14} className="mr-1.5" /> Download
+                          </Button>
+                        </div>
                       </div>
                     ))}
                     {exports.length === 0 && <p className="text-center py-12 text-gray-400 text-sm">No exports generated yet.</p>}

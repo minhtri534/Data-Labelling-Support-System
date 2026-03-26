@@ -337,12 +337,36 @@ export const managerService = {
 
   async downloadExport(exportId: string): Promise<void> {
     const response = await api.get(`/manager/exports/${exportId}/download`, { responseType: 'blob' });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    
+    // response.data is already a Blob when using responseType: 'blob'
+    const blob = response.data;
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `export-${exportId}.zip`);
+    
+    // Try to get filename from Content-Disposition header
+    const contentDisposition = response.headers['content-disposition'];
+    let fileName = `export-${exportId}`;
+    
+    if (contentDisposition) {
+      // Handle various Content-Disposition formats
+      const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+      const matches = filenameRegex.exec(contentDisposition);
+      if (matches != null && matches[1]) { 
+        fileName = matches[1].replace(/['"]/g, '');
+      }
+    } else {
+      // Fallback based on MIME type
+      const extension = blob.type === 'application/zip' || blob.type === 'application/x-zip-compressed' ? '.zip' : '.json';
+      if (!fileName.endsWith(extension)) {
+        fileName += extension;
+      }
+    }
+    
+    link.setAttribute('download', fileName);
     document.body.appendChild(link);
     link.click();
+    link.remove();
     window.URL.revokeObjectURL(url);
   },
 

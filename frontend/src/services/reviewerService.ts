@@ -7,21 +7,27 @@ export interface ReviewerSubmittedTaskResponse {
   projectName: string;
   annotatorId: string;
   annotatorName: string;
+  annotationSetId: string;
   submittedAt: string;
+  annotationCount: number;
   status: string;
+}
+
+export interface ReviewerAnnotationItemResponse {
+  annotationId: string;
+  labelId: string;
+  labelName: string;
+  annotationType: string;
+  geometryData: string;
 }
 
 export interface ReviewerLabeledDataResponse {
   taskId: string;
-  dataItemId: string;
-  filePath: string;
-  annotations: Array<{
-    id: string;
-    labelId: string;
-    labelName: string;
-    geometryData: any;
-    annotationType: string;
-  }>;
+  annotationSetId: string;
+  guideline?: string;
+  storageProvider: string;
+  objectKey: string;
+  annotations: ReviewerAnnotationItemResponse[];
 }
 
 export interface GuidelineComparisonResponse {

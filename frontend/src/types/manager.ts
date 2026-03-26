@@ -272,7 +272,9 @@ export interface ExportValidationResponse {
 
 // Export Types
 export interface ExportConfigResponse {
-  parameters?: unknown;
+  labelFormat: string;
+  includeFields: string;
+  filters: string;
 }
 
 export interface ExportResponse {
@@ -290,7 +292,10 @@ export interface ExportResponse {
 export interface CreateExportRequest {
   projectId: string;
   format: string;
-  config?: ExportConfigResponse;
+  exportPath: string;
+  labelFormat: string;
+  includeFields?: string[];
+  filters?: Record<string, string>;
 }
 
 export interface ExportDownloadInfoResponse {

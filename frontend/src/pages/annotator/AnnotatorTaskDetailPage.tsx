@@ -92,14 +92,25 @@ const AnnotatorTaskDetailPage: React.FC = () => {
               <p className="text-gray-500 mt-1">Task details and instructions.</p>
             </div>
           </div>
-          {task.status !== "Submitted" && (
-            <Link to={`/annotator/ai-label/${taskId}`}>
-              <Button variant="primary" className="bg-blue-600 hover:bg-blue-700 px-6">
-                <PlayCircle className="h-4 w-4 mr-2" />
-                Bắt đầu dán nhãn
-              </Button>
-            </Link>
-          )}
+          
+          <div className="flex items-center gap-3">
+            {/* Show "View" button for Submitted/Completed, "Start/Revise" for others */}
+            {["Submitted", "Completed"].includes(task.status) ? (
+              <Link to={`/annotator/ai-label/${taskId}`}>
+                <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50 px-6">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Xem lại bài làm
+                </Button>
+              </Link>
+            ) : (
+              <Link to={`/annotator/ai-label/${taskId}`}>
+                <Button variant="primary" className="bg-blue-600 hover:bg-blue-700 px-6">
+                  <PlayCircle className="h-4 w-4 mr-2" />
+                  {["Returned", "Rejected"].includes(task.status) ? "Sửa lại bài làm" : "Bắt đầu dán nhãn"}
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -124,21 +135,24 @@ const AnnotatorTaskDetailPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-6 border-t border-gray-100">
-              <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Current Progress</h3>
-              <div className="max-w-md mx-auto">
-                <div className="w-full bg-gray-100 rounded-full h-3">
-                  <div
-                    className="bg-blue-600 h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${task.status === "Submitted" ? 100 : task.status === "InProgress" ? 50 : 10}%` }}
-                  ></div>
-                </div>
-                <div className="flex justify-between items-center mt-3 text-sm">
-                  <span className="text-gray-500">Status: <span className="font-bold text-blue-600 uppercase tracking-wide ml-1">{statusLabel}</span></span>
-                  <span className="text-gray-400 font-medium">{task.status === "Submitted" ? "100%" : task.status === "InProgress" ? "50%" : "0%"}</span>
+            {/* Only show progress for active tasks */}
+            {!["Submitted", "Completed"].includes(task.status) && (
+              <div className="pt-6 border-t border-gray-100">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Current Progress</h3>
+                <div className="max-w-md mx-auto">
+                  <div className="w-full bg-gray-100 rounded-full h-3">
+                    <div
+                      className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${task.status === "InProgress" ? 50 : 10}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between items-center mt-3 text-sm">
+                    <span className="text-gray-500">Status: <span className="font-bold text-blue-600 uppercase tracking-wide ml-1">{statusLabel}</span></span>
+                    <span className="text-gray-400 font-medium">{task.status === "InProgress" ? "50%" : "0%"}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </Card>
 
           {/* Sidebar Info */}
