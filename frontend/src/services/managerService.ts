@@ -59,71 +59,97 @@ export interface CreateTaskRequest {
 }
 
 export const managerService = {
-  // Projects
+
+  // ================= PROJECTS =================
+
   async getProjects(): Promise<ServiceResponse<ProjectResponse[]>> {
-    const response = await api.get<ServiceResponse<ProjectResponse[]>>('/manager/projects');
+    const response = await api.get('/manager/projects');
     return response.data;
   },
 
   async getProjectById(projectId: string): Promise<ServiceResponse<ProjectResponse>> {
-    const response = await api.get<ServiceResponse<ProjectResponse>>(`/manager/projects/${projectId}`);
+    const response = await api.get(`/manager/projects/${projectId}`);
     return response.data;
   },
 
   async createProject(data: CreateProjectRequest): Promise<ServiceResponse<ProjectResponse>> {
-    const response = await api.post<ServiceResponse<ProjectResponse>>('/manager/projects', data);
+    const response = await api.post('/manager/projects', data);
     return response.data;
   },
 
   async updateProject(projectId: string, data: UpdateProjectRequest): Promise<ServiceResponse<ProjectResponse>> {
-    const response = await api.put<ServiceResponse<ProjectResponse>>(`/manager/projects/${projectId}`, data);
+    const response = await api.put(`/manager/projects/${projectId}`, data);
     return response.data;
   },
 
   async deleteProject(projectId: string): Promise<ServiceResponse<boolean>> {
-    const response = await api.delete<ServiceResponse<boolean>>(`/manager/projects/${projectId}`);
+    const response = await api.delete(`/manager/projects/${projectId}`);
     return response.data;
   },
 
   async archiveProject(projectId: string): Promise<ServiceResponse<ProjectResponse>> {
-    const response = await api.post<ServiceResponse<ProjectResponse>>(`/manager/projects/${projectId}/archive`);
+    const response = await api.post(`/manager/projects/${projectId}/archive`);
     return response.data;
   },
 
-  // Project Roles
+  // ✅ MISSING FIX
+  async changeProjectStatus(projectId: string, data: UpdateProjectRequest): Promise<ServiceResponse<ProjectResponse>> {
+    const response = await api.patch(`/manager/projects/${projectId}/status`, data);
+    return response.data;
+  },
+
+  // ================= PROJECT ROLES =================
+
   async getProjectRoles(projectId: string): Promise<ServiceResponse<any[]>> {
-    const response = await api.get<ServiceResponse<any[]>>(`/manager/projects/${projectId}/project-roles`);
+    const response = await api.get(`/manager/projects/${projectId}/project-roles`);
     return response.data;
   },
 
   async assignProjectRole(data: { projectId: string; userId: string; roleName: string }): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>('/manager/project-roles', data);
+    const response = await api.post('/manager/project-roles', data);
     return response.data;
   },
 
-  // Datasets
+  // ================= DATASETS =================
+
   async getDatasets(projectId: string): Promise<ServiceResponse<DatasetResponse[]>> {
-    const response = await api.get<ServiceResponse<DatasetResponse[]>>(`/manager/projects/${projectId}/datasets`);
+    const response = await api.get(`/manager/projects/${projectId}/datasets`);
     return response.data;
   },
 
   async getDatasetById(datasetId: string): Promise<ServiceResponse<DatasetResponse>> {
-    const response = await api.get<ServiceResponse<DatasetResponse>>(`/manager/datasets/${datasetId}`);
+    const response = await api.get(`/manager/datasets/${datasetId}`);
     return response.data;
   },
 
   async createDataset(data: CreateDatasetRequest): Promise<ServiceResponse<DatasetResponse>> {
-    const response = await api.post<ServiceResponse<DatasetResponse>>('/manager/datasets', data);
+    const response = await api.post('/manager/datasets', data);
     return response.data;
   },
 
   async updateDataset(datasetId: string, data: { name: string }): Promise<ServiceResponse<DatasetResponse>> {
-    const response = await api.put<ServiceResponse<DatasetResponse>>(`/manager/datasets/${datasetId}`, data);
+    const response = await api.put(`/manager/datasets/${datasetId}`, data);
     return response.data;
   },
 
   async deleteDataset(datasetId: string): Promise<ServiceResponse<boolean>> {
-    const response = await api.delete<ServiceResponse<boolean>>(`/manager/datasets/${datasetId}`);
+    const response = await api.delete(`/manager/datasets/${datasetId}`);
+    return response.data;
+  },
+
+  // ✅ MISSING FIX
+  async createDatasetVersion(data: any): Promise<ServiceResponse<any>> {
+    const response = await api.post('/manager/dataset-versions', data);
+    return response.data;
+  },
+
+  async getDatasetVersions(datasetId: string): Promise<ServiceResponse<any[]>> {
+    const response = await api.get(`/manager/datasets/${datasetId}/versions`);
+    return response.data;
+  },
+
+  async restoreDatasetVersion(versionId: string): Promise<ServiceResponse<any>> {
+    const response = await api.post(`/manager/dataset-versions/${versionId}/restore`);
     return response.data;
   },
 
@@ -132,192 +158,188 @@ export const managerService = {
     formData.append('datasetId', datasetId);
     files.forEach(file => formData.append('files', file));
 
-    const response = await api.post<ServiceResponse<any>>('/manager/datasets/upload-files', formData, {
+    const response = await api.post('/manager/datasets/upload-files', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
   },
 
   async uploadDatasetItems(data: any): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>('/manager/datasets/upload', data);
+    const response = await api.post('/manager/datasets/upload', data);
     return response.data;
   },
 
   async importDatasetExternal(data: any): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>('/manager/datasets/import-external', data);
+    const response = await api.post('/manager/datasets/import-external', data);
     return response.data;
   },
 
-  async restoreDatasetVersion(versionId: string): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>(`/manager/dataset-versions/${versionId}/restore`);
-    return response.data;
-  },
+  // ================= LABELS =================
 
-  // Labels
   async getLabels(projectId: string): Promise<ServiceResponse<ManagerLabelResponse[]>> {
-    const response = await api.get<ServiceResponse<ManagerLabelResponse[]>>(`/manager/projects/${projectId}/labels`);
+    const response = await api.get(`/manager/projects/${projectId}/labels`);
     return response.data;
   },
 
   async createLabel(data: CreateLabelRequest): Promise<ServiceResponse<ManagerLabelResponse>> {
-    const response = await api.post<ServiceResponse<ManagerLabelResponse>>('/manager/labels', data);
+    const response = await api.post('/manager/labels', data);
     return response.data;
   },
 
   async updateLabel(labelId: string, data: any): Promise<ServiceResponse<ManagerLabelResponse>> {
-    const response = await api.put<ServiceResponse<ManagerLabelResponse>>(`/manager/labels/${labelId}`, data);
+    const response = await api.put(`/manager/labels/${labelId}`, data);
     return response.data;
   },
 
   async deleteLabel(labelId: string): Promise<ServiceResponse<boolean>> {
-    const response = await api.delete<ServiceResponse<boolean>>(`/manager/labels/${labelId}`);
+    const response = await api.delete(`/manager/labels/${labelId}`);
     return response.data;
   },
 
-  // Label Categories
+  // ================= LABEL CATEGORY =================
+
   async createLabelCategory(data: any): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>('/manager/label-categories', data);
+    const response = await api.post('/manager/label-categories', data);
     return response.data;
   },
 
   async getLabelCategories(projectId: string): Promise<ServiceResponse<any[]>> {
-    const response = await api.get<ServiceResponse<any[]>>(`/manager/projects/${projectId}/label-categories`);
+    const response = await api.get(`/manager/projects/${projectId}/label-categories`);
     return response.data;
   },
 
   async updateLabelCategory(categoryId: string, data: any): Promise<ServiceResponse<any>> {
-    const response = await api.put<ServiceResponse<any>>(`/manager/label-categories/${categoryId}`, data);
+    const response = await api.put(`/manager/label-categories/${categoryId}`, data);
     return response.data;
   },
 
   async deleteLabelCategory(categoryId: string): Promise<ServiceResponse<boolean>> {
-    const response = await api.delete<ServiceResponse<boolean>>(`/manager/label-categories/${categoryId}`);
+    const response = await api.delete(`/manager/label-categories/${categoryId}`);
     return response.data;
   },
 
-  // Annotation Types
+  // ================= ANNOTATION TYPE =================
+
   async createAnnotationType(data: any): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>('/manager/annotation-types', data);
+    const response = await api.post('/manager/annotation-types', data);
     return response.data;
   },
 
   async getAnnotationTypes(projectId: string): Promise<ServiceResponse<any[]>> {
-    const response = await api.get<ServiceResponse<any[]>>(`/manager/projects/${projectId}/annotation-types`);
+    const response = await api.get(`/manager/projects/${projectId}/annotation-types`);
     return response.data;
   },
 
   async updateAnnotationType(annotationTypeId: string, data: any): Promise<ServiceResponse<any>> {
-    const response = await api.put<ServiceResponse<any>>(`/manager/annotation-types/${annotationTypeId}`, data);
+    const response = await api.put(`/manager/annotation-types/${annotationTypeId}`, data);
     return response.data;
   },
 
   async deleteAnnotationType(annotationTypeId: string): Promise<ServiceResponse<boolean>> {
-    const response = await api.delete<ServiceResponse<boolean>>(`/manager/annotation-types/${annotationTypeId}`);
+    const response = await api.delete(`/manager/annotation-types/${annotationTypeId}`);
     return response.data;
   },
 
-  // Guideline
+  // ================= GUIDELINE =================
+
   async updateGuideline(projectId: string, guideline: string): Promise<ServiceResponse<ProjectResponse>> {
-    const response = await api.patch<ServiceResponse<ProjectResponse>>(`/manager/projects/${projectId}/guideline`, { guideline });
+    const response = await api.patch(`/manager/projects/${projectId}/guideline`, { guideline });
     return response.data;
   },
 
-  // Tasks
+  // ================= TASK =================
+
   async createTask(data: CreateTaskRequest): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>('/manager/tasks', data);
+    const response = await api.post('/manager/tasks', data);
     return response.data;
   },
 
   async assignTask(taskId: string, data: any): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>(`/manager/tasks/${taskId}/assign`, data);
+    const response = await api.post(`/manager/tasks/${taskId}/assign`, data);
     return response.data;
   },
 
   async bulkAssignTasks(data: any): Promise<ServiceResponse<number>> {
-    const response = await api.post<ServiceResponse<number>>('/manager/tasks/bulk-assign', data);
+    const response = await api.post('/manager/tasks/bulk-assign', data);
     return response.data;
   },
 
   async reassignTask(taskId: string, data: any): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>(`/manager/tasks/${taskId}/reassign`, data);
+    const response = await api.post(`/manager/tasks/${taskId}/reassign`, data);
     return response.data;
   },
 
   async pauseTask(taskId: string): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>(`/manager/tasks/${taskId}/pause`);
+    const response = await api.post(`/manager/tasks/${taskId}/pause`);
     return response.data;
   },
 
   async resumeTask(taskId: string): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>(`/manager/tasks/${taskId}/resume`);
+    const response = await api.post(`/manager/tasks/${taskId}/resume`);
     return response.data;
   },
 
   async cancelTask(taskId: string): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>(`/manager/tasks/${taskId}/cancel`);
+    const response = await api.post(`/manager/tasks/${taskId}/cancel`);
     return response.data;
   },
 
   async requestRelabeling(taskId: string, data: any): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>(`/manager/tasks/${taskId}/relabel`, data);
+    const response = await api.post(`/manager/tasks/${taskId}/relabel`, data);
     return response.data;
   },
 
   async getTaskProgress(projectId: string): Promise<ServiceResponse<any>> {
-    const response = await api.get<ServiceResponse<any>>(`/manager/projects/${projectId}/tasks/progress`);
+    const response = await api.get(`/manager/projects/${projectId}/tasks/progress`);
     return response.data;
   },
 
   async getTaskHistory(taskId: string): Promise<ServiceResponse<any[]>> {
-    const response = await api.get<ServiceResponse<any[]>>(`/manager/tasks/${taskId}/history`);
+    const response = await api.get(`/manager/tasks/${taskId}/history`);
     return response.data;
   },
 
-  // Monitoring
+  // ================= MONITORING =================
+
   async getLabelingOverview(projectId: string): Promise<ServiceResponse<any>> {
-    const response = await api.get<ServiceResponse<any>>(`/manager/projects/${projectId}/monitoring/overview`);
+    const response = await api.get(`/manager/projects/${projectId}/monitoring/overview`);
     return response.data;
   },
 
   async getAnnotatorPerformance(projectId: string): Promise<ServiceResponse<any[]>> {
-    const response = await api.get<ServiceResponse<any[]>>(`/manager/projects/${projectId}/monitoring/annotator-performance`);
+    const response = await api.get(`/manager/projects/${projectId}/monitoring/annotator-performance`);
     return response.data;
   },
 
   async getReviewStats(projectId: string): Promise<ServiceResponse<any>> {
-    const response = await api.get<ServiceResponse<any>>(`/manager/projects/${projectId}/monitoring/review-stats`);
+    const response = await api.get(`/manager/projects/${projectId}/monitoring/review-stats`);
     return response.data;
   },
 
   async getInconsistentLabels(projectId: string): Promise<ServiceResponse<any[]>> {
-    const response = await api.get<ServiceResponse<any[]>>(`/manager/projects/${projectId}/monitoring/inconsistent-labels`);
+    const response = await api.get(`/manager/projects/${projectId}/monitoring/inconsistent-labels`);
     return response.data;
   },
 
   async getQualityReport(projectId: string): Promise<ServiceResponse<any>> {
-    const response = await api.get<ServiceResponse<any>>(`/manager/projects/${projectId}/monitoring/quality-report`);
+    const response = await api.get(`/manager/projects/${projectId}/monitoring/quality-report`);
     return response.data;
   },
 
-  // Dataset Versions
-  async getDatasetVersions(datasetId: string): Promise<ServiceResponse<any[]>> {
-    const response = await api.get<ServiceResponse<any[]>>(`/manager/datasets/${datasetId}/versions`);
-    return response.data;
-  },
+  // ================= EXPORT =================
 
-  // Exports
   async createExport(data: any): Promise<ServiceResponse<any>> {
-    const response = await api.post<ServiceResponse<any>>('/manager/exports', data);
+    const response = await api.post('/manager/exports', data);
     return response.data;
   },
 
   async getProjectExports(projectId: string): Promise<ServiceResponse<any[]>> {
-    const response = await api.get<ServiceResponse<any[]>>(`/manager/projects/${projectId}/exports`);
+    const response = await api.get(`/manager/projects/${projectId}/exports`);
     return response.data;
   },
 
   async validateApprovedData(projectId: string): Promise<ServiceResponse<any>> {
-    const response = await api.get<ServiceResponse<any>>(`/manager/projects/${projectId}/exports/validate`);
+    const response = await api.get(`/manager/projects/${projectId}/exports/validate`);
     return response.data;
   },
 
@@ -326,16 +348,17 @@ export const managerService = {
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `export-${exportId}.zip`); // Default filename
+    link.setAttribute('download', `export-${exportId}.zip`);
     document.body.appendChild(link);
     link.click();
     window.URL.revokeObjectURL(url);
   },
 
-  // Activity Logs
+  // ================= ACTIVITY LOG =================
+
   async getActivityLogs(projectId?: string, userId?: string, page = 1, pageSize = 50): Promise<ServiceResponse<any[]>> {
     const params = { projectId, userId, page, pageSize };
-    const response = await api.get<ServiceResponse<any[]>>('/manager/activity-logs', { params });
+    const response = await api.get('/manager/activity-logs', { params });
     return response.data;
   }
 };

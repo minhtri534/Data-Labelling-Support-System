@@ -18,10 +18,6 @@ import ManagerDatasetDetailPage from './pages/manager/datasets/ManagerDatasetDet
 import ManagerLabelManagementPage from './pages/manager/labels/ManagerLabelManagementPage';
 import ManagerGuidelinePage from './pages/manager/labels/ManagerGuidelinePage';
 import ManagerCreateTaskPage from './pages/manager/tasks/ManagerCreateTaskPage';
-import ManagerProjectBudgetPage from "./pages/manager/finance/ManagerProjectBudgetPage";
-import ManagerCostApprovalPage from "./pages/manager/finance/ManagerCostApprovalPage";
-import ManagerExpenseReportPage from "./pages/manager/finance/ManagerExpenseReportPage";
-import ManagerPaymentPage from "./pages/manager/finance/ManagerPaymentPage";
 
 // Reviewer Pages
 import ReviewerDashboard from './pages/reviewer/ReviewerDashboard';
@@ -81,11 +77,7 @@ function App() {
         <Route path="/manager/label-config" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerLabelManagementPage /></ProtectedRoute>} />
         <Route path="/manager/guidelines" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerGuidelinePage /></ProtectedRoute>} />
         <Route path="/manager/tasks/create" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerCreateTaskPage /></ProtectedRoute>} />
-        <Route path="/manager/budget" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerProjectBudgetPage /></ProtectedRoute>} />
-        <Route path="/manager/approve-cost" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerCostApprovalPage /></ProtectedRoute>} />
-        <Route path="/manager/expense-report" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerExpenseReportPage /></ProtectedRoute>} />
-        <Route path="/manager/payment" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerPaymentPage /></ProtectedRoute>} />
-
+        
         {/* Reviewer Routes */}
         <Route path="/reviewer" element={<ProtectedRoute allowedRoles={['reviewer', 'admin']}><ReviewerDashboard /></ProtectedRoute>} />
         <Route path="/review" element={<ProtectedRoute allowedRoles={['reviewer', 'admin']}><ReviewQueuePage /></ProtectedRoute>} />

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, Tag, Edit2, Trash2, Settings, HelpCircle, Save, AlertCircle, Loader } from "lucide-react";
+import { ArrowLeft, Tag, Trash2, Plus, Loader, AlertCircle } from "lucide-react";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import { Card } from "../../../components/ui/Card";
 import { Label } from "../../../components/ui/Label";
@@ -17,44 +17,35 @@ const ManagerLabelManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Form states
-  const [categoryName, setCategoryName] = useState("");
-  const [categoryDescription, setCategoryDescription] = useState("");
-  const [labelName, setLabelName] = useState("");
+  // NEW states
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newLabelName, setNewLabelName] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       if (!projectId) {
-        setError("Project ID is missing");
+        setError("Missing projectId");
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
-        const [catResponse, labelResponse] = await Promise.all([
+        const [catRes, labelRes] = await Promise.all([
           managerService.getLabelCategories(projectId),
           managerService.getLabels(projectId),
         ]);
 
-        if (catResponse.isSuccess && catResponse.data) {
-          setCategories(catResponse.data);
-          if (catResponse.data.length > 0) {
-            setSelectedCategory(catResponse.data[0]);
-            setCategoryName(catResponse.data[0].name);
-            setCategoryDescription(catResponse.data[0].description || "");
-          }
+        if (catRes.isSuccess && catRes.data) {
+          setCategories(catRes.data);
+          setSelectedCategory(catRes.data[0] || null);
         }
 
-        if (labelResponse.isSuccess && labelResponse.data) {
-          setLabels(labelResponse.data);
-        }
-
-        if (!catResponse.isSuccess) {
-          setError(catResponse.message || "Failed to fetch categories");
+        if (labelRes.isSuccess && labelRes.data) {
+          setLabels(labelRes.data);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch data");
+        setError("Failed to fetch data");
       } finally {
         setLoading(false);
       }
@@ -63,55 +54,65 @@ const ManagerLabelManagementPage: React.FC = () => {
     fetchData();
   }, [projectId]);
 
-  const handleCategorySelect = (category: LabelCategoryResponse) => {
-    setSelectedCategory(category);
-    setCategoryName(category.name);
-    setCategoryDescription(category.description || "");
-  };
+  const handleCreateCategory = async () => {
+    if (!projectId || !newCategoryName) return;
 
-  const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
-    if (!window.confirm(`Delete category "${categoryName}"?`)) return;
+    const res = await managerService.createLabelCategory({
+      projectId,
+      name: newCategoryName,
+    });
 
-    try {
-      const response = await managerService.deleteLabelCategory(categoryId);
-      if (response.isSuccess) {
-        setCategories(prev => prev.filter(c => c.id !== categoryId));
-        if (selectedCategory?.id === categoryId) {
-          setSelectedCategory(null);
-        }
-      } else {
-        alert(response.message || "Failed to delete category");
-      }
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete category");
+    if (res.isSuccess && res.data) {
+      setCategories(prev => [...prev, res.data]);
+      setNewCategoryName("");
+    } else {
+      alert(res.message);
     }
   };
 
-  const handleDeleteLabel = async (labelId: string) => {
-    if (!window.confirm("Delete this label?")) return;
+  const handleCreateLabel = async () => {
+    if (!projectId || !newLabelName) return;
 
-    try {
-      const response = await managerService.deleteLabel(labelId);
-      if (response.isSuccess) {
-        setLabels(prev => prev.filter(l => l.id !== labelId));
-      } else {
-        alert(response.message || "Failed to delete label");
-      }
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete label");
+    const res = await managerService.createLabel({
+      projectId,
+      name: newLabelName,
+      yoloClassId: Math.floor(Math.random() * 1000),
+    });
+
+    if (res.isSuccess && res.data) {
+      setLabels(prev => [...prev, res.data]);
+      setNewLabelName("");
+    } else {
+      alert(res.message);
     }
   };
 
-  const getCategoryLabels = () => {
-    if (!selectedCategory) return [];
-    return labels.filter(l => l.categoryId === selectedCategory.id);
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm("Delete this category?")) return;
+
+    const res = await managerService.deleteLabelCategory(id);
+    if (res.isSuccess) {
+      setCategories(prev => prev.filter(c => c.id !== id));
+      if (selectedCategory?.id === id) setSelectedCategory(null);
+    }
   };
+
+  const handleDeleteLabel = async (id: string) => {
+    if (!confirm("Delete this label?")) return;
+
+    const res = await managerService.deleteLabel(id);
+    if (res.isSuccess) {
+      setLabels(prev => prev.filter(l => l.id !== id));
+    }
+  };
+
+  const categoryLabels = labels.filter(l => l.categoryId === selectedCategory?.id);
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center py-12">
-          <Loader className="h-6 w-6 animate-spin text-blue-600" />
+        <div className="flex justify-center py-10">
+          <Loader className="animate-spin" />
         </div>
       </DashboardLayout>
     );
@@ -119,131 +120,92 @@ const ManagerLabelManagementPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+
         {error && (
-          <Card variant="glass" className="p-4 bg-red-50 border border-red-200">
-            <div className="flex items-center gap-2 text-red-800">
-              <AlertCircle className="h-5 w-5" />
-              <span>{error}</span>
-            </div>
+          <Card className="p-4 text-red-600 flex items-center gap-2">
+            <AlertCircle /> {error}
           </Card>
         )}
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to={projectId ? `/manager/projects/${projectId}` : "/manager/projects"} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-              <ArrowLeft className="h-6 w-6 text-gray-600" />
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Label Configuration</h1>
-              <p className="text-gray-500 mt-1">Define label categories and rules for your project.</p>
-            </div>
-          </div>
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Link to={`/manager/projects/${projectId}`}>
+            <ArrowLeft />
+          </Link>
+          <h1 className="text-2xl font-bold">Label Management</h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Danh sách danh mục bên trái */}
-          <div className="md:col-span-1 space-y-4">
-            <h3 className="font-semibold text-gray-700 uppercase text-xs tracking-wider">Categories ({categories.length})</h3>
-            {categories.length === 0 ? (
-              <p className="text-sm text-gray-500">No categories yet</p>
-            ) : (
-              categories.map(cat => (
-                <Card 
-                  key={cat.id} 
-                  className={`p-4 cursor-pointer border-2 transition-all ${
-                    selectedCategory?.id === cat.id 
-                      ? "border-blue-500 bg-blue-50" 
-                      : "border-transparent hover:border-blue-300"
-                  }`}
-                  onClick={() => handleCategorySelect(cat)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="font-bold text-gray-900">{cat.name}</div>
-                      <div className="text-xs text-gray-500 mt-1">{cat.description || "No description"}</div>
-                    </div>
-                    <Tag className="h-4 w-4 text-blue-500" />
-                  </div>
-                </Card>
-              ))
-            )}
+        <div className="grid grid-cols-3 gap-6">
+
+          {/* LEFT */}
+          <div className="space-y-4">
+            <h3 className="font-semibold">Categories</h3>
+
+            {/* Create category */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="New category"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+              />
+              <Button onClick={handleCreateCategory}>
+                <Plus size={16} />
+              </Button>
+            </div>
+
+            {categories.map(c => (
+              <Card
+                key={c.id}
+                className={`p-3 cursor-pointer ${
+                  selectedCategory?.id === c.id ? "bg-blue-50" : ""
+                }`}
+                onClick={() => setSelectedCategory(c)}
+              >
+                {c.name}
+              </Card>
+            ))}
           </div>
 
-          {/* Chi tiết chỉnh sửa bên phải */}
-          {selectedCategory ? (
-            <div className="md:col-span-2">
-              <Card variant="glass" className="p-8 space-y-6">
-                <div className="flex justify-between items-center border-b pb-4">
-                  <h2 className="text-xl font-bold text-gray-800">Category: {selectedCategory.name}</h2>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-red-600 border-red-600 hover:bg-red-50"
-                    onClick={() => handleDeleteCategory(selectedCategory.id, selectedCategory.name)}
-                  >
-                    <Trash2 className="h-4 w-4" />
+          {/* RIGHT */}
+          <div className="col-span-2 space-y-4">
+            {selectedCategory ? (
+              <Card className="p-6 space-y-4">
+                <div className="flex justify-between">
+                  <h2>{selectedCategory.name}</h2>
+                  <Button onClick={() => handleDeleteCategory(selectedCategory.id)}>
+                    <Trash2 size={16} />
                   </Button>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <Label>Category Name</Label>
-                    <Input 
-                      value={categoryName} 
-                      onChange={(e) => setCategoryName(e.currentTarget.value)}
-                      disabled
-                    />
-                  </div>
-                  <div>
-                    <Label>Description</Label>
-                    <Input 
-                      value={categoryDescription} 
-                      onChange={(e) => setCategoryDescription(e.currentTarget.value)}
-                      disabled
-                      placeholder="No description"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label>Labels in Category</Label>
-                    <div className="space-y-2 mt-2">
-                      {getCategoryLabels().length === 0 ? (
-                        <p className="text-sm text-gray-500">No labels in this category</p>
-                      ) : (
-                        getCategoryLabels().map((label) => (
-                          <div key={label.id} className="flex gap-2 items-center p-2 bg-gray-50 rounded">
-                            <Input 
-                              value={label.name} 
-                              disabled
-                              className="flex-1"
-                            />
-                            <span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-600">
-                              Class {label.yoloClassId}
-                            </span>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-red-500"
-                              onClick={() => handleDeleteLabel(label.id)}
-                            >
-                              <Trash2 className="h-4 w-4"/>
-                            </Button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
+                {/* Create label */}
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="New label"
+                    value={newLabelName}
+                    onChange={(e) => setNewLabelName(e.target.value)}
+                  />
+                  <Button onClick={handleCreateLabel}>
+                    <Plus size={16} />
+                  </Button>
                 </div>
+
+                {categoryLabels.map(l => (
+                  <div key={l.id} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                    <span>{l.name}</span>
+                    <Button onClick={() => handleDeleteLabel(l.id)}>
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                ))}
               </Card>
-            </div>
-          ) : (
-            <div className="md:col-span-2">
-              <Card variant="glass" className="p-8">
-                <p className="text-center text-gray-500 py-8">Select a category to view details</p>
+            ) : (
+              <Card className="p-6 text-center text-gray-500">
+                Select a category
               </Card>
-            </div>
-          )}
+            )}
+          </div>
+
         </div>
       </div>
     </DashboardLayout>
