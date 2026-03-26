@@ -32,25 +32,15 @@ const NAV_BY_ROLE = {
     { label: 'Dashboard', icon: LayoutDashboard, path: '/reviewer' },
     { label: 'Review Queue', icon: CheckSquare, path: '/review' },
     { label: 'Quality Reports', icon: ClipboardList, path: '/quality-report' },
-    { label: 'My Earnings', icon: History, path: '/reviewer/earnings' },
   ],
 
   annotator: [
     { label: 'Task List', icon: ClipboardList, path: '/annotator/tasks' }, 
-    { label: 'AI-assisted Labeling', icon: Sparkles, path: '/annotator/ai-label' },
-    { label: 'Rework Queue', icon: History, path: '/annotator/returned' },
-    { label: 'Earnings', icon: History, path: '/annotator/earnings' },
   ],
 
   manager: [
     { label: 'Projects', icon: ClipboardList, path: '/manager/projects' }, 
     { label: 'Datasets', icon: ShieldCheck, path: '/manager/datasets' }, 
-    { label: 'Label Config', icon: Settings, path: '/manager/label-config' }, 
-    { label: 'Guidelines', icon: MessageSquare, path: '/manager/guidelines' }, 
-    { label: 'Budget', icon: LayoutDashboard, path: '/manager/budget' },
-    { label: 'Approve Costs', icon: CheckSquare, path: '/manager/approve-cost' },
-    { label: 'Expense Reports', icon: History, path: '/manager/expense-report' },
-    { label: 'Payments', icon: History, path: '/manager/payment' },
   ],
 
   admin: [
