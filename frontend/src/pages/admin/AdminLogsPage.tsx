@@ -34,13 +34,13 @@ const AdminLogsPage: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `nhat-ky-he-thong-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `system-activity-log-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-      alert("Đã tải xuống nhật ký hệ thống.");
+      alert("System activity log downloaded.");
     } catch (error) {
-      alert("Lỗi khi xuất nhật ký.");
+      alert("Error exporting logs.");
     }
   };
 
@@ -49,12 +49,12 @@ const AdminLogsPage: React.FC = () => {
       <div className="space-y-6 max-w-6xl mx-auto">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Nhật ký hoạt động</h1>
-            <p className="text-gray-500">Theo dõi toàn bộ các thao tác quản trị và hệ thống</p>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Activity Logs</h1>
+            <p className="text-gray-500">Track all admin and system actions</p>
           </div>
           <Button onClick={handleExport} variant="outline" className="gap-2 border-blue-200 text-blue-600 hover:bg-blue-50">
             <Download size={18} />
-            Xuất file CSV
+            Export CSV
           </Button>
         </div>
 
@@ -63,14 +63,14 @@ const AdminLogsPage: React.FC = () => {
             <Search className="absolute left-3 top-2.5 text-gray-400 h-5 w-5" />
             <Input 
               className="pl-10 border-gray-200 focus:ring-blue-500" 
-              placeholder="Lọc theo email người dùng, hành động hoặc thực thể..." 
+              placeholder="Filter by user email, action, or entity..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <Button variant="ghost" className="text-gray-500">
             <Filter size={18} className="mr-2" />
-            Bộ lọc nâng cao
+            Advanced filters
           </Button>
         </div>
 
@@ -78,18 +78,18 @@ const AdminLogsPage: React.FC = () => {
           {loading ? (
             <div className="py-20 flex flex-col items-center justify-center text-gray-500 gap-3">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-              <p>Đang tải nhật ký...</p>
+              <p>Loading logs...</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <th className="px-6 py-4 text-left font-bold text-gray-600 uppercase text-xs">Hành động</th>
-                    <th className="px-6 py-4 text-left font-bold text-gray-600 uppercase text-xs">Người thực hiện</th>
-                    <th className="px-6 py-4 text-left font-bold text-gray-600 uppercase text-xs">Thực thể</th>
-                    <th className="px-6 py-4 text-left font-bold text-gray-600 uppercase text-xs">Chi tiết</th>
-                    <th className="px-6 py-4 text-left font-bold text-gray-600 uppercase text-xs">Thời gian</th>
+                    <th className="px-6 py-4 text-left font-bold text-gray-600 uppercase text-xs">Action</th>
+                    <th className="px-6 py-4 text-left font-bold text-gray-600 uppercase text-xs">Actor</th>
+                    <th className="px-6 py-4 text-left font-bold text-gray-600 uppercase text-xs">Entity</th>
+                    <th className="px-6 py-4 text-left font-bold text-gray-600 uppercase text-xs">Details</th>
+                    <th className="px-6 py-4 text-left font-bold text-gray-600 uppercase text-xs">Time</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -118,17 +118,17 @@ const AdminLogsPage: React.FC = () => {
                       <td className="px-6 py-4 text-gray-400 whitespace-nowrap">
                         <div className="flex items-center gap-2 text-xs">
                           <Clock size={12} />
-                          {new Date(log.timestamp).toLocaleString('vi-VN')}
+                          {new Date(log.timestamp).toLocaleString('en-US')}
                         </div>
                       </td>
                     </tr>
                   ))}
                   {logs.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center text-gray-400 italic">
-                        Không tìm thấy nhật ký hoạt động nào.
-                      </td>
-                    </tr>
+                        <td colSpan={5} className="py-12 text-center text-gray-400 italic">
+                          No activity logs found.
+                        </td>
+                      </tr>
                   )}
                 </tbody>
               </table>
@@ -144,9 +144,9 @@ const AdminLogsPage: React.FC = () => {
             onClick={() => setPage(p => p - 1)}
             className="text-xs"
           >
-            Trang trước
+            Previous
           </Button>
-          <span className="text-sm text-gray-500 font-medium">Trang {page}</span>
+          <span className="text-sm text-gray-500 font-medium">Page {page}</span>
           <Button 
             variant="outline" 
             size="sm"
@@ -154,7 +154,7 @@ const AdminLogsPage: React.FC = () => {
             onClick={() => setPage(p => p + 1)}
             className="text-xs"
           >
-            Trang sau
+            Next
           </Button>
         </div>
       </div>

@@ -61,7 +61,7 @@ const AdminUserManagement: React.FC = () => {
   // =============================
   const handleCreateUser = async () => {
     if (!newUserName || !newUserEmail || !newUserPassword || !newUserRole) {
-      alert('Vui lòng điền đầy đủ các thông tin: Tên, Email, Mật khẩu và Vai trò.');
+      alert('Please fill in all fields: Name, Email, Password and Role.');
       return;
     }
 
@@ -77,10 +77,10 @@ const AdminUserManagement: React.FC = () => {
       setNewUserName('');
       setNewUserEmail('');
       setNewUserPassword('');
-      alert('Tạo người dùng mới thành công!');
+      alert('New user created successfully!');
       fetchData();
     } else {
-      alert(res.message || 'Lỗi khi tạo người dùng.');
+      alert(res.message || 'Error creating user.');
     }
   };
 
@@ -90,10 +90,10 @@ const AdminUserManagement: React.FC = () => {
   const handleChangeRole = async (userId: string, roleId: string) => {
     const res = await adminService.assignRole(userId, { roleId });
     if (res.isSuccess) {
-      alert('Cập nhật vai trò thành công!');
+      alert('Role updated successfully!');
       fetchData();
     } else {
-      alert(res.message || 'Lỗi khi cập nhật vai trò.');
+      alert(res.message || 'Error updating role.');
     }
   };
 
@@ -101,14 +101,14 @@ const AdminUserManagement: React.FC = () => {
   // DISABLE USER (UC-102)
   // =============================
   const handleDisableUser = async (userId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn vô hiệu hóa người dùng này không?')) return;
+    if (!confirm('Are you sure you want to disable this user?')) return;
     
     const res = await adminService.disableUser(userId);
-    if (res.isSuccess) {
-      alert('Đã vô hiệu hóa người dùng.');
+      if (res.isSuccess) {
+      alert('User disabled.');
       fetchData();
     } else {
-      alert(res.message || 'Lỗi khi vô hiệu hóa người dùng.');
+      alert(res.message || 'Error disabling user.');
     }
   };
 
@@ -116,14 +116,14 @@ const AdminUserManagement: React.FC = () => {
   // DELETE USER (UC-103)
   // =============================
   const handleDeleteUser = async (id: string) => {
-    if (!confirm('Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa người dùng này?')) return;
+    if (!confirm('This action is irreversible. Are you sure you want to delete this user?')) return;
 
     const res = await userService.delete(id);
     if (res.isSuccess) {
-      alert('Đã xóa người dùng khỏi hệ thống.');
+      alert('User removed from the system.');
       fetchData();
     } else {
-      alert(res.message || 'Lỗi khi xóa người dùng.');
+      alert(res.message || 'Error deleting user.');
     }
   };
 
@@ -131,16 +131,16 @@ const AdminUserManagement: React.FC = () => {
   // RESET PASSWORD
   // =============================
   const handleResetPassword = async (userId: string) => {
-    const newPassword = prompt('Nhập mật khẩu mới cho người dùng này:');
+    const newPassword = prompt('Enter a new password for this user:');
     if (!newPassword) return;
 
     setResettingId(userId);
     try {
       const res = await adminService.resetUserPassword(userId, { newPassword });
-      if (res.isSuccess) {
-        alert('Đặt lại mật khẩu thành công!');
+        if (res.isSuccess) {
+        alert('Password reset successfully!');
       } else {
-        alert(res.message || 'Lỗi khi đặt lại mật khẩu.');
+        alert(res.message || 'Error resetting password.');
       }
     } finally {
       setResettingId(null);
@@ -153,20 +153,20 @@ const AdminUserManagement: React.FC = () => {
 
         {/* HEADER */}
         <div>
-          <h1 className="text-3xl font-bold">Quản lý người dùng (Admin)</h1>
-          <p className="text-gray-500">Quản lý tài khoản, phân quyền và trạng thái hoạt động</p>
+          <h1 className="text-3xl font-bold">User Management (Admin)</h1>
+          <p className="text-gray-500">Manage accounts, roles and active status</p>
         </div>
 
         {/* CREATE USER FORM */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
           <h2 className="font-semibold text-gray-700 flex items-center gap-2">
             <Users className="h-5 w-5 text-blue-600" />
-            Tạo tài khoản mới
+            Create New Account
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <Input
-              placeholder="Họ và tên"
+              placeholder="Full name"
               value={newUserName}
               onChange={(e) => setNewUserName(e.target.value)}
             />
@@ -177,7 +177,7 @@ const AdminUserManagement: React.FC = () => {
             />
             <Input
               type="password"
-              placeholder="Mật khẩu"
+              placeholder="Password"
               value={newUserPassword}
               onChange={(e) => setNewUserPassword(e.target.value)}
             />
@@ -192,7 +192,7 @@ const AdminUserManagement: React.FC = () => {
             </select>
 
             <Button onClick={handleCreateUser} className="bg-blue-600 hover:bg-blue-700">
-              Xác nhận tạo
+              Create
             </Button>
           </div>
         </div>
@@ -200,9 +200,9 @@ const AdminUserManagement: React.FC = () => {
         {/* SEARCH */}
         <div className="flex gap-4 items-center bg-white p-2 rounded-lg shadow-sm border border-gray-100">
           <Search className="h-5 w-5 text-gray-400 ml-2" />
-          <Input
+            <Input
             className="border-none focus:ring-0 shadow-none"
-            placeholder="Tìm kiếm theo tên hoặc email..."
+            placeholder="Search by name or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -211,9 +211,9 @@ const AdminUserManagement: React.FC = () => {
         {/* USER TABLE */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           {loading ? (
-            <div className="p-12 flex flex-col items-center justify-center gap-3 text-gray-500">
+              <div className="p-12 flex flex-col items-center justify-center gap-3 text-gray-500">
               <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
-              <p>Đang tải danh sách người dùng...</p>
+              <p>Loading users...</p>
             </div>
           ) : (
             <>

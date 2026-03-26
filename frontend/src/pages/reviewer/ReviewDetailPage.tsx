@@ -40,7 +40,7 @@ const ReviewDetailPage: React.FC = () => {
             const url = URL.createObjectURL(blob);
             setSecureImageUrl(url);
           } catch (err) {
-            console.error("Lỗi khi tải hình ảnh bảo mật:", err);
+            console.error("Error loading secure image:", err);
           }
         }
       } finally {
@@ -99,7 +99,7 @@ const ReviewDetailPage: React.FC = () => {
       <DashboardLayout>
         <div className="py-20 flex flex-col items-center justify-center text-gray-500 gap-3">
           <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-          <p className="font-medium text-lg">Đang tải dữ liệu dán nhãn...</p>
+          <p className="font-medium text-lg">Loading labeled data...</p>
         </div>
       </DashboardLayout>
     );
@@ -111,9 +111,9 @@ const ReviewDetailPage: React.FC = () => {
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={() => navigate("/review")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Quay lại
+            Back
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">Chi tiết kiểm duyệt</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Review Details</h1>
           <Badge variant="primary" className="ml-auto">ID: {id?.slice(-6)}</Badge>
         </div>
 
@@ -134,7 +134,7 @@ const ReviewDetailPage: React.FC = () => {
                 ) : (
                   <div className="flex flex-col items-center gap-3 text-gray-400 py-20">
                     <Loader2 className="h-8 w-8 animate-spin" />
-                    <p>Đang tải hình ảnh bảo mật...</p>
+                    <p>Loading secure image...</p>
                   </div>
                 )}
                 
@@ -175,7 +175,7 @@ const ReviewDetailPage: React.FC = () => {
             <Card className="p-5 space-y-4">
               <h2 className="font-bold text-lg flex items-center gap-2">
                 <ShieldCheck className="text-blue-600 h-5 w-5" />
-                Kết quả dán nhãn
+                Labeling Results
               </h2>
               <div className="space-y-3">
                 {task?.annotations.map((ann) => (
@@ -188,7 +188,7 @@ const ReviewDetailPage: React.FC = () => {
                 ))}
                 {(!task?.annotations || task.annotations.length === 0) && (
                   <p className="text-sm text-gray-500 italic text-center py-4 bg-gray-50 rounded-lg">
-                    Chưa có nhãn nào được dán.
+                    No labels have been applied.
                   </p>
                 )}
               </div>
@@ -197,11 +197,11 @@ const ReviewDetailPage: React.FC = () => {
             <Card className="p-5 space-y-4">
               <h2 className="font-bold text-lg flex items-center gap-2">
                 <MessageSquare className="text-green-600 h-5 w-5" />
-                Phản hồi kiểm duyệt
+                Review Feedback
               </h2>
               <textarea
                 className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                placeholder="Nhập nhận xét hoặc hướng dẫn sửa đổi tại đây..."
+                placeholder="Enter comments or revision instructions here..."
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
               />
@@ -213,7 +213,7 @@ const ReviewDetailPage: React.FC = () => {
                   disabled={isSubmitting}
                 >
                   <XCircle className="h-4 w-4 mr-2" />
-                  Trả về
+                  Return
                 </Button>
                 <Button 
                   className="bg-green-600 hover:bg-green-700 text-white"
@@ -221,7 +221,7 @@ const ReviewDetailPage: React.FC = () => {
                   disabled={isSubmitting}
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Duyệt
+                  Approve
                 </Button>
               </div>
             </Card>

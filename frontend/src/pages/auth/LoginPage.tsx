@@ -56,9 +56,9 @@ const LoginPage: React.FC = () => {
   };
 
   const handleGoogleLogin = () => {
-    // Trong thực tế, bạn sẽ dùng thư viện @react-oauth/google
-    // Ở đây tôi demo luồng xử lý sau khi có idToken từ Google
-    alert("Tính năng này yêu cầu Client ID từ Google Cloud Console. Vui lòng cấu hình trong appsettings.json và cài đặt thư viện frontend.");
+    // In production, use @react-oauth/google
+    // This block demonstrates handling an idToken from Google
+    alert("This feature requires a Google Cloud Client ID. Configure it in appsettings.json and install the frontend Google OAuth library.");
   };
 
   return (

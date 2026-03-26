@@ -8,7 +8,7 @@ import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { authService } from "../../services/authService";
 
-// Helper để hiển thị lỗi input
+// Helper to display input errors
 const ErrorMessage: React.FC<{ message?: string }> = ({ message }) => {
   if (!message) return null;
   return (
@@ -42,41 +42,41 @@ const RegisterPage: React.FC = () => {
     const newErrors: Record<string, string> = {};
     
     if (!formData.fullName.trim()) {
-      newErrors.fullName = "Họ và tên không được để trống";
+      newErrors.fullName = "Full name is required";
     } else if (formData.fullName.length > 150) {
-      newErrors.fullName = "Họ và tên không được quá 150 ký tự";
+      newErrors.fullName = "Full name must not exceed 150 characters";
     }
     
     if (!formData.email) {
-      newErrors.email = "Email không được để trống";
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email không hợp lệ";
+      newErrors.email = "Invalid email address";
     } else if (formData.email.length > 320) {
-      newErrors.email = "Email không được quá 320 ký tự";
+      newErrors.email = "Email must not exceed 320 characters";
     }
     
     if (!formData.password) {
-      newErrors.password = "Mật khẩu không được để trống";
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
-      newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự";
+      newErrors.password = "Password must be at least 8 characters";
     } else if (formData.password.length > 128) {
-      newErrors.password = "Mật khẩu không được quá 128 ký tự";
+      newErrors.password = "Password must not exceed 128 characters";
     }
     
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
+      newErrors.confirmPassword = "Password confirmation does not match";
     }
 
     if (formData.phoneNumber && formData.phoneNumber.length > 20) {
-      newErrors.phoneNumber = "Số điện thoại không được quá 20 ký tự";
+      newErrors.phoneNumber = "Phone number must not exceed 20 characters";
     }
 
     if (formData.identifyNumber && formData.identifyNumber.length > 20) {
-      newErrors.identifyNumber = "CMND/CCCD không được quá 20 ký tự";
+      newErrors.identifyNumber = "ID number must not exceed 20 characters";
     }
 
     if (formData.address && formData.address.length > 300) {
-      newErrors.address = "Địa chỉ không được quá 300 ký tự";
+      newErrors.address = "Address must not exceed 300 characters";
     }
 
     setErrors(newErrors);
@@ -86,7 +86,7 @@ const RegisterPage: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Xóa lỗi khi người dùng nhập lại
+    // Clear error when user types
     if (errors[name]) {
       setErrors(prev => {
         const updated = { ...prev };
@@ -118,14 +118,14 @@ const RegisterPage: React.FC = () => {
       });
 
       if (response.isSuccess) {
-        setSuccessMessage(response.message || "Đăng ký tài khoản thành công!");
+        setSuccessMessage(response.message || "Account created successfully!");
         
-        // Đợi 2 giây để người dùng thấy thông báo rồi mới chuyển trang
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
+          // Wait 2 seconds so the user can see the message, then navigate
+          setTimeout(() => {
+            navigate("/login");
+          }, 2000);
       } else {
-        setServerError(response.message || "Đăng ký thất bại");
+          setServerError(response.message || "Registration failed");
       }
     } catch (err: any) {
       console.error('Register error:', err);
@@ -142,9 +142,9 @@ const RegisterPage: React.FC = () => {
         });
         
         setErrors(newErrors);
-        setServerError("Vui lòng kiểm tra lại các thông tin đã nhập.");
+        setServerError("Please review the form and correct errors.");
       } else {
-        setServerError(err.response?.data?.message || "Đã có lỗi xảy ra khi kết nối đến server");
+        setServerError(err.response?.data?.message || "An error occurred while connecting to the server");
       }
     } finally {
       setLoading(false);
@@ -152,15 +152,15 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <AuthLayout title="Tạo tài khoản" subtitle="Bắt đầu quản lý dữ liệu và tác vụ một cách dễ dàng.">
+    <AuthLayout title="Create Account" subtitle="Start managing data and tasks with ease.">
       <Card className="w-full max-w-2xl p-8">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-green-100 flex items-center justify-center">
             <UserPlus className="h-5 w-5 text-green-600" />
           </div>
           <div>
-            <div className="text-sm text-gray-500">Bắt đầu nào</div>
-            <h2 className="text-xl font-semibold text-gray-900">Đăng ký tài khoản</h2>
+            <div className="text-sm text-gray-500">Get started</div>
+            <h2 className="text-xl font-semibold text-gray-900">Register an Account</h2>
           </div>
         </div>
 
@@ -182,16 +182,16 @@ const RegisterPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Thông tin cơ bản */}
             <div className="space-y-5">
-              <h3 className="text-sm font-medium text-gray-700 border-b pb-2">Thông tin đăng nhập</h3>
+              <h3 className="text-sm font-medium text-gray-700 border-b pb-2">Account information</h3>
               <div>
-                <Label htmlFor="fullName">Họ và tên *</Label>
+                <Label htmlFor="fullName">Full name *</Label>
                 <Input
                   id="fullName"
                   name="fullName"
                   type="text"
                   required
                   leadingIcon={<User className="h-5 w-5" />}
-                  placeholder="Nguyễn Văn A"
+                  placeholder="John Doe"
                   value={formData.fullName}
                   onChange={handleChange}
                   className={errors.fullName ? "border-red-500 focus:ring-red-200" : ""}
@@ -214,7 +214,7 @@ const RegisterPage: React.FC = () => {
                 <ErrorMessage message={errors.email} />
               </div>
               <div>
-                <Label htmlFor="password">Mật khẩu *</Label>
+                <Label htmlFor="password">Password *</Label>
                 <Input
                   id="password"
                   name="password"
@@ -229,7 +229,7 @@ const RegisterPage: React.FC = () => {
                 <ErrorMessage message={errors.password} />
               </div>
               <div>
-                <Label htmlFor="confirmPassword">Xác nhận mật khẩu *</Label>
+                <Label htmlFor="confirmPassword">Confirm password *</Label>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -247,9 +247,9 @@ const RegisterPage: React.FC = () => {
 
             {/* Thông tin cá nhân */}
             <div className="space-y-5">
-              <h3 className="text-sm font-medium text-gray-700 border-b pb-2">Thông tin cá nhân</h3>
+              <h3 className="text-sm font-medium text-gray-700 border-b pb-2">Personal information</h3>
               <div>
-                <Label htmlFor="phoneNumber">Số điện thoại</Label>
+                <Label htmlFor="phoneNumber">Phone number</Label>
                 <Input
                   id="phoneNumber"
                   name="phoneNumber"
@@ -263,7 +263,7 @@ const RegisterPage: React.FC = () => {
                 <ErrorMessage message={errors.phoneNumber} />
               </div>
               <div>
-                <Label htmlFor="identifyNumber">Số CMND/CCCD</Label>
+                <Label htmlFor="identifyNumber">ID number</Label>
                 <Input
                   id="identifyNumber"
                   name="identifyNumber"
@@ -290,15 +290,15 @@ const RegisterPage: React.FC = () => {
                       value={formData.gender}
                       onChange={handleChange}
                     >
-                      <option value="">Chọn...</option>
-                      <option value="Nam">Nam</option>
-                      <option value="Nữ">Nữ</option>
-                      <option value="Khác">Khác</option>
+                      <option value="">Choose...</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
                     </select>
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="dateOfBirth">Ngày sinh</Label>
+                  <Label htmlFor="dateOfBirth">Date of birth</Label>
                   <Input
                     id="dateOfBirth"
                     name="dateOfBirth"
@@ -310,7 +310,7 @@ const RegisterPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <Label htmlFor="address">Địa chỉ</Label>
+                <Label htmlFor="address">Address</Label>
                 <Input
                   id="address"
                   name="address"
@@ -327,17 +327,17 @@ const RegisterPage: React.FC = () => {
           <div className="pt-4 border-t">
             <div className="flex items-center gap-2 mb-6">
               <input id="terms" name="terms" type="checkbox" required className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
-              <span className="text-sm text-gray-700">Tôi đồng ý với Điều khoản và Điều kiện</span>
+              <span className="text-sm text-gray-700">I agree to the Terms and Conditions</span>
             </div>
             
             <Button type="submit" fullWidth variant="gradient" disabled={loading}>
-              {loading ? "Đang xử lý..." : "Tạo tài khoản"}
+              {loading ? "Processing..." : "Create account"}
             </Button>
             
             <div className="text-center mt-6 text-sm text-gray-600">
-              Đã có tài khoản?{" "}
+              Already have an account?{" "}
               <Link to="/login" className="text-blue-600 hover:text-blue-700">
-                Đăng nhập
+                Sign in
               </Link>
             </div>
           </div>

@@ -20,13 +20,13 @@ import {
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: localStorage.getItem("fullName") || 'Người dùng',
+    fullName: localStorage.getItem("fullName") || 'User',
     email: localStorage.getItem("email") || 'user@example.com',
     phone: '+84 (000) 000-000',
-    location: 'Việt Nam',
-    bio: 'Chuyên viên tại hệ thống DLSS.',
+    location: 'Vietnam',
+    bio: 'Specialist at the DLSS platform.',
     role: (localStorage.getItem("role") || 'Annotator').toUpperCase(),
-    department: 'Phòng khảo sát dữ liệu'
+    department: 'Data Survey Department'
   });
 
   const initials = useMemo(() => {
@@ -48,7 +48,7 @@ export default function ProfilePage() {
     setIsEditing(false);
     // Here you would typically handle the API call to update profile
     console.log('Profile updated:', formData);
-    alert("Đã cập nhật thông tin cá nhân thành công!");
+    alert("Profile updated successfully!");
   };
 
   return (
@@ -56,9 +56,9 @@ export default function ProfilePage() {
       <div className="space-y-8 max-w-6xl mx-auto">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Hồ sơ cá nhân
+            Profile
           </h1>
-          <p className="text-gray-500 mt-1">Quản lý thông tin cá nhân và cài đặt tài khoản của bạn.</p>
+          <p className="text-gray-500 mt-1">Manage your personal information and account settings.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -79,11 +79,11 @@ export default function ProfilePage() {
               
               <div className="mt-8 w-full space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
-                  <span className="text-sm text-gray-500">Hoạt động</span>
-                  <span className="text-sm font-bold text-gray-900">Ổn định</span>
+                  <span className="text-sm text-gray-500">Activity</span>
+                  <span className="text-sm font-bold text-gray-900">Stable</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
-                  <span className="text-sm text-gray-500">Độ tin cậy</span>
+                  <span className="text-sm text-gray-500">Reliability</span>
                   <span className="text-sm font-bold text-green-600">99.2%</span>
                 </div>
               </div>
@@ -92,20 +92,20 @@ export default function ProfilePage() {
             <Card className="p-6 border-none shadow-sm">
               <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Shield className="h-5 w-5 text-blue-600" />
-                Trạng thái tài khoản
+                Account status
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-sm">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-gray-600 font-medium">Email đã xác minh</span>
+                  <span className="text-gray-600 font-medium">Email verified</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-gray-600 font-medium">Bảo mật 2 lớp: Tắt</span>
+                  <span className="text-gray-600 font-medium">Two-factor auth: Off</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-gray-600 font-medium">Đang hoạt động</span>
+                  <span className="text-gray-600 font-medium">Active</span>
                 </div>
               </div>
 
@@ -113,7 +113,7 @@ export default function ProfilePage() {
                 <Link to="/change-password">
                   <Button variant="outline" className="w-full justify-center">
                     <Lock className="h-4 w-4 mr-2" />
-                    Đổi mật khẩu
+                    Change password
                   </Button>
                 </Link>
               </div>
@@ -124,20 +124,20 @@ export default function ProfilePage() {
           <div className="lg:col-span-2">
             <Card className="p-8 border-none shadow-sm">
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-bold text-gray-900">Chi tiết thông tin</h3>
+                <h3 className="text-xl font-bold text-gray-900">Details</h3>
                 <Button 
                   variant={isEditing ? "ghost" : "primary"} 
                   onClick={() => !isEditing && setIsEditing(true)}
                   className={isEditing ? "text-gray-500" : "bg-blue-600 hover:bg-blue-700"}
                 >
-                  {isEditing ? 'Hủy bỏ' : 'Chỉnh sửa hồ sơ'}
+                  {isEditing ? 'Cancel' : 'Edit profile'}
                 </Button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Họ và tên</Label>
+                    <Label htmlFor="fullName">Full name</Label>
                     <Input
                       id="fullName"
                       name="fullName"
@@ -148,7 +148,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Địa chỉ Email</Label>
+                    <Label htmlFor="email">Email address</Label>
                     <Input
                       id="email"
                       name="email"
@@ -160,7 +160,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Số điện thoại</Label>
+                    <Label htmlFor="phone">Phone number</Label>
                     <Input
                       id="phone"
                       name="phone"
@@ -171,7 +171,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">Địa chỉ</Label>
+                    <Label htmlFor="location">Address</Label>
                     <Input
                       id="location"
                       name="location"
@@ -184,7 +184,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="bio">Giới thiệu bản thân</Label>
+                  <Label htmlFor="bio">About me</Label>
                   <textarea
                     id="bio"
                     name="bio"
@@ -198,9 +198,9 @@ export default function ProfilePage() {
 
                 {isEditing && (
                   <div className="flex justify-end pt-6 border-t border-gray-100">
-                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700 px-8">
+                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700 px-8">
                       <Save className="h-4 w-4 mr-2" />
-                      Lưu thay đổi
+                      Save changes
                     </Button>
                   </div>
                 )}

@@ -33,8 +33,8 @@ const ManagerLabelManagementPage: React.FC = () => {
       try {
         setLoading(true);
         const [catResponse, labelResponse] = await Promise.all([
-          managerService.labelCategory.getLabelCategories(projectId),
-          managerService.label.getLabels(projectId),
+          managerService.getLabelCategories(projectId),
+          managerService.getLabels(projectId),
         ]);
 
         if (catResponse.isSuccess && catResponse.data) {
@@ -73,7 +73,7 @@ const ManagerLabelManagementPage: React.FC = () => {
     if (!window.confirm(`Delete category "${categoryName}"?`)) return;
 
     try {
-      const response = await managerService.labelCategory.deleteLabelCategory(categoryId);
+      const response = await managerService.deleteLabelCategory(categoryId);
       if (response.isSuccess) {
         setCategories(prev => prev.filter(c => c.id !== categoryId));
         if (selectedCategory?.id === categoryId) {
@@ -91,7 +91,7 @@ const ManagerLabelManagementPage: React.FC = () => {
     if (!window.confirm("Delete this label?")) return;
 
     try {
-      const response = await managerService.label.deleteLabel(labelId);
+      const response = await managerService.deleteLabel(labelId);
       if (response.isSuccess) {
         setLabels(prev => prev.filter(l => l.id !== labelId));
       } else {
@@ -135,8 +135,8 @@ const ManagerLabelManagementPage: React.FC = () => {
               <ArrowLeft className="h-6 w-6 text-gray-600" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Cấu hình Nhãn</h1>
-              <p className="text-gray-500 mt-1">Định nghĩa các loại nhãn và quy tắc cho dự án của bạn.</p>
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Label Configuration</h1>
+              <p className="text-gray-500 mt-1">Define label categories and rules for your project.</p>
             </div>
           </div>
         </div>
@@ -144,9 +144,9 @@ const ManagerLabelManagementPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Danh sách danh mục bên trái */}
           <div className="md:col-span-1 space-y-4">
-            <h3 className="font-semibold text-gray-700 uppercase text-xs tracking-wider">Danh mục ({categories.length})</h3>
+            <h3 className="font-semibold text-gray-700 uppercase text-xs tracking-wider">Categories ({categories.length})</h3>
             {categories.length === 0 ? (
-              <p className="text-sm text-gray-500">Chưa có danh mục nào</p>
+              <p className="text-sm text-gray-500">No categories yet</p>
             ) : (
               categories.map(cat => (
                 <Card 
@@ -188,7 +188,7 @@ const ManagerLabelManagementPage: React.FC = () => {
 
                 <div className="space-y-4">
                   <div>
-                    <Label>Tên danh mục</Label>
+                    <Label>Category Name</Label>
                     <Input 
                       value={categoryName} 
                       onChange={(e) => setCategoryName(e.currentTarget.value)}
@@ -196,7 +196,7 @@ const ManagerLabelManagementPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <Label>Mô tả</Label>
+                    <Label>Description</Label>
                     <Input 
                       value={categoryDescription} 
                       onChange={(e) => setCategoryDescription(e.currentTarget.value)}
@@ -206,10 +206,10 @@ const ManagerLabelManagementPage: React.FC = () => {
                   </div>
                   
                   <div>
-                    <Label>Nhãn trong danh mục</Label>
+                    <Label>Labels in Category</Label>
                     <div className="space-y-2 mt-2">
                       {getCategoryLabels().length === 0 ? (
-                        <p className="text-sm text-gray-500">Chưa có nhãn nào trong danh mục này</p>
+                        <p className="text-sm text-gray-500">No labels in this category</p>
                       ) : (
                         getCategoryLabels().map((label) => (
                           <div key={label.id} className="flex gap-2 items-center p-2 bg-gray-50 rounded">
@@ -240,7 +240,7 @@ const ManagerLabelManagementPage: React.FC = () => {
           ) : (
             <div className="md:col-span-2">
               <Card variant="glass" className="p-8">
-                <p className="text-center text-gray-500 py-8">Chọn một danh mục để xem chi tiết</p>
+                <p className="text-center text-gray-500 py-8">Select a category to view details</p>
               </Card>
             </div>
           )}

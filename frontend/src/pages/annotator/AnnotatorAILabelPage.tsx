@@ -143,7 +143,7 @@ export default function AnnotatorAILabelPage() {
         setReviewFeedback(feedbackRes.data);
       }
     } catch (err) {
-      console.error("Lỗi khi tải dữ liệu công việc:", err);
+      console.error("Error loading task data:", err);
     }
   };
 
@@ -219,7 +219,7 @@ export default function AnnotatorAILabelPage() {
   const handleSave = async (isSubmit: boolean) => {
     if (!currentTaskId) return;
     if (isSubmit && boxes.length === 0) {
-      alert("Vui lòng dán ít nhất một nhãn trước khi nộp.");
+      alert("Please label at least one object before submitting.");
       return;
     }
 
@@ -234,10 +234,10 @@ export default function AnnotatorAILabelPage() {
         : await annotatorService.saveDraft(currentTaskId, savePayload);
 
       if (res.isSuccess) {
-        alert(isSubmit ? "Đã nộp bài thành công!" : "Đã lưu bản nháp.");
+        alert(isSubmit ? "Submission successful!" : "Draft saved.");
         if (isSubmit) navigate("/annotator/tasks");
       } else {
-        alert(res.message || "Lỗi khi lưu dữ liệu.");
+        alert(res.message || "Error saving data.");
       }
     } finally {
       setSaving(false);
@@ -251,7 +251,7 @@ export default function AnnotatorAILabelPage() {
     try {
       const res = await annotatorService.suggestAi(currentTaskId, false);
       if (!res.isSuccess || !res.data) {
-        alert("AI không tìm thấy gợi ý nào hoặc Service AI đang tắt.");
+        alert("AI found no suggestions or AI service is disabled.");
         return;
       }
 
@@ -288,9 +288,9 @@ export default function AnnotatorAILabelPage() {
 
       if (aiBoxes.length > 0) {
         setBoxes((prev) => [...prev, ...aiBoxes]);
-        alert(`Đã thêm ${aiBoxes.length} gợi ý từ AI. Bạn có thể Chấp nhận hoặc Từ chối từng nhãn.`);
+        alert(`Added ${aiBoxes.length} AI suggestions. You can accept or reject each label.`);
       } else {
-        alert("AI không tìm thấy đối tượng nào.");
+        alert("AI found no objects.");
       }
     } finally {
       setAiLoading(false);
@@ -307,7 +307,7 @@ export default function AnnotatorAILabelPage() {
         setBoxes(prev => prev.map((b, i) => i === boxIndex ? { ...b, isAiSuggestion: false } : b));
       }
     } catch (err) {
-      console.error("Lỗi khi chấp nhận AI:", err);
+      console.error("Error accepting AI:", err);
     }
   };
 
@@ -327,7 +327,7 @@ export default function AnnotatorAILabelPage() {
         setBoxes(prev => prev.filter((_, i) => i !== boxIndex));
       }
     } catch (err) {
-      console.error("Lỗi khi từ chối AI:", err);
+      console.error("Error rejecting AI:", err);
     }
   };
 
@@ -376,7 +376,7 @@ export default function AnnotatorAILabelPage() {
       <DashboardLayout>
         <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
           <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-          <p className="font-medium">Đang thiết lập không gian làm việc...</p>
+          <p className="font-medium">Setting up workspace...</p>
         </div>
       </DashboardLayout>
     );
@@ -385,7 +385,7 @@ export default function AnnotatorAILabelPage() {
   if (!task) {
     return (
       <DashboardLayout>
-        <Card className="max-w-4xl mx-auto p-10 text-center text-gray-600">Không có task để gán nhãn.</Card>
+        <Card className="max-w-4xl mx-auto p-10 text-center text-gray-600">No task to label.</Card>
       </DashboardLayout>
     );
   }
@@ -398,13 +398,13 @@ export default function AnnotatorAILabelPage() {
         {/* Review Feedback Banner */}
         {isRework && reviewFeedback && (
           <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex items-start gap-3 shadow-sm">
-            <AlertCircle className="text-amber-600 h-5 w-5 mt-0.5 shrink-0" />
+              <AlertCircle className="text-amber-600 h-5 w-5 mt-0.5 shrink-0" />
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-amber-900 text-sm">Yêu cầu sửa đổi từ Reviewer</span>
+                <span className="font-bold text-amber-900 text-sm">Revision request from Reviewer</span>
                 <span className="bg-amber-200 text-amber-800 text-[10px] px-2 py-0.5 rounded font-bold">Điểm: {reviewFeedback.score}/100</span>
               </div>
-              <p className="text-sm text-amber-800 italic mt-1">"{reviewFeedback.comment || "Vui lòng kiểm tra lại độ chính xác."}"</p>
+              <p className="text-sm text-amber-800 italic mt-1">"{reviewFeedback.comment || "Please check accuracy."}"</p>
               <div className="flex gap-2 mt-2">
                 {reviewFeedback.categories.map(c => (
                   <span key={c.errorTypeId} className="bg-white/60 border border-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded">
@@ -414,9 +414,9 @@ export default function AnnotatorAILabelPage() {
               </div>
             </div>
             <div className="flex flex-col gap-2 min-w-[200px]">
-              <Input 
+                <Input 
                 size={3}
-                placeholder="Phản hồi cho Reviewer..." 
+                placeholder="Feedback for Reviewer..." 
                 value={reworkComment} 
                 onChange={(e) => setReworkComment(e.target.value)}
                 className="bg-white/80 text-xs h-8"
@@ -428,16 +428,16 @@ export default function AnnotatorAILabelPage() {
         {/* Toolbar Top */}
         <div className="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-100">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/annotator/tasks")}>
-              <ChevronLeft size={18} className="mr-1" /> Quay lại
+            <Button variant="ghost" size="sm" onClick={() => navigate("/annotator/tasks")}> 
+              <ChevronLeft size={18} className="mr-1" /> Back
             </Button>
             <div className="h-6 w-[1px] bg-gray-200" />
             <h2 className="font-bold text-gray-900">Task #{currentTaskId.slice(-6)}</h2>
             <div className={`px-2 py-1 rounded text-xs font-bold uppercase ${
               isRework ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
             }`}>
-              {task?.status === "InProgress" ? "Đang thực hiện" : 
-               task?.status === "Returned" ? "Cần sửa lại" : task?.status}
+              {task?.status === "InProgress" ? "In Progress" : 
+               task?.status === "Returned" ? "Needs Revision" : task?.status}
             </div>
           </div>
 
@@ -449,7 +449,7 @@ export default function AnnotatorAILabelPage() {
                 onClick={() => setDrawMode(false)}
                 className="h-8 px-3"
               >
-                Xem
+                View
               </Button>
               <Button
                 variant={drawMode ? "primary" : "ghost"}
@@ -457,7 +457,7 @@ export default function AnnotatorAILabelPage() {
                 onClick={() => setDrawMode(true)}
                 className="h-8 px-3"
               >
-                <Pencil size={14} className="mr-1" /> Vẽ nhãn
+                <Pencil size={14} className="mr-1" /> Draw
               </Button>
             </div>
 
@@ -479,16 +479,16 @@ export default function AnnotatorAILabelPage() {
               className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
             >
               {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Bot size={16} className="mr-1" />}
-              AI Gợi ý
+              AI Suggestions
             </Button>
           </div>
 
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving}>
-              <Save size={16} className="mr-1" /> Lưu nháp
+              <Save size={16} className="mr-1" /> Save Draft
             </Button>
             <Button variant="primary" size="sm" onClick={() => handleSave(true)} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
-              <Send size={16} className="mr-1" /> {isRework ? "Gửi lại bài" : "Nộp bài"}
+              <Send size={16} className="mr-1" /> {isRework ? "Resubmit" : "Submit"}
             </Button>
           </div>
         </div>
@@ -510,7 +510,7 @@ export default function AnnotatorAILabelPage() {
             >
               <img
                 src={secureImageUrl}
-                alt="Dữ liệu dán nhãn"
+                    alt="Labeled Data"
                 draggable={false}
                 style={{
                   width: 800 * zoom,
@@ -556,14 +556,14 @@ export default function AnnotatorAILabelPage() {
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleAcceptAi(i); }}
                         className="p-1 bg-emerald-500 text-white rounded hover:bg-emerald-600 shadow-lg"
-                        title="Chấp nhận"
+                          title="Accept"
                       >
                         <Check size={12} />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleRejectAi(i); }}
                         className="p-1 bg-red-500 text-white rounded hover:bg-red-600 shadow-lg"
-                        title="Từ chối"
+                        title="Reject"
                       >
                         <X size={12} />
                       </button>

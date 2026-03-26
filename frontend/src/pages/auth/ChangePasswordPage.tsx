@@ -24,17 +24,17 @@ const ChangePasswordPage: React.FC = () => {
     setSuccess(null);
 
     if (newPassword !== confirmPassword) {
-      setError("Mật khẩu mới và xác nhận mật khẩu không khớp");
+      setError("New password and confirmation do not match");
       return;
     }
 
     if (newPassword.length < 8) {
-      setError("Mật khẩu mới phải có ít nhất 8 ký tự");
+      setError("New password must be at least 8 characters");
       return;
     }
 
     if (currentPassword === newPassword) {
-      setError("Mật khẩu mới phải khác mật khẩu hiện tại");
+      setError("New password must be different from the current password");
       return;
     }
 
@@ -46,21 +46,21 @@ const ChangePasswordPage: React.FC = () => {
       });
 
       if (response.isSuccess) {
-        setSuccess("Đổi mật khẩu thành công!");
+        setSuccess("Password changed successfully!");
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
         
-        // Tùy chọn: Chuyển hướng sau vài giây
+        // Optional: redirect after a few seconds
         setTimeout(() => {
           navigate('/profile');
         }, 2000);
       } else {
-        setError(response.message || "Đổi mật khẩu thất bại");
+        setError(response.message || "Failed to change password");
       }
     } catch (err: any) {
       console.error('Change password error:', err);
-      setError(err.response?.data?.message || "Mật khẩu hiện tại không chính xác hoặc lỗi hệ thống");
+      setError(err.response?.data?.message || "Current password is incorrect or a system error occurred");
     } finally {
       setLoading(false);
     }
@@ -75,9 +75,9 @@ const ChangePasswordPage: React.FC = () => {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-              Đổi mật khẩu
+              Change Password
             </h1>
-            <p className="text-gray-500 mt-1">Cập nhật mật khẩu mới để bảo vệ tài khoản của bạn.</p>
+            <p className="text-gray-500 mt-1">Update your password to keep your account secure.</p>
           </div>
         </div>
 
@@ -87,8 +87,8 @@ const ChangePasswordPage: React.FC = () => {
               <ShieldCheck className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <div className="text-sm text-gray-500">Bảo mật tài khoản</div>
-              <h2 className="text-xl font-semibold text-gray-900">Thiết lập mật khẩu</h2>
+              <div className="text-sm text-gray-500">Account security</div>
+              <h2 className="text-xl font-semibold text-gray-900">Set a new password</h2>
             </div>
           </div>
 
@@ -108,7 +108,7 @@ const ChangePasswordPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="currentPassword">Mật khẩu hiện tại</Label>
+              <Label htmlFor="currentPassword">Current password</Label>
               <Input
                 id="currentPassword"
                 name="currentPassword"
@@ -123,7 +123,7 @@ const ChangePasswordPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="newPassword">Mật khẩu mới</Label>
+                <Label htmlFor="newPassword">New password</Label>
                 <Input
                   id="newPassword"
                   name="newPassword"
@@ -136,7 +136,7 @@ const ChangePasswordPage: React.FC = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="confirmPassword">Xác nhận mật khẩu mới</Label>
+                <Label htmlFor="confirmPassword">Confirm new password</Label>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -152,10 +152,10 @@ const ChangePasswordPage: React.FC = () => {
 
             <div className="pt-4 flex justify-end gap-4">
               <Link to="/profile">
-                <Button type="button" variant="ghost">Hủy bỏ</Button>
+                <Button type="button" variant="ghost">Cancel</Button>
               </Link>
               <Button type="submit" variant="gradient" disabled={loading}>
-                {loading ? "Đang xử lý..." : "Cập nhật mật khẩu"}
+                {loading ? "Processing..." : "Update password"}
               </Button>
             </div>
           </form>

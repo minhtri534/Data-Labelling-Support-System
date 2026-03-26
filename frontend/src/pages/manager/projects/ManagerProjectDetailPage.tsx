@@ -44,8 +44,8 @@ const ProjectDetailPage: React.FC = () => {
       ]);
 
       if (projRes.isSuccess) setProject(projRes.data);
-      if (dsRes.isSuccess) setDatasets(res => dsRes.data || []);
-      if (lblRes.isSuccess) setLabels(res => lblRes.data || []);
+      if (dsRes.isSuccess) setDatasets(dsRes.data || []);
+      if (lblRes.isSuccess) setLabels(lblRes.data || []);
     } finally {
       setLoading(false);
     }
@@ -80,10 +80,10 @@ const ProjectDetailPage: React.FC = () => {
   };
 
   const handleArchive = async () => {
-    if (!projectId || !confirm("Bạn có chắc muốn lưu trữ dự án này?")) return;
+    if (!projectId || !confirm("Are you sure you want to archive this project?")) return;
     const res = await managerService.archiveProject(projectId);
     if (res.isSuccess) {
-      alert("Đã lưu trữ dự án.");
+      alert("Project archived.");
       navigate("/manager/projects");
     }
   };
@@ -93,7 +93,7 @@ const ProjectDetailPage: React.FC = () => {
       <DashboardLayout>
         <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
           <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-          <p>Đang tải thông tin dự án...</p>
+          <p>Loading project details...</p>
         </div>
       </DashboardLayout>
     );
@@ -121,9 +121,9 @@ const ProjectDetailPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline"><Edit className="h-4 w-4 mr-2"/> Sửa</Button>
+            <Button variant="outline"><Edit className="h-4 w-4 mr-2"/> Edit</Button>
             <Button variant="secondary" onClick={handleArchive} disabled={project.status !== 0}>
-              <Archive className="h-4 w-4 mr-2"/> Lưu trữ
+              <Archive className="h-4 w-4 mr-2"/> Archive
             </Button>
           </div>
         </div>
@@ -138,25 +138,25 @@ const ProjectDetailPage: React.FC = () => {
             <Card className="p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <FileText className="text-blue-600 h-5 w-5" />
-                Hướng dẫn & Mô tả
+                Guideline & Description
               </h2>
               <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100 text-gray-700 whitespace-pre-wrap italic">
-                {project.guideline || "Chưa có hướng dẫn dán nhãn cụ thể cho dự án này."}
+                {project.guideline || "No specific labeling guideline for this project."}
               </div>
               
               <div className="grid grid-cols-2 gap-6 mt-6 pt-6 border-t text-sm">
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-gray-400" />
                   <div>
-                    <div className="text-gray-500">Ngày tạo</div>
-                    <div className="font-semibold">{new Date(project.createdAt).toLocaleDateString('vi-VN')}</div>
+                    <div className="text-gray-500">Created</div>
+                    <div className="font-semibold">{new Date(project.createdAt).toLocaleDateString('en-US')}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Clock className="h-5 w-5 text-gray-400" />
                   <div>
-                    <div className="text-gray-500">Cập nhật cuối</div>
-                    <div className="font-semibold">{new Date(project.updatedAt).toLocaleDateString('vi-VN')}</div>
+                    <div className="text-gray-500">Last updated</div>
+                    <div className="font-semibold">{new Date(project.updatedAt).toLocaleDateString('en-US')}</div>
                   </div>
                 </div>
               </div>
@@ -165,9 +165,9 @@ const ProjectDetailPage: React.FC = () => {
             {/* Dataset Management */}
             <Card className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                   <List className="text-blue-600 h-5 w-5" />
-                  Danh sách Dataset
+                  Datasets
                 </h2>
               </div>
 
@@ -175,13 +175,13 @@ const ProjectDetailPage: React.FC = () => {
                 {/* Create Dataset Form */}
                 <div className="flex gap-2">
                   <Input 
-                    placeholder="Tên Dataset mới..." 
+                    placeholder="New dataset name..." 
                     value={newDatasetName}
                     onChange={(e) => setNewDatasetName(e.target.value)}
                   />
-                  <Button onClick={handleCreateDataset} disabled={isCreatingDataset || !newDatasetName}>
+                    <Button onClick={handleCreateDataset} disabled={isCreatingDataset || !newDatasetName}>
                     {isCreatingDataset ? <Loader2 className="animate-spin h-4 w-4" /> : <Plus className="h-4 w-4 mr-1" />}
-                    Tạo
+                    Create
                   </Button>
                 </div>
 
@@ -203,7 +203,7 @@ const ProjectDetailPage: React.FC = () => {
                     </div>
                   ))}
                   {datasets.length === 0 && (
-                    <p className="col-span-full text-center text-gray-400 py-4 italic">Chưa có dataset nào.</p>
+                    <p className="col-span-full text-center text-gray-400 py-4 italic">No datasets yet.</p>
                   )}
                 </div>
               </div>
@@ -217,13 +217,13 @@ const ProjectDetailPage: React.FC = () => {
             <Card className="p-6">
               <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Tag className="text-blue-600 h-5 w-5" />
-                Nhãn dự án
+                Project Labels
               </h2>
               
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <Input 
-                    placeholder="Tên nhãn..." 
+                    placeholder="Label name..." 
                     value={newLabelName}
                     onChange={(e) => setNewLabelName(e.target.value)}
                   />
@@ -242,35 +242,35 @@ const ProjectDetailPage: React.FC = () => {
                       <span className="text-[10px] text-gray-400">Class ID: {lbl.yoloClassId}</span>
                     </div>
                   ))}
-                  {labels.length === 0 && <p className="text-center text-gray-400 text-sm italic">Chưa có nhãn nào.</p>}
+                  {labels.length === 0 && <p className="text-center text-gray-400 text-sm italic">No labels yet.</p>}
                 </div>
               </div>
             </Card>
 
             {/* Quick Actions */}
             <Card className="p-6 bg-gray-900 text-white">
-              <h3 className="text-lg font-bold mb-4">Thao tác nhanh</h3>
+              <h3 className="text-lg font-bold mb-4">Quick actions</h3>
               <div className="space-y-3">
                 <Button fullWidth className="bg-blue-600 hover:bg-blue-700 border-none">
                   <Users className="h-4 w-4 mr-2" />
-                  Gán Task cho Annotator
+                  Assign task to Annotator
                 </Button>
                 <Button fullWidth variant="outline" className="text-white border-gray-700 hover:bg-gray-800">
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Kiểm tra chất lượng
+                  Quality check
                 </Button>
               </div>
             </Card>
 
             <Card variant="glass" className="p-6 space-y-3">
               <Link to={`/manager/projects/${projectId}/datasets`} className="block">
-                <Button fullWidth variant="secondary">Quản lý Datasets</Button>
+                <Button fullWidth variant="secondary">Manage Datasets</Button>
               </Link>
               <Link to={`/manager/projects/${projectId}/labels`} className="block">
-                <Button fullWidth variant="secondary">Quản lý Nhãn</Button>
+                <Button fullWidth variant="secondary">Manage Labels</Button>
               </Link>
               <Link to={`/manager/projects/${projectId}/tasks`} className="block">
-                <Button fullWidth variant="secondary">Quản lý Công việc</Button>
+                <Button fullWidth variant="secondary">Manage Tasks</Button>
               </Link>
             </Card>
           </div>

@@ -19,31 +19,31 @@ const ForgotPasswordPage: React.FC = () => {
     setError(null);
     setLoading(true);
 
-    try {
-      const response = await authService.forgotPassword({ email });
-      if (response.isSuccess) {
-        setIsSubmitted(true);
-      } else {
-        setError(response.message || "Đã có lỗi xảy ra");
+      try {
+        const response = await authService.forgotPassword({ email });
+        if (response.isSuccess) {
+          setIsSubmitted(true);
+        } else {
+          setError(response.message || "An error occurred");
+        }
+      } catch (err: any) {
+        console.error('Forgot password error:', err);
+        setError(err.response?.data?.message || "Cannot connect to server");
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      console.error('Forgot password error:', err);
-      setError(err.response?.data?.message || "Không thể kết nối đến máy chủ");
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
-    <AuthLayout title="Khôi phục mật khẩu" subtitle="Chúng tôi sẽ giúp bạn lấy lại quyền truy cập vào tài khoản." variant="simple">
+    <AuthLayout title="Password Recovery" subtitle="We'll help you regain access to your account." variant="simple">
       <Card className="w-full max-w-md p-8">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center">
             <KeyRound className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <div className="text-sm text-gray-500">Khôi phục tài khoản</div>
-            <h2 className="text-xl font-semibold text-gray-900">Quên mật khẩu</h2>
+            <div className="text-sm text-gray-500">Account recovery</div>
+            <h2 className="text-xl font-semibold text-gray-900">Forgot Password</h2>
           </div>
         </div>
 
@@ -57,7 +57,7 @@ const ForgotPasswordPage: React.FC = () => {
         {!isSubmitted ? (
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <p className="text-sm text-gray-600">
-              Nhập địa chỉ email được liên kết với tài khoản của bạn và chúng tôi sẽ gửi cho bạn một liên kết để đặt lại mật khẩu.
+              Enter the email address associated with your account and we'll send a link to reset your password.
             </p>
             <div>
               <Label htmlFor="email">Email</Label>
@@ -74,12 +74,12 @@ const ForgotPasswordPage: React.FC = () => {
             </div>
             
             <Button type="submit" fullWidth variant="gradient" disabled={loading}>
-              {loading ? "Đang xử lý..." : "Gửi liên kết đặt lại"}
+              {loading ? "Processing..." : "Send reset link"}
             </Button>
             
             <div className="text-center text-sm text-gray-600">
               <Link to="/login" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
-                <ArrowLeft className="h-4 w-4" /> Quay lại Đăng nhập
+                <ArrowLeft className="h-4 w-4" /> Back to Login
               </Link>
             </div>
           </form>
@@ -87,15 +87,15 @@ const ForgotPasswordPage: React.FC = () => {
           <div className="mt-8 space-y-5">
             <div className="rounded-lg bg-green-50 p-4 border border-green-100">
               <p className="text-sm text-green-800 text-center">
-                Nếu tài khoản tồn tại cho <strong>{email}</strong>, bạn sẽ sớm nhận được liên kết đặt lại mật khẩu.
+                If an account exists for <strong>{email}</strong>, you will receive a password reset link shortly.
               </p>
             </div>
             <Button fullWidth variant="outline" onClick={() => setIsSubmitted(false)}>
-              Thử với email khác
+              Try a different email
             </Button>
             <div className="text-center text-sm text-gray-600">
               <Link to="/login" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
-                <ArrowLeft className="h-4 w-4" /> Quay lại Đăng nhập
+                <ArrowLeft className="h-4 w-4" /> Back to Login
               </Link>
             </div>
           </div>

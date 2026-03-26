@@ -50,36 +50,36 @@ export default function ReviewerDashboard() {
 
   const statCards = [
     {
-      label: 'Chờ kiểm duyệt',
+      label: 'Pending Review',
       value: stats.pending.toString(),
-      change: 'Cập nhật mới',
+      change: 'Updated',
       icon: Clock,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
       border: 'border-amber-100',
     },
     {
-      label: 'Đã duyệt hôm nay',
+      label: 'Reviewed Today',
       value: stats.reviewedToday.toString(),
-      change: '85% mục tiêu',
+      change: '85% target',
       icon: CheckCircle2,
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
       border: 'border-emerald-100',
     },
     {
-      label: 'Tỷ lệ chính xác',
+      label: 'Accuracy',
       value: `${stats.accuracy}%`,
-      change: '+0.4% tuần này',
+      change: '+0.4% this week',
       icon: TrendingUp,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
       border: 'border-blue-100',
     },
     {
-      label: 'Yêu cầu sửa lại',
+      label: 'Revision Requests',
       value: stats.issues.toString(),
-      change: 'Đang xử lý',
+      change: 'In progress',
       icon: AlertCircle,
       color: 'text-red-600',
       bg: 'bg-red-50',
@@ -94,12 +94,12 @@ export default function ReviewerDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-              Bảng điều khiển Reviewer
+              Reviewer Dashboard
             </h1>
-            <p className="text-gray-500 mt-1">Chào mừng quay trở lại! Bạn có {stats.pending} công việc đang chờ kiểm duyệt.</p>
+            <p className="text-gray-500 mt-1">Welcome back! You have {stats.pending} tasks pending review.</p>
           </div>
           <Button onClick={() => navigate('/review')} className="bg-blue-600 hover:bg-blue-700 shadow-lg transition-all">
-            Bắt đầu Review ngay
+            Start Reviewing
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -129,9 +129,9 @@ export default function ReviewerDashboard() {
           {/* Recent Tasks List */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Hàng đợi gần đây</h2>
+              <h2 className="text-xl font-bold text-gray-900">Recent Queue</h2>
               <Button variant="ghost" size="sm" onClick={() => navigate('/review')} className="text-blue-600 hover:bg-blue-50">
-                Xem tất cả
+                View all
               </Button>
             </div>
             
@@ -144,7 +144,7 @@ export default function ReviewerDashboard() {
               ) : tasks.length === 0 ? (
                 <Card className="p-12 text-center border-dashed flex flex-col items-center gap-3">
                   <ClipboardCheck className="h-12 w-12 text-gray-200" />
-                  <p className="text-gray-500 font-medium">Hiện không có tác vụ nào cần kiểm duyệt.</p>
+                  <p className="text-gray-500 font-medium">No tasks to review right now.</p>
                 </Card>
               ) : (
                 tasks.slice(0, 5).map((task) => (
@@ -155,18 +155,18 @@ export default function ReviewerDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-1">
                         <h3 className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">{task.projectName}</h3>
-                        <Badge className="text-[10px] uppercase bg-blue-50 text-blue-600 border border-blue-600">Mới nộp</Badge>
+                        <Badge className="text-[10px] uppercase bg-blue-50 text-blue-600 border border-blue-600">New Submission</Badge>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-gray-500">
                         <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">ID: {task.id.slice(-6)}</span>
                         <span>•</span>
                         <span className="font-medium text-gray-700">Bởi: {task.annotatorName}</span>
                         <span>•</span>
-                        <span>{new Date(task.submittedAt).toLocaleDateString('vi-VN')}</span>
+                        <span>{new Date(task.submittedAt).toLocaleDateString('en-US')}</span>
                       </div>
                     </div>
                     <Button variant="outline" size="sm" className="hidden sm:flex group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
-                      Xem chi tiết
+                      View details
                     </Button>
                   </Card>
                 ))
@@ -176,7 +176,7 @@ export default function ReviewerDashboard() {
 
           {/* Right Column */}
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-900">Thông báo</h2>
+            <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
             <Card className="p-0 overflow-hidden shadow-sm border-gray-100">
               <div className="divide-y divide-gray-50">
                 {tasks.length > 0 ? (
@@ -186,11 +186,11 @@ export default function ReviewerDashboard() {
                         <div className="h-2 w-2 mt-2 rounded-full bg-blue-500 flex-shrink-0" />
                         <div>
                           <p className="text-sm text-gray-600">
-                            <span className="font-bold text-gray-900">{t.annotatorName}</span> vừa nộp bài cho dự án 
+                            <span className="font-bold text-gray-900">{t.annotatorName}</span> just submitted for project
                             <span className="font-bold text-gray-900"> {t.projectName}</span>
                           </p>
                           <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">
-                            {new Date(t.submittedAt).toLocaleTimeString('vi-VN')}
+                            {new Date(t.submittedAt).toLocaleTimeString('en-US')}
                           </p>
                         </div>
                       </div>
@@ -198,7 +198,7 @@ export default function ReviewerDashboard() {
                   ))
                 ) : (
                   <div className="p-8 text-center text-gray-400 text-sm italic">
-                    Không có thông báo mới.
+                    No new notifications.
                   </div>
                 )}
               </div>
@@ -208,7 +208,7 @@ export default function ReviewerDashboard() {
             <Card className="p-6 bg-gray-900 text-white border-none shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 blur-3xl rounded-full -mr-10 -mt-10" />
               <div className="relative z-10">
-                <h3 className="font-bold mb-2 text-lg">Mục tiêu tuần</h3>
+                <h3 className="font-bold mb-2 text-lg">Weekly Goal</h3>
                 <div className="flex items-end gap-2 mb-2">
                   <span className="text-4xl font-bold tracking-tight">428</span>
                   <span className="text-gray-400 text-sm mb-1.5 font-medium">/ 500 tasks</span>
@@ -217,7 +217,7 @@ export default function ReviewerDashboard() {
                   <div className="bg-blue-500 h-2 rounded-full" style={{ width: '85%' }} />
                 </div>
                 <p className="text-xs text-gray-400 mt-4">
-                  Bạn đang hoàn thành rất tốt kế hoạch!
+                  You are on track with the plan!
                 </p>
               </div>
             </Card>

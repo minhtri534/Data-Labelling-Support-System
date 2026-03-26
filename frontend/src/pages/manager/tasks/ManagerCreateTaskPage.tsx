@@ -63,8 +63,8 @@ const ManagerCreateTaskPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProjectId || !selectedDatasetId || !selectedAnnotatorId) {
-      alert("Vui lòng chọn đầy đủ Dự án, Dataset và Người dán nhãn.");
+      if (!selectedProjectId || !selectedDatasetId || !selectedAnnotatorId) {
+      alert("Please select a Project, Dataset, and Annotator.");
       return;
     }
 
@@ -83,10 +83,10 @@ const ManagerCreateTaskPage: React.FC = () => {
       });
 
       if (res.isSuccess) {
-        alert("Đã tạo và giao việc thành công!");
+        alert("Task created and assigned successfully!");
         navigate(`/manager/projects/${selectedProjectId}`);
       } else {
-        alert(res.message || "Lỗi khi tạo công việc.");
+        alert(res.message || "Error creating task.");
       }
     } finally {
       setSubmitting(false);
@@ -101,9 +101,9 @@ const ManagerCreateTaskPage: React.FC = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
+          <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
           <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-          <p>Đang tải dữ liệu...</p>
+          <p>Loading data...</p>
         </div>
       </DashboardLayout>
     );
@@ -117,8 +117,8 @@ const ManagerCreateTaskPage: React.FC = () => {
             <ArrowLeft className="h-6 w-6 text-gray-600" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Giao việc (Task) mới</h1>
-            <p className="text-gray-500 mt-1">Phân bổ dữ liệu cho đội ngũ dán nhãn của bạn.</p>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Create Task</h1>
+            <p className="text-gray-500 mt-1">Assign data to your annotation team.</p>
           </div>
         </div>
 
@@ -128,7 +128,7 @@ const ManagerCreateTaskPage: React.FC = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="project">Chọn dự án</Label>
+                    <Label htmlFor="project">Project</Label>
                   <select 
                     id="project" 
                     required 
@@ -136,12 +136,12 @@ const ManagerCreateTaskPage: React.FC = () => {
                     value={selectedProjectId}
                     onChange={(e) => setSelectedProjectId(e.target.value)}
                   >
-                    <option value="">-- Chọn dự án --</option>
+                    <option value="">-- Select project --</option>
                     {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="dataset">Chọn bộ dữ liệu (Dataset)</Label>
+                  <Label htmlFor="dataset">Dataset</Label>
                   <select 
                     id="dataset" 
                     required 
@@ -150,7 +150,7 @@ const ManagerCreateTaskPage: React.FC = () => {
                     value={selectedDatasetId}
                     onChange={(e) => setSelectedDatasetId(e.target.value)}
                   >
-                    <option value="">-- Chọn dataset --</option>
+                    <option value="">-- Select dataset --</option>
                     {datasets.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
@@ -161,7 +161,7 @@ const ManagerCreateTaskPage: React.FC = () => {
             <div className="pt-8 border-t border-gray-100">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Users className="h-5 w-5 text-blue-600"/>
-                Chọn Annotator (Người dán nhãn)
+                Select Annotator
               </h3>
               <div className="p-4 border rounded-xl bg-gray-50/50">
                 <div className="mb-4">
@@ -169,7 +169,7 @@ const ManagerCreateTaskPage: React.FC = () => {
                     <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                     <Input 
                       className="pl-10 bg-white border-gray-200" 
-                      placeholder="Tìm kiếm theo tên hoặc email..." 
+                      placeholder="Search by name or email..." 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -195,17 +195,17 @@ const ManagerCreateTaskPage: React.FC = () => {
                     </div>
                   ))}
                   {filteredAnnotators.length === 0 && (
-                    <p className="text-center text-gray-400 py-4 text-sm italic">Không tìm thấy người dán nhãn nào.</p>
+                    <p className="text-center text-gray-400 py-4 text-sm italic">No annotators found.</p>
                   )}
                 </div>
               </div>
             </div>
 
             <div className="pt-8 flex justify-end gap-4 border-t border-gray-100">
-              <Button type="button" variant="ghost" onClick={() => navigate(-1)}>Hủy bỏ</Button>
+              <Button type="button" variant="ghost" onClick={() => navigate(-1)}>Cancel</Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700 px-8" disabled={submitting}>
                 {submitting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <PlusCircle className="h-4 w-4 mr-2" />}
-                Xác nhận và Giao việc
+                Confirm and Assign
               </Button>
             </div>
           </Card>

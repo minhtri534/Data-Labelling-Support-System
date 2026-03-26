@@ -22,7 +22,7 @@ export default function AnnotatorReturnedTasksPage() {
           setTasks(returnedTasks);
         }
       } catch (err) {
-        console.error("Lỗi khi tải danh sách công việc:", err);
+        console.error("Error loading tasks:", err);
       } finally {
         setLoading(false);
       }
@@ -35,7 +35,7 @@ export default function AnnotatorReturnedTasksPage() {
       <DashboardLayout>
         <div className="flex flex-col justify-center items-center h-96 gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-          <p className="text-gray-500 font-medium">Đang tải danh sách...</p>
+          <p className="text-gray-500 font-medium">Loading list...</p>
         </div>
       </DashboardLayout>
     );
@@ -47,15 +47,15 @@ export default function AnnotatorReturnedTasksPage() {
         {/* Header Section */}
         <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Việc cần sửa lại</h1>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Returned Tasks</h1>
             <p className="text-gray-500 text-sm mt-1">
-              Vui lòng xem lại và khắc phục các lỗi do người kiểm duyệt báo cáo.
+              Please review and fix issues reported by the reviewer.
             </p>
           </div>
           {tasks.length > 0 && (
             <span className="bg-red-100 text-red-600 px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 mb-1">
               <AlertCircle className="w-4 h-4" />
-              Có {tasks.length} công việc cần sửa
+              {tasks.length} tasks need revision
             </span>
           )}
         </div>
@@ -66,9 +66,9 @@ export default function AnnotatorReturnedTasksPage() {
             <div className="bg-green-50 p-4 rounded-full mb-4">
               <CheckCircle2 className="w-12 h-12 text-green-500" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Tuyệt vời!</h3>
+            <h3 className="text-xl font-bold text-gray-900">Great!</h3>
             <p className="text-gray-500 max-w-sm mt-2">
-              Bạn không có công việc nào cần phải sửa lại lúc này. Hãy tiếp tục phát huy nhé!
+              You have no tasks to revise right now. Keep up the good work!
             </p>
           </Card>
         ) : (
@@ -86,12 +86,12 @@ export default function AnnotatorReturnedTasksPage() {
                       </span>
                       <span className="text-xs text-gray-400 flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5" />
-                        Cập nhật: {new Date(task.completedAt || task.assignedAt || Date.now()).toLocaleDateString('vi-VN')}
+                        Updated: {new Date(task.completedAt || task.assignedAt || Date.now()).toLocaleDateString('en-US')}
                       </span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <Badge className="text-[10px] uppercase bg-red-50 text-red-600 border border-red-600">CẦN SỬA LẠI</Badge>
+                    <Badge className="text-[10px] uppercase bg-red-50 text-red-600 border border-red-600">REVISIONS NEEDED</Badge>
                   </div>
                 </div>
 
@@ -101,9 +101,9 @@ export default function AnnotatorReturnedTasksPage() {
                     <MessageSquare className="w-5 h-5 text-amber-600" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[11px] font-bold text-amber-800 uppercase tracking-widest">Phản hồi từ Reviewer</p>
+                    <p className="text-[11px] font-bold text-amber-800 uppercase tracking-widest">Feedback from Reviewer</p>
                     <p className="text-sm text-amber-900 leading-relaxed italic">
-                      Chi tiết các lỗi cần sửa và phản hồi cụ thể của người kiểm duyệt đã có sẵn trong trang chỉnh sửa. Vui lòng bấm "Bắt đầu sửa lỗi" để xem chi tiết.
+                      Details of required fixes and specific reviewer feedback are available on the edit page. Click "Start Fixing" to view details.
                     </p>
                   </div>
                 </div>
@@ -114,7 +114,7 @@ export default function AnnotatorReturnedTasksPage() {
                     onClick={() => navigate(`/annotator/ai-label/${task.id}`)}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-8"
                   >
-                    Bắt đầu sửa lỗi
+                    Start Fixing
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>

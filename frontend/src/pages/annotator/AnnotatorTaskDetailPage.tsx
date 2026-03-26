@@ -10,7 +10,7 @@ import type { AnnotatorTaskSummary } from "../../types/annotator";
 const AnnotatorTaskDetailPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const [task, setTask] = useState<AnnotatorTaskSummary | null>(null);
-  const [guideline, setGuideline] = useState<string>("Đang tải hướng dẫn...");
+  const [guideline, setGuideline] = useState<string>("Loading guideline...");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const AnnotatorTaskDetailPage: React.FC = () => {
         }
 
         if (guidelineRes.isSuccess) {
-          setGuideline(guidelineRes.data?.guideline || "Không có hướng dẫn cụ thể cho dự án này.");
+          setGuideline(guidelineRes.data?.guideline || "No specific guideline for this project.");
         }
       } finally {
         setLoading(false);
@@ -44,11 +44,11 @@ const AnnotatorTaskDetailPage: React.FC = () => {
   }, [taskId]);
 
   const statusLabel = useMemo(() => {
-    if (!task) return "Không xác định";
-    if (task.status === "InProgress") return "Đang thực hiện";
-    if (task.status === "Assigned") return "Đã giao";
-    if (task.status === "Submitted") return "Đã nộp";
-    if (task.status === "Returned") return "Cần sửa lại";
+    if (!task) return "Unknown";
+    if (task.status === "InProgress") return "In Progress";
+    if (task.status === "Assigned") return "Assigned";
+    if (task.status === "Submitted") return "Submitted";
+    if (task.status === "Returned") return "Needs Revision";
     return task.status;
   }, [task]);
 
@@ -57,7 +57,7 @@ const AnnotatorTaskDetailPage: React.FC = () => {
       <DashboardLayout>
         <div className="h-96 flex flex-col items-center justify-center gap-3 text-gray-600">
           <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-          <p>Đang tải chi tiết công việc...</p>
+          <p>Loading task details...</p>
         </div>
       </DashboardLayout>
     );
@@ -68,7 +68,7 @@ const AnnotatorTaskDetailPage: React.FC = () => {
       <DashboardLayout>
         <div className="max-w-4xl mx-auto py-20">
           <Card className="p-12 text-center text-gray-500 border-dashed">
-            Không tìm thấy thông tin công việc hoặc bạn không có quyền truy cập.
+            Task not found or you do not have access.
           </Card>
         </div>
       </DashboardLayout>
@@ -87,8 +87,8 @@ const AnnotatorTaskDetailPage: React.FC = () => {
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Chi tiết Task #{task.id.slice(-6)}</h1>
-              <p className="text-gray-500 mt-1">Thông tin chi tiết và hướng dẫn thực hiện.</p>
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Task Details #{task.id.slice(-6)}</h1>
+              <p className="text-gray-500 mt-1">Task details and instructions.</p>
             </div>
           </div>
           {task.status !== "Submitted" && (
@@ -107,24 +107,24 @@ const AnnotatorTaskDetailPage: React.FC = () => {
             <div className="space-y-3">
               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <FileText className="text-blue-600 h-5 w-5" />
-                Mô tả công việc
+                Task Description
               </h3>
               <div className="p-4 bg-gray-50 rounded-xl text-gray-600 border border-gray-100">
-                Công việc thuộc dự án <span className="font-semibold text-gray-900">{task.projectId}</span>. 
-                Bạn cần thực hiện dán nhãn cho mục dữ liệu <span className="font-semibold text-gray-900">{task.dataItemId}</span> 
-                theo đúng quy chuẩn của dự án.
+                This task belongs to project <span className="font-semibold text-gray-900">{task.projectId}</span>.
+                You need to label the data item <span className="font-semibold text-gray-900">{task.dataItemId}</span>
+                according to the project guideline.
               </div>
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-xl font-bold text-gray-800">Hướng dẫn thực hiện</h3>
+              <h3 className="text-xl font-bold text-gray-800">Guidelines</h3>
               <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-100 text-blue-900 whitespace-pre-wrap italic">
                 {guideline}
               </div>
             </div>
 
             <div className="pt-6 border-t border-gray-100">
-              <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Tiến độ hiện tại</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Current Progress</h3>
               <div className="max-w-md mx-auto">
                 <div className="w-full bg-gray-100 rounded-full h-3">
                   <div
@@ -133,7 +133,7 @@ const AnnotatorTaskDetailPage: React.FC = () => {
                   ></div>
                 </div>
                 <div className="flex justify-between items-center mt-3 text-sm">
-                  <span className="text-gray-500">Trạng thái: <span className="font-bold text-blue-600 uppercase tracking-wide ml-1">{statusLabel}</span></span>
+                  <span className="text-gray-500">Status: <span className="font-bold text-blue-600 uppercase tracking-wide ml-1">{statusLabel}</span></span>
                   <span className="text-gray-400 font-medium">{task.status === "Submitted" ? "100%" : task.status === "InProgress" ? "50%" : "0%"}</span>
                 </div>
               </div>
@@ -145,7 +145,7 @@ const AnnotatorTaskDetailPage: React.FC = () => {
             <Card className="p-6 space-y-6 h-fit border-none shadow-sm">
               <div>
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
-                  Trạng thái
+                  Status
                 </h3>
                 <div className="flex items-center gap-2 text-green-600 font-bold text-lg">
                   <CheckCircle className="h-6 w-6" />
@@ -159,27 +159,27 @@ const AnnotatorTaskDetailPage: React.FC = () => {
                 </h3>
                 <div className="flex items-center gap-2 text-gray-700 font-medium">
                   <Clock className="h-5 w-5 text-gray-400" />
-                  {task.assignedAt ? new Date(task.assignedAt).toLocaleString('vi-VN') : "-"}
+                  {task.assignedAt ? new Date(task.assignedAt).toLocaleString('en-US') : "-"}
                 </div>
               </div>
 
               {task.status === "Returned" && (
                 <div className="pt-6 border-t border-red-50">
                   <h3 className="text-xs font-bold text-red-400 uppercase tracking-widest mb-3">
-                    Phản hồi từ Reviewer
+                    Feedback from Reviewer
                   </h3>
                   <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm italic">
-                    Vui lòng kiểm tra lại các nhãn đã dán theo phản hồi của người kiểm duyệt.
+                    Please review the labels according to the reviewer's feedback.
                   </div>
                 </div>
               )}
             </Card>
 
             <Card className="p-6 bg-gray-900 text-white border-none shadow-xl">
-              <h3 className="font-bold mb-2">Cần hỗ trợ?</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                Nếu bạn gặp khó khăn trong quá trình dán nhãn, hãy liên hệ với Quản lý dự án hoặc tham khảo lại Guideline.
-              </p>
+              <h3 className="font-bold mb-2">Need help?</h3>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  If you encounter issues while labeling, contact the Project Manager or refer to the project Guideline.
+                </p>
             </Card>
           </div>
         </div>

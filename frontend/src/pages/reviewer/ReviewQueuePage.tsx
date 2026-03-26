@@ -32,14 +32,14 @@ export default function ReviewQueuePage() {
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Hàng đợi kiểm duyệt</h1>
-          <p className="text-gray-500">Danh sách các tác vụ đã nộp đang chờ đánh giá chất lượng</p>
+          <h1 className="text-3xl font-bold text-gray-900">Review Queue</h1>
+          <p className="text-gray-500">List of submitted tasks awaiting quality review</p>
         </div>
 
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center text-gray-500 gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <p>Đang tải danh sách kiểm duyệt...</p>
+            <p>Loading review queue...</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -54,20 +54,20 @@ export default function ReviewQueuePage() {
                     <p className="text-sm text-gray-500 flex items-center gap-2">
                       <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">ID: {task.id.slice(-6)}</span>
                       <span>•</span>
-                      <span className="font-medium text-gray-700">Người dán nhãn: {task.annotatorName}</span>
+                      <span className="font-medium text-gray-700">Annotator: {task.annotatorName}</span>
                       <span>•</span>
-                      <span>Nộp lúc: {new Date(task.submittedAt).toLocaleString('vi-VN')}</span>
+                      <span>Submitted at: {new Date(task.submittedAt).toLocaleString('en-US')}</span>
                     </p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <Badge variant="primary">Đã nộp</Badge>
+                  <Badge variant="primary">Submitted</Badge>
                   <Button 
                     onClick={() => navigate(`/review/${task.id}`)}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
-                    Bắt đầu Review
+                    Start Review
                   </Button>
                 </div>
               </Card>
@@ -76,7 +76,7 @@ export default function ReviewQueuePage() {
             {tasks.length === 0 && (
               <div className="py-20 text-center bg-white rounded-xl border-2 border-dashed border-gray-200">
                 <ClipboardCheck className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">Tuyệt vời! Không còn tác vụ nào đang chờ kiểm duyệt.</p>
+                <p className="text-gray-500 font-medium">Great! No tasks awaiting review.</p>
               </div>
             )}
           </div>

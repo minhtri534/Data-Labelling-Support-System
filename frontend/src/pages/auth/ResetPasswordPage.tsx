@@ -18,31 +18,31 @@ const ResetPasswordPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Lấy email và token từ URL (ví dụ: /reset-password?token=abc&email=test@gmail.com)
+  // Extract email and token from URL (e.g., /reset-password?token=abc&email=test@gmail.com)
   const queryParams = new URLSearchParams(location.search);
   const token = queryParams.get('token') || '';
   const email = queryParams.get('email') || '';
 
   const fromProfile = location.state?.from === 'profile';
   const backLink = fromProfile ? '/profile' : '/login';
-  const backText = fromProfile ? 'Quay lại Trang cá nhân' : 'Quay lại Đăng nhập';
+  const backText = fromProfile ? 'Back to Profile' : 'Back to Login';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     if (password !== confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp");
+      setError("Password confirmation does not match");
       return;
     }
 
     if (password.length < 8) {
-      setError("Mật khẩu phải có ít nhất 8 ký tự");
+      setError("Password must be at least 8 characters");
       return;
     }
 
     if (!token || !email) {
-      setError("Liên kết khôi phục mật khẩu không hợp lệ hoặc đã hết hạn");
+      setError("Reset link is invalid or has expired");
       return;
     }
 
@@ -57,26 +57,26 @@ const ResetPasswordPage: React.FC = () => {
       if (response.isSuccess) {
         setIsSuccess(true);
       } else {
-        setError(response.message || "Đã có lỗi xảy ra");
+        setError(response.message || "An error occurred");
       }
     } catch (err: any) {
       console.error('Reset password error:', err);
-      setError(err.response?.data?.message || "Không thể kết nối đến máy chủ");
+      setError(err.response?.data?.message || "Cannot connect to server");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthLayout title="Bảo mật tài khoản" subtitle="Tạo mật khẩu mới mạnh mẽ cho tài khoản của bạn." variant="simple">
+    <AuthLayout title="Account Security" subtitle="Create a strong new password for your account." variant="simple">
       <Card className="w-full max-w-md p-8">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center">
             <ShieldCheck className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <div className="text-sm text-gray-500">Bảo mật</div>
-            <h2 className="text-xl font-semibold text-gray-900">Đặt mật khẩu mới</h2>
+            <div className="text-sm text-gray-500">Security</div>
+            <h2 className="text-xl font-semibold text-gray-900">Set a New Password</h2>
           </div>
         </div>
 
@@ -90,10 +90,10 @@ const ResetPasswordPage: React.FC = () => {
         {!isSuccess ? (
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <p className="text-sm text-gray-600">
-              Mật khẩu mới của bạn phải khác với các mật khẩu đã sử dụng trước đó.
+              Your new password should be different from previously used passwords.
             </p>
             <div>
-              <Label htmlFor="password">Mật khẩu mới</Label>
+              <Label htmlFor="password">New password</Label>
               <Input
                 id="password"
                 name="password"
@@ -106,7 +106,7 @@ const ResetPasswordPage: React.FC = () => {
               />
             </div>
             <div>
-              <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
+              <Label htmlFor="confirmPassword">Confirm password</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -120,7 +120,7 @@ const ResetPasswordPage: React.FC = () => {
             </div>
             
             <Button type="submit" fullWidth variant="gradient" disabled={loading}>
-              {loading ? "Đang xử lý..." : "Đặt lại mật khẩu"}
+              {loading ? "Processing..." : "Reset Password"}
             </Button>
 
             <div className="text-center text-sm text-gray-600">
@@ -135,14 +135,14 @@ const ResetPasswordPage: React.FC = () => {
                 <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                   <ShieldCheck className="h-8 w-8 text-green-600" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900">Hoàn tất đặt lại mật khẩu</h3>
+                <h3 className="text-lg font-medium text-gray-900">Password Reset Complete</h3>
                 <p className="text-center text-sm text-gray-600 mt-2">
-                  Mật khẩu của bạn đã được cập nhật thành công. Bây giờ bạn có thể đăng nhập bằng mật khẩu mới.
+                  Your password has been updated successfully. You can now sign in using your new password.
                 </p>
              </div>
             <Link to="/login">
               <Button fullWidth variant="gradient">
-                Đăng nhập ngay
+                Sign in now
               </Button>
             </Link>
           </div>

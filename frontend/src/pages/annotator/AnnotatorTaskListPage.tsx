@@ -10,19 +10,19 @@ import type { AnnotatorTaskSummary } from "../../types/annotator";
 
 const getStatusBadge = (status: string) => {
   if (status === "Assigned") {
-    return <Badge variant="secondary">Đã giao</Badge>;
+    return <Badge variant="secondary">Assigned</Badge>;
   }
 
   if (status === "InProgress") {
-    return <Badge variant="primary">Đang thực hiện</Badge>;
+    return <Badge variant="primary">In Progress</Badge>;
   }
 
   if (status === "Submitted") {
-    return <Badge variant="success">Đã nộp</Badge>;
+    return <Badge variant="success">Submitted</Badge>;
   }
 
   if (status === "Rejected" || status === "Returned") {
-    return <Badge variant="danger">Cần sửa lại</Badge>;
+    return <Badge variant="danger">Needs Revision</Badge>;
   }
 
   switch (status) {
@@ -70,21 +70,21 @@ const AnnotatorTaskListPage: React.FC = () => {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Công việc của tôi</h1>
-          <p className="text-gray-500 mt-1">Danh sách các tác vụ dán nhãn được giao cho bạn.</p>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">My Tasks</h1>
+          <p className="text-gray-500 mt-1">List of labeling tasks assigned to you.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="p-4 border-l-4 border-l-gray-400">
-            <p className="text-sm text-gray-500 font-medium">Đã giao</p>
+            <p className="text-sm text-gray-500 font-medium">Assigned</p>
             <p className="text-2xl font-bold text-gray-900">{taskStats.assigned}</p>
           </Card>
           <Card className="p-4 border-l-4 border-l-blue-600">
-            <p className="text-sm text-gray-500 font-medium">Đang thực hiện</p>
+            <p className="text-sm text-gray-500 font-medium">In Progress</p>
             <p className="text-2xl font-bold text-blue-700">{taskStats.inProgress}</p>
           </Card>
           <Card className="p-4 border-l-4 border-l-green-600">
-            <p className="text-sm text-gray-500 font-medium">Đã nộp</p>
+            <p className="text-sm text-gray-500 font-medium">Submitted</p>
             <p className="text-2xl font-bold text-green-700">{taskStats.submitted}</p>
           </Card>
         </div>
@@ -93,14 +93,14 @@ const AnnotatorTaskListPage: React.FC = () => {
           {loading ? (
             <div className="py-14 flex flex-col items-center justify-center text-gray-600 gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              <p>Đang tải danh sách công việc...</p>
+              <p>Loading tasks...</p>
             </div>
           ) : (
             <div className="space-y-4">
               {tasks.length === 0 && (
                 <div className="p-12 text-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                   <List className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">Bạn chưa có công việc nào được giao.</p>
+                  <p className="text-gray-500">You have no assigned tasks.</p>
                 </div>
               )}
               {tasks.map((task) => (
@@ -114,11 +114,11 @@ const AnnotatorTaskListPage: React.FC = () => {
                       <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
                         <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-semibold uppercase">Project: {task.projectId.slice(-6)}</span>
                         <span>•</span>
-                        <span>Dữ liệu: {task.dataItemId.slice(-6)}</span>
+                        <span>Data: {task.dataItemId.slice(-6)}</span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                        <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        Giao lúc: {task.assignedAt ? new Date(task.assignedAt).toLocaleString('vi-VN') : "-"}
+                        Assigned at: {task.assignedAt ? new Date(task.assignedAt).toLocaleString('en-US') : "-"}
                       </p>
                     </div>
                   </div>
@@ -126,17 +126,17 @@ const AnnotatorTaskListPage: React.FC = () => {
                     {getStatusBadge(task.status)}
                     <div className="h-8 w-[1px] bg-gray-100 mx-2" />
                     <Link to={`/annotator/task/${task.id}`}>
-                      <Button variant="ghost" className="text-blue-600 hover:bg-blue-50">Chi tiết</Button>
+                      <Button variant="ghost" className="text-blue-600 hover:bg-blue-50">Details</Button>
                     </Link>
                     {task.status === "Submitted" ? (
                       <Button variant="secondary" disabled className="bg-gray-100 text-gray-400">
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Đã hoàn thành
+                        Completed
                       </Button>
                     ) : (
                       <Button variant="primary" onClick={() => handleStart(task.id)} className="bg-blue-600 hover:bg-blue-700">
                         <PlayCircle className="h-4 w-4 mr-2" />
-                        Bắt đầu
+                        Start
                       </Button>
                     )}
                   </div>

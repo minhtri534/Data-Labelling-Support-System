@@ -39,7 +39,10 @@ export interface ManagerLabelResponse {
   projectId: string;
   name: string;
   yoloClassId: number;
+  categoryId?: string;
+  annotationTypeId?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateLabelRequest {
