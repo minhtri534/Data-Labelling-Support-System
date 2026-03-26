@@ -6,7 +6,8 @@ import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Badge } from "../../../components/ui/Badge";
-import { managerService, type DatasetResponse } from "../../../services/managerService";
+import { managerService } from "../../../services/managerService";
+import type { DatasetResponse } from "../../../types/manager";
 
 const ManagerDatasetListPage: React.FC = () => {
   const [datasets, setDatasets] = useState<DatasetResponse[]>([]);

@@ -1327,6 +1327,92 @@ public sealed class ManagerService(
         return ServiceResponse<TaskResponse>.Success(ToTaskResponse(entity), "Created");
     }
 
+    public async Task<ServiceResponse<int>> BulkCreateTasksByDatasetAsync(string actorUserId, BulkCreateTasksByDatasetRequest request)
+    {
+        var projectId = (request.ProjectId ?? string.Empty).Trim();
+        var datasetId = (request.DatasetId ?? string.Empty).Trim();
+        var annotatorId = (request.AnnotatorId ?? string.Empty).Trim();
+
+        var projectExists = await dbContext.Projects.AsNoTracking().AnyAsync(x => x.Id == projectId);
+        if (!projectExists)
+        {
+            return ServiceResponse<int>.Failure(ErrorMessages.NotFound, ["Project not found"]);
+        }
+
+        var access = await EnsureProjectAccessAsync(actorUserId, projectId);
+        if (access is not null)
+        {
+            return ServiceResponse<int>.Failure(access.Message, access.Errors);
+        }
+
+        var dataset = await dbContext.Datasets.AsNoTracking().FirstOrDefaultAsync(x => x.Id == datasetId);
+        if (dataset is null)
+        {
+            return ServiceResponse<int>.Failure(ErrorMessages.NotFound, ["Dataset not found"]);
+        }
+
+        if (!string.Equals(dataset.ProjectId, projectId, StringComparison.Ordinal))
+        {
+            return ServiceResponse<int>.Failure("Invalid dataset", ["Dataset does not belong to project"]);
+        }
+
+        var annotator = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == annotatorId);
+        if (annotator is null)
+        {
+            return ServiceResponse<int>.Failure(ErrorMessages.NotFound, ["Annotator not found"]);
+        }
+
+        // Find data items in the dataset that are NOT already assigned in this project
+        var alreadyAssignedDataItemIds = await dbContext.LabelingTasks
+            .AsNoTracking()
+            .Where(x => x.ProjectId == projectId)
+            .Select(x => x.DataItemId)
+            .ToListAsync();
+
+        var dataItemsToAssign = await dbContext.DataItems
+            .AsNoTracking()
+            .Where(x => x.DatasetId == datasetId && !alreadyAssignedDataItemIds.Contains(x.Id))
+            .ToListAsync();
+
+        if (dataItemsToAssign.Count == 0)
+        {
+            var totalItemsInDataset = await dbContext.DataItems.CountAsync(x => x.DatasetId == datasetId);
+            if (totalItemsInDataset == 0)
+            {
+                return ServiceResponse<int>.Success(0, "The dataset is empty");
+            }
+
+            return ServiceResponse<int>.Success(0, "All items in this dataset are already assigned to tasks in this project");
+        }
+
+        var tasks = dataItemsToAssign.Select(item => new LabelingTask
+        {
+            ProjectId = projectId,
+            DataItemId = item.Id,
+            AnnotatorId = annotatorId,
+            AssignedByUserId = actorUserId,
+            AssignedAt = DateTime.UtcNow,
+            Status = "Assigned"
+        }).ToList();
+
+        dbContext.LabelingTasks.AddRange(tasks);
+        await dbContext.SaveChangesAsync();
+
+        var histories = tasks.Select(task => new TaskHistory
+        {
+            TaskId = task.Id,
+            OldStatus = null,
+            NewStatus = "Assigned",
+            ChangedByUserId = actorUserId
+        }).ToList();
+
+        dbContext.TaskHistories.AddRange(histories);
+        await AddActivityLogAsync(actorUserId, "Manager.BulkCreateTasks", "datasets", datasetId);
+        await dbContext.SaveChangesAsync();
+
+        return ServiceResponse<int>.Success(tasks.Count, $"{tasks.Count} tasks created");
+    }
+
     public Task<ServiceResponse<TaskResponse>> AssignTaskAsync(string actorUserId, string taskId, AssignTaskRequest request)
         => ChangeTaskAssigneeAsync(actorUserId, taskId, request.AnnotatorId, "Manager.AssignTask");
 
@@ -1396,6 +1482,30 @@ public sealed class ManagerService(
         return ServiceResponse<TaskProgressResponse>.Success(response, "OK");
     }
 
+    public async Task<ServiceResponse<List<TaskResponse>>> GetProjectTasksAsync(string actorUserId, string projectId)
+    {
+        var id = (projectId ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return ServiceResponse<List<TaskResponse>>.Failure("Invalid project", ["Project id is required"]);
+        }
+
+        var access = await EnsureProjectAccessAsync(actorUserId, id);
+        if (access is not null)
+        {
+            return ServiceResponse<List<TaskResponse>>.Failure(access.Message, access.Errors);
+        }
+
+        var items = await dbContext.LabelingTasks
+            .AsNoTracking()
+            .Where(x => x.ProjectId == id)
+            .OrderByDescending(x => x.AssignedAt)
+            .Select(x => ToTaskResponse(x))
+            .ToListAsync();
+
+        return ServiceResponse<List<TaskResponse>>.Success(items, "OK");
+    }
+
     public async Task<ServiceResponse<List<TaskHistoryResponse>>> GetTaskHistoryAsync(string actorUserId, string taskId)
     {
         var id = (taskId ?? string.Empty).Trim();
@@ -1440,15 +1550,22 @@ public sealed class ManagerService(
             return ServiceResponse<LabelingProgressOverviewResponse>.Failure(access.Message, access.Errors);
         }
 
-        var statuses = await dbContext.LabelingTasks.AsNoTracking().Where(x => x.ProjectId == id).Select(x => x.Status).ToListAsync();
+        var statuses = await dbContext.LabelingTasks
+            .AsNoTracking()
+            .Where(x => x.ProjectId == id)
+            .Select(x => x.Status)
+            .ToListAsync();
 
-        var response = new LabelingProgressOverviewResponse(
-            id,
-            statuses.Count,
-            statuses.Count(x => x == "Completed"),
-            statuses.Count(x => x == "Submitted"),
-            statuses.Count(x => x == "Assigned" || x == "InProgress" || x == "Paused" || x == "Rework"));
+        var total = statuses.Count;
+        var completed = statuses.Count(x => string.Equals(x, "Completed", StringComparison.OrdinalIgnoreCase));
+        var submitted = statuses.Count(x => string.Equals(x, "Submitted", StringComparison.OrdinalIgnoreCase));
+        var active = statuses.Count(x => 
+            string.Equals(x, "Assigned", StringComparison.OrdinalIgnoreCase) || 
+            string.Equals(x, "InProgress", StringComparison.OrdinalIgnoreCase) || 
+            string.Equals(x, "Paused", StringComparison.OrdinalIgnoreCase) || 
+            string.Equals(x, "Rework", StringComparison.OrdinalIgnoreCase));
 
+        var response = new LabelingProgressOverviewResponse(id, total, completed, submitted, active);
         return ServiceResponse<LabelingProgressOverviewResponse>.Success(response, "OK");
     }
 
@@ -1487,7 +1604,7 @@ public sealed class ManagerService(
 
         var reviews = await dbContext.Reviews
             .AsNoTracking()
-            .Where(r => dbContext.AnnotationSets.Any(s => s.Id == r.AnnotationSetId && dbContext.LabelingTasks.Any(t => t.Id == s.TaskId && t.ProjectId == id)))
+            .Where(r => r.AnnotationSet != null && r.AnnotationSet.Task != null && r.AnnotationSet.Task.ProjectId == id)
             .Select(r => new { r.Result, r.Score })
             .ToListAsync();
 
@@ -1515,11 +1632,11 @@ public sealed class ManagerService(
 
         var items = await dbContext.Annotations
             .AsNoTracking()
-            .Where(a => dbContext.LabelingTasks.Any(t => t.ProjectId == id && dbContext.AnnotationSets.Any(s => s.Id == a.AnnotationSetId && s.TaskId == t.Id)))
-            .Where(a => string.IsNullOrWhiteSpace(a.GeometryData) || !string.Equals(a.AnnotationType, "bbox", StringComparison.OrdinalIgnoreCase))
+            .Where(a => a.AnnotationSet != null && a.AnnotationSet.Task != null && a.AnnotationSet.Task.ProjectId == id)
+            .Where(a => string.IsNullOrWhiteSpace(a.GeometryData) || a.AnnotationType != "bbox")
             .Select(a => new InconsistentLabelResponse(
                 a.Id,
-                dbContext.AnnotationSets.Where(s => s.Id == a.AnnotationSetId).Select(s => s.TaskId).FirstOrDefault() ?? string.Empty,
+                a.AnnotationSet!.TaskId,
                 a.LabelId,
                 string.IsNullOrWhiteSpace(a.GeometryData) ? "Missing geometry" : "Unsupported annotation type"))
             .Take(500)

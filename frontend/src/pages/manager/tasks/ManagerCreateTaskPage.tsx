@@ -6,8 +6,8 @@ import { Card } from "../../../components/ui/Card";
 import { Label } from "../../../components/ui/Label";
 import { Input } from "../../../components/ui/Input";
 import { Button } from "../../../components/ui/Button";
-import { managerService, type ProjectResponse, type DatasetResponse } from "../../../services/managerService";
-import { userService, type UserResponse } from "../../../services/userService";
+import { managerService } from "../../../services/managerService";
+import type { ProjectResponse, DatasetResponse, UserProjectRoleResponse } from "../../../types/manager";
 
 const ManagerCreateTaskPage: React.FC = () => {
   const navigate = useNavigate();
@@ -17,8 +17,9 @@ const ManagerCreateTaskPage: React.FC = () => {
 
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [datasets, setDatasets] = useState<DatasetResponse[]>([]);
-  const [annotators, setAnnotators] = useState<UserResponse[]>([]);
+  const [annotators, setAnnotators] = useState<UserProjectRoleResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingAnnotators, setLoadingAnnotators] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [selectedProjectId, setSelectedProjectId] = useState(initialProjectId);
@@ -33,35 +34,23 @@ const ManagerCreateTaskPage: React.FC = () => {
   useEffect(() => {
     if (selectedProjectId) {
       fetchDatasets(selectedProjectId);
+      fetchAnnotators(selectedProjectId);
+    } else {
+      setDatasets([]);
+      setAnnotators([]);
     }
   }, [selectedProjectId]);
 
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const [projRes, userRes] = await Promise.all([
-        managerService.getProjects(),
-        userService.getAll()
-      ]);
+      const projRes = await managerService.getProjects();
 
       if (projRes.isSuccess && projRes.data) {
         setProjects(projRes.data);
       } else {
         setProjects([]);
       }
-
-      if (userRes.isSuccess && userRes.data) {
-        setAnnotators(
-          userRes.data.filter(
-            u =>
-              u.roleName === "Annotator" ||
-              (u.roleId && u.roleId.endsWith("3"))
-          )
-        );
-      } else {
-        setAnnotators([]);
-      }
-
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error loading data");
     } finally {
@@ -85,6 +74,23 @@ const ManagerCreateTaskPage: React.FC = () => {
     }
   };
 
+  const fetchAnnotators = async (pid: string) => {
+    setLoadingAnnotators(true);
+    try {
+      const res = await managerService.getProjectRoles(pid);
+      if (res.isSuccess && res.data) {
+        // Filter only Annotators
+        setAnnotators(res.data.filter(r => r.roleName === "Annotator"));
+      } else {
+        setAnnotators([]);
+      }
+    } catch {
+      setAnnotators([]);
+    } finally {
+      setLoadingAnnotators(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -96,32 +102,32 @@ const ManagerCreateTaskPage: React.FC = () => {
     setSubmitting(true);
 
     try {
-      // ⚠️ TEMP FIX: fake dataItemId
-      const dataItemId = "demo-item-id";
-
-      const res = await managerService.createTask({
+      const res = await managerService.bulkCreateTasksByDataset({
         projectId: selectedProjectId,
         datasetId: selectedDatasetId,
-        dataItemId,
         annotatorId: selectedAnnotatorId
       });
 
       if (res.isSuccess) {
-        alert("Task created successfully!");
-        navigate(`/manager/projects/${selectedProjectId}`);
+        if (res.data === 0) {
+          alert(res.message || "No new data items to assign.");
+        } else {
+          alert(`${res.data} tasks created successfully!`);
+          navigate(`/manager/projects/${selectedProjectId}`);
+        }
       } else {
-        alert(res.message || "Error creating task");
+        alert(res.message || "Error creating tasks");
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error creating task");
+      alert(err instanceof Error ? err.message : "Error creating tasks");
     } finally {
       setSubmitting(false);
     }
   };
 
   const filteredAnnotators = annotators.filter(a =>
-    a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    a.userEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a.userId?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
@@ -178,7 +184,9 @@ const ManagerCreateTaskPage: React.FC = () => {
                 >
                   <option value="">Select dataset</option>
                   {datasets.map(d => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
+                    <option key={d.id} value={d.id}>
+                      {d.name} ({d.totalItems ?? 0} items)
+                    </option>
                   ))}
                 </select>
               </div>
@@ -195,18 +203,27 @@ const ManagerCreateTaskPage: React.FC = () => {
               />
 
               <div className="mt-3 max-h-60 overflow-y-auto space-y-2">
-                {filteredAnnotators.map(user => (
+                {loadingAnnotators ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="animate-spin h-5 w-5 text-blue-600" />
+                  </div>
+                ) : filteredAnnotators.map(user => (
                   <div
-                    key={user.id}
-                    className={`p-3 border rounded cursor-pointer ${
-                      selectedAnnotatorId === user.id ? "bg-blue-100" : ""
+                    key={user.userId}
+                    className={`p-3 border rounded cursor-pointer flex justify-between items-center ${
+                      selectedAnnotatorId === user.userId ? "bg-blue-100 border-blue-300" : "hover:bg-gray-50"
                     }`}
-                    onClick={() => setSelectedAnnotatorId(user.id)}
+                    onClick={() => setSelectedAnnotatorId(user.userId)}
                   >
-                    {user.fullName} ({user.email})
-                    {selectedAnnotatorId === user.id && <CheckCircle size={16} />}
+                    <span>{user.userEmail || "Unknown"}</span>
+                    {selectedAnnotatorId === user.userId && <CheckCircle size={16} className="text-blue-600" />}
                   </div>
                 ))}
+                {!loadingAnnotators && filteredAnnotators.length === 0 && (
+                  <p className="text-center py-4 text-gray-400 text-sm">
+                    {selectedProjectId ? "No annotators found in this project." : "Please select a project first."}
+                  </p>
+                )}
               </div>
             </div>
 

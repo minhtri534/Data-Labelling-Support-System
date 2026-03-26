@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/ui/Card';
@@ -16,39 +16,65 @@ import {
   Lock,
   Badge
 } from 'lucide-react';
+import { userService } from '../../services/userService';
+import type { UserResponse, UpdateUserRequest } from '../../services/userService';
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: localStorage.getItem("fullName") || 'User',
-    email: localStorage.getItem("email") || 'user@example.com',
-    phone: '+84 (000) 000-000',
-    location: 'Vietnam',
-    bio: 'Specialist at the DLSS platform.',
-    role: (localStorage.getItem("role") || 'Annotator').toUpperCase(),
-    department: 'Data Survey Department'
-  });
+  const [user, setUser] = useState<UserResponse | null>(null);
+  const [formData, setFormData] = useState<Partial<UpdateUserRequest>>({});
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      // Temporary: fetchUser logic disabled until backend endpoint /users/me is ready
+      /*
+      const res = await userService.getMe();
+      if (res.isSuccess) {
+        setUser(res.data);
+        setFormData({
+          fullName: res.data.fullName,
+          email: res.data.email,
+          phoneNumber: res.data.phoneNumber,
+          address: res.data.address,
+          dateOfBirth: res.data.dateOfBirth,
+        });
+      }
+      */
+    };
+    fetchUser();
+  }, []);
 
   const initials = useMemo(() => {
-    return formData.fullName
+    if (!user?.fullName) return 'U';
+    return user.fullName
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase()
       .slice(0, 2);
-  }, [formData.fullName]);
+  }, [user?.fullName]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsEditing(false);
-    // Here you would typically handle the API call to update profile
-    console.log('Profile updated:', formData);
-    alert("Profile updated successfully!");
+    if (!user) return;
+
+    // Temporary: updateMe logic disabled until backend endpoint /users/me is ready
+    /*
+    const res = await userService.updateMe(formData as UpdateUserRequest);
+    if (res.isSuccess) {
+      setUser(res.data);
+      setIsEditing(false);
+      alert("Profile updated successfully!");
+    } else {
+      alert(res.message || "Failed to update profile");
+    }
+    */
+    alert("Profile update is currently disabled (backend pending)");
   };
 
   return (
@@ -74,8 +100,8 @@ export default function ProfilePage() {
                 </button>
               </div>
               
-              <h2 className="text-2xl font-bold text-gray-900">{formData.fullName}</h2>
-              <Badge className="mt-1 px-4 py-1 bg-blue-50 text-blue-600 border border-blue-600">{formData.role}</Badge>
+              <h2 className="text-2xl font-bold text-gray-900">{user?.fullName}</h2>
+              <Badge className="mt-1 px-4 py-1 bg-blue-50 text-blue-600 border border-blue-600">{user?.roleName}</Badge>
               
               <div className="mt-8 w-full space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
@@ -141,7 +167,7 @@ export default function ProfilePage() {
                     <Input
                       id="fullName"
                       name="fullName"
-                      value={formData.fullName}
+                      value={formData.fullName || ''}
                       onChange={handleChange}
                       disabled={!isEditing}
                       className="bg-gray-50/50"
@@ -153,29 +179,29 @@ export default function ProfilePage() {
                       id="email"
                       name="email"
                       type="email"
-                      value={formData.email}
+                      value={formData.email || ''}
                       onChange={handleChange}
                       disabled={!isEditing}
                       className="bg-gray-50/50"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone number</Label>
+                    <Label htmlFor="phoneNumber">Phone number</Label>
                     <Input
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      value={formData.phoneNumber || ''}
                       onChange={handleChange}
                       disabled={!isEditing}
                       className="bg-gray-50/50"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">Address</Label>
+                    <Label htmlFor="address">Address</Label>
                     <Input
-                      id="location"
-                      name="location"
-                      value={formData.location}
+                      id="address"
+                      name="address"
+                      value={formData.address || ''}
                       onChange={handleChange}
                       disabled={!isEditing}
                       className="bg-gray-50/50"
@@ -184,15 +210,15 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="bio">About me</Label>
-                  <textarea
-                    id="bio"
-                    name="bio"
-                    rows={4}
-                    value={formData.bio}
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Input
+                    id="dateOfBirth"
+                    name="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString().split('T')[0] : ''}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    className="w-full mt-1 rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-500 transition-all"
+                    className="bg-gray-50/50"
                   />
                 </div>
 

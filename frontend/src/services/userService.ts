@@ -67,5 +67,19 @@ export const userService = {
   async delete(userId: string): Promise<ServiceResponse<boolean>> {
     const response = await api.delete<ServiceResponse<boolean>>(`/users/${userId}`);
     return response.data;
+  },
+
+  async search(query: string, role?: string): Promise<ServiceResponse<UserSummaryResponse[]>> {
+    const response = await api.get<ServiceResponse<UserSummaryResponse[]>>('/users/search', {
+      params: { q: query, role }
+    });
+    return response.data;
   }
 };
+
+export interface UserSummaryResponse {
+  id: string;
+  fullName: string;
+  email: string;
+  roleName: string;
+}

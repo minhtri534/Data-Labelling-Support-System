@@ -31,9 +31,10 @@ export interface UpdateProjectRequest {
 export interface DatasetResponse {
   id: string;
   projectId: string;
-  projectName: string;
+  projectName?: string;
   name: string;
-  totalItems: number;
+  type?: string;
+  totalItems?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -87,13 +88,13 @@ export interface ImportDatasetFromExternalRequest {
 export interface DatasetVersionResponse {
   id: string;
   datasetId: string;
-  versionNumber: number;
+  versionName: string;
   createdAt: string;
-  createdByUserId: string;
 }
 
 export interface CreateDatasetVersionRequest {
   datasetId: string;
+  versionName: string;
 }
 
 // Label Types
@@ -180,6 +181,12 @@ export interface TaskResponse {
 export interface CreateTaskRequest {
   projectId: string;
   dataItemId: string;
+  annotatorId: string;
+}
+
+export interface BulkCreateTasksByDatasetRequest {
+  projectId: string;
+  datasetId: string;
   annotatorId: string;
 }
 
@@ -295,17 +302,18 @@ export interface ExportDownloadInfoResponse {
 
 // Project Role Types
 export interface UserProjectRoleResponse {
-  id: string;
-  projectId: string;
   userId: string;
-  role: string;
-  assignedAt: string;
+  userEmail: string;
+  projectId: string;
+  projectName: string;
+  roleId: string;
+  roleName: string;
 }
 
 export interface AssignUserProjectRoleRequest {
   projectId: string;
   userId: string;
-  role: string;
+  roleId: string;
 }
 
 // Project Guideline Types

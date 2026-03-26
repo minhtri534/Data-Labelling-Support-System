@@ -163,14 +163,25 @@ const AnnotatorTaskDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              {task.status === "Returned" && (
-                <div className="pt-6 border-t border-red-50">
-                  <h3 className="text-xs font-bold text-red-400 uppercase tracking-widest mb-3">
+              {task.status === "Returned" && feedback.length > 0 && (
+                <div className="pt-6 border-t border-red-100">
+                  <h3 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <MessageSquareWarning className="h-4 w-4" />
                     Feedback from Reviewer
                   </h3>
-                  <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm italic">
-                    Please review the labels according to the reviewer's feedback.
-                  </div>
+                  {feedback.map(fb => (
+                    <div key={fb.id} className="p-4 bg-red-50 text-red-800 rounded-lg text-sm mb-3 border border-red-100">
+                      <p className="italic">“{fb.comment}”</p>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {fb.errorCategories.map(cat => (
+                          <span key={cat.id} className="px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-semibold">
+                            {cat.name}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-red-400 mt-2 text-right">{new Date(fb.createdAt).toLocaleString()}</p>
+                    </div>
+                  ))}
                 </div>
               )}
             </Card>

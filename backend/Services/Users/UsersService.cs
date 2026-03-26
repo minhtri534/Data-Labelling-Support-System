@@ -207,5 +207,51 @@ public sealed class UsersService(AppDbContext dbContext, IPasswordHasher passwor
         return ServiceResponse<bool>.Success(true, "Deleted");
     }
 
+    public async Task<ServiceResponse<List<UserSummaryResponse>>> SearchAsync(string actorUserId, string query, string? roleName = null)
+    {
+        var actor = await dbContext.Users.AsNoTracking().Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == actorUserId);
+        if (actor is null)
+        {
+            return ServiceResponse<List<UserSummaryResponse>>.Failure(ErrorMessages.Unauthorized, ["User not found"]);
+        }
+
+        var isActorAdmin = string.Equals(actor.Role?.Name, "Admin", StringComparison.OrdinalIgnoreCase);
+
+        var normalizedQuery = (query ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedQuery))
+        {
+            return ServiceResponse<List<UserSummaryResponse>>.Success([], "OK");
+        }
+
+        var usersQuery = dbContext.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .Where(u => u.Email.ToLower().Contains(normalizedQuery) || u.FullName.ToLower().Contains(normalizedQuery));
+
+        // Security filter: If not Admin, exclude other Admin/Manager roles
+        if (!isActorAdmin)
+        {
+            usersQuery = usersQuery.Where(u => u.Role != null && 
+                u.Role.Name != "Admin" && u.Role.Name != "Manager");
+        }
+
+        if (!string.IsNullOrWhiteSpace(roleName))
+        {
+            usersQuery = usersQuery.Where(u => u.Role != null && u.Role.Name == roleName);
+        }
+
+        var users = await usersQuery
+            .OrderBy(u => u.FullName)
+            .Take(20)
+            .Select(u => new UserSummaryResponse(
+                u.Id,
+                u.FullName,
+                u.Email,
+                u.Role != null ? u.Role.Name : null))
+            .ToListAsync();
+
+        return ServiceResponse<List<UserSummaryResponse>>.Success(users, "OK");
+    }
+
     private static string NormalizeEmail(string email) => (email ?? string.Empty).Trim().ToLowerInvariant();
 }

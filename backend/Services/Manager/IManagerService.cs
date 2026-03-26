@@ -47,6 +47,7 @@ public interface IManagerService
     Task<ServiceResponse<ProjectResponse>> UpdateProjectGuidelineAsync(string actorUserId, string projectId, UpdateProjectGuidelineRequest request);
 
     Task<ServiceResponse<TaskResponse>> CreateTaskAsync(string actorUserId, CreateTaskRequest request);
+    Task<ServiceResponse<int>> BulkCreateTasksByDatasetAsync(string actorUserId, BulkCreateTasksByDatasetRequest request);
     Task<ServiceResponse<TaskResponse>> AssignTaskAsync(string actorUserId, string taskId, AssignTaskRequest request);
     Task<ServiceResponse<int>> BulkAssignTasksAsync(string actorUserId, BulkAssignTasksRequest request);
     Task<ServiceResponse<TaskResponse>> ReassignTaskAsync(string actorUserId, string taskId, AssignTaskRequest request);
@@ -55,6 +56,7 @@ public interface IManagerService
     Task<ServiceResponse<TaskResponse>> CancelTaskAsync(string actorUserId, string taskId);
     Task<ServiceResponse<TaskResponse>> RequestRelabelingAsync(string actorUserId, string taskId, RequestRelabelingRequest request);
     Task<ServiceResponse<TaskProgressResponse>> GetTaskProgressAsync(string actorUserId, string projectId);
+    Task<ServiceResponse<List<TaskResponse>>> GetProjectTasksAsync(string actorUserId, string projectId);
     Task<ServiceResponse<List<TaskHistoryResponse>>> GetTaskHistoryAsync(string actorUserId, string taskId);
 
     Task<ServiceResponse<LabelingProgressOverviewResponse>> GetLabelingProgressOverviewAsync(string actorUserId, string projectId);

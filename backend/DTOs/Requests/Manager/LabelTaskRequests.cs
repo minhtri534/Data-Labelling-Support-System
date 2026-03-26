@@ -43,6 +43,12 @@ public sealed record CreateTaskRequest(
     string AnnotatorId
 );
 
+public sealed record BulkCreateTasksByDatasetRequest(
+    string ProjectId,
+    string DatasetId,
+    string AnnotatorId
+);
+
 public sealed record AssignTaskRequest(
     string AnnotatorId
 );

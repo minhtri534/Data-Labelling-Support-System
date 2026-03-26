@@ -1,4 +1,5 @@
 using DataLabellingSupportSystem.Api.Common.Constants;
+using DataLabellingSupportSystem.Api.Common.Extensions;
 using DataLabellingSupportSystem.Api.Common.Results;
 using DataLabellingSupportSystem.Api.DTOs.Requests.Users;
 using DataLabellingSupportSystem.Api.DTOs.Responses.Users;
@@ -75,5 +76,19 @@ public sealed class UsersController(IUsersService usersService) : ControllerBase
         return result.Message == ErrorMessages.NotFound
             ? NotFound(result)
             : BadRequest(result);
+    }
+
+    [HttpGet("search")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<ActionResult<ServiceResponse<List<UserSummaryResponse>>>> Search([FromQuery] string q, [FromQuery] string? role = null)
+    {
+        var userId = User.GetUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(ServiceResponse<List<UserSummaryResponse>>.Failure(ErrorMessages.Unauthorized, ["Missing user id claim"]));
+        }
+
+        var result = await usersService.SearchAsync(userId, q, role);
+        return this.ToOkOrBadRequest(result);
     }
 }

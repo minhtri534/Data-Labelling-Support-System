@@ -615,6 +615,19 @@ public sealed class ManagerController(IManagerService managerService, IStorageSe
         return this.ToOkOrBadRequest(result);
     }
 
+    [HttpPost("tasks/bulk-create-by-dataset")]
+    public async Task<ActionResult<ServiceResponse<int>>> BulkCreateTasksByDataset([FromBody] BulkCreateTasksByDatasetRequest request)
+    {
+        var userId = User.GetUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(ServiceResponse<int>.Failure(ErrorMessages.Unauthorized, ["Missing user id claim"]));
+        }
+
+        var result = await managerService.BulkCreateTasksByDatasetAsync(userId, request);
+        return this.ToOkOrBadRequest(result);
+    }
+
     [HttpPost("tasks/{taskId}/assign")]
     public async Task<ActionResult<ServiceResponse<TaskResponse>>> AssignTask([FromRoute] string taskId, [FromBody] AssignTaskRequest request)
     {
@@ -716,6 +729,19 @@ public sealed class ManagerController(IManagerService managerService, IStorageSe
         }
 
         var result = await managerService.GetTaskProgressAsync(userId, projectId);
+        return this.ToOkOrBadRequest(result);
+    }
+
+    [HttpGet("projects/{projectId}/tasks")]
+    public async Task<ActionResult<ServiceResponse<List<TaskResponse>>>> GetProjectTasks([FromRoute] string projectId)
+    {
+        var userId = User.GetUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(ServiceResponse<List<TaskResponse>>.Failure(ErrorMessages.Unauthorized, ["Missing user id claim"]));
+        }
+
+        var result = await managerService.GetProjectTasksAsync(userId, projectId);
         return this.ToOkOrBadRequest(result);
     }
 

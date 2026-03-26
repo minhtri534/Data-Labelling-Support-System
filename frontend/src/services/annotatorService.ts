@@ -8,11 +8,26 @@ import type {
   ProjectGuideline,
   ServiceResponse,
   UpsertTaskAnnotationsPayload,
+  ReviewFeedback,
 } from "../types/annotator";
+
+export interface RejectTaskRequest {
+  reason?: string;
+}
 
 export const annotatorService = {
   async getMyTasks() {
     const res = await api.get<ServiceResponse<AnnotatorTaskSummary[]>>("/annotator/tasks");
+    return res.data;
+  },
+
+  async acceptTask(taskId: string) {
+    const res = await api.post<ServiceResponse<boolean>>(`/annotator/tasks/${taskId}/accept`);
+    return res.data;
+  },
+
+  async rejectTask(taskId: string, data: RejectTaskRequest) {
+    const res = await api.post<ServiceResponse<boolean>>(`/annotator/tasks/${taskId}/reject`, data);
     return res.data;
   },
 
@@ -79,7 +94,7 @@ export const annotatorService = {
   },
 
   async getReviewFeedback(taskId: string) {
-    const res = await api.get<ServiceResponse<any>>(`/annotator/tasks/${taskId}/review-feedback`);
+    const res = await api.get<ServiceResponse<ReviewFeedback[]>>(`/annotator/tasks/${taskId}/review-feedback`);
     return res.data;
   },
 

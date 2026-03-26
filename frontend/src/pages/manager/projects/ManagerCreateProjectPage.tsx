@@ -8,7 +8,7 @@ import { Input } from "../../../components/ui/Input";
 import { Button } from "../../../components/ui/Button";
 import { Textarea } from "../../../components/ui/Textarea";
 import { managerService } from "../../../services/managerService";
-import type { CreateProjectRequest } from "../../../services/managerService";
+import type { CreateProjectRequest } from "../../../types/manager";
 
 const ManagerCreateProjectPage: React.FC = () => {
   const navigate = useNavigate();

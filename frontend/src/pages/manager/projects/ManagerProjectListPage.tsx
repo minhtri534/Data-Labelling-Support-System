@@ -4,7 +4,8 @@ import DashboardLayout from "../../../layouts/DashboardLayout";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Badge } from "../../../components/ui/Badge";
-import { managerService, type ProjectResponse } from "../../../services/managerService";
+import { managerService } from "../../../services/managerService";
+import type { ProjectResponse } from "../../../types/manager";
 import { Plus, Folder, Calendar, Loader2, Archive } from "lucide-react";
 
 const ManagerProjectListPage: React.FC = () => {

@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "../../utils/cn";
 
-type Variant = "primary" | "secondary" | "outline" | "gradient" | "ghost";
+type Variant = "primary" | "secondary" | "outline" | "gradient" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg" | "icon";
 
 type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -20,7 +20,8 @@ const variants: Record<Variant, string> = {
     "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus-visible:ring-brand shadow-sm",
   gradient:
     "bg-gradient-to-r from-brand to-palette-violet text-white shadow-soft hover:brightness-110 border border-transparent",
-  ghost: "bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+  ghost: "bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+  danger: "bg-red-600 text-white hover:bg-red-700 shadow-sm"
 };
 
 const sizes: Record<Size, string> = {

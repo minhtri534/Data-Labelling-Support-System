@@ -15,24 +15,13 @@ import ManagerProjectDetailPage from './pages/manager/projects/ManagerProjectDet
 import ManagerUploadDatasetPage from './pages/manager/datasets/ManagerUploadDatasetPage';
 import ManagerDatasetListPage from './pages/manager/datasets/ManagerDatasetListPage';
 import ManagerDatasetDetailPage from './pages/manager/datasets/ManagerDatasetDetailPage';
-import ManagerLabelManagementPage from './pages/manager/labels/ManagerLabelManagementPage';
-import ManagerGuidelinePage from './pages/manager/labels/ManagerGuidelinePage';
 import ManagerCreateTaskPage from './pages/manager/tasks/ManagerCreateTaskPage';
 
 // Reviewer Pages
-import ReviewerDashboard from './pages/reviewer/ReviewerDashboard';
-import ReviewQueuePage from './pages/reviewer/ReviewQueuePage';
-import ReviewDetailPage from './pages/reviewer/ReviewDetailPage';
-import QualityReportPage from './pages/reviewer/QualityReportPage';
-import ReviewerEarningsPage from "./pages/reviewer/ReviewerEarningsPage";
+import ReviewerRoutes from "./pages/reviewer";
 
 // Annotator Pages
-import AnnotatorReturnedTasksPage from "./pages/annotator/AnnotatorReturnedTasksPage";
-import AnnotatorEarningsPage from "./pages/annotator/AnnotatorEarningsPage";
-import AnnotatorAILabelPage from "./pages/annotator/AnnotatorAILabelPage";
-import AnnotatorTaskListPage from "./pages/annotator/AnnotatorTaskListPage";
-import AnnotatorTaskDetailPage from "./pages/annotator/AnnotatorTaskDetailPage";
-import AnnotatorLabelingPage from "./pages/annotator/AnnotatorLabelingPage";
+import AnnotatorRoutes from "./pages/annotator";
 
 // Admin Pages
 import AdminUserManagement from './pages/admin/AdminUserManagement';
@@ -74,26 +63,13 @@ function App() {
         <Route path="/manager/datasets" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerDatasetListPage /></ProtectedRoute>} />
         <Route path="/manager/datasets/upload" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerUploadDatasetPage /></ProtectedRoute>} />
         <Route path="/manager/datasets/:datasetId" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerDatasetDetailPage /></ProtectedRoute>} />
-        <Route path="/manager/label-config" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerLabelManagementPage /></ProtectedRoute>} />
-        <Route path="/manager/guidelines" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerGuidelinePage /></ProtectedRoute>} />
         <Route path="/manager/tasks/create" element={<ProtectedRoute allowedRoles={['manager', 'admin']}><ManagerCreateTaskPage /></ProtectedRoute>} />
         
         {/* Reviewer Routes */}
-        <Route path="/reviewer" element={<ProtectedRoute allowedRoles={['reviewer', 'admin']}><ReviewerDashboard /></ProtectedRoute>} />
-        <Route path="/review" element={<ProtectedRoute allowedRoles={['reviewer', 'admin']}><ReviewQueuePage /></ProtectedRoute>} />
-        <Route path="/review/:id" element={<ProtectedRoute allowedRoles={['reviewer', 'admin']}><ReviewDetailPage /></ProtectedRoute>} />
-        <Route path="/quality-report" element={<ProtectedRoute allowedRoles={['reviewer', 'admin']}><QualityReportPage /></ProtectedRoute>} />
-        <Route path="/reviewer/earnings" element={<ProtectedRoute allowedRoles={['reviewer', 'admin']}><ReviewerEarningsPage /></ProtectedRoute>} />
+        <Route path="/reviewer/*" element={<ProtectedRoute allowedRoles={['reviewer', 'admin']}><ReviewerRoutes /></ProtectedRoute>} />
 
         {/* Annotator Routes */}
-        <Route path="/annotator/tasks" element={<ProtectedRoute allowedRoles={['annotator', 'admin']}><AnnotatorTaskListPage /></ProtectedRoute>} />
-        <Route path="/annotator/task/:taskId" element={<ProtectedRoute allowedRoles={['annotator', 'admin']}><AnnotatorTaskDetailPage /></ProtectedRoute>} />
-        <Route path="/annotator/task/:taskId/label" element={<ProtectedRoute allowedRoles={['annotator', 'admin']}><AnnotatorLabelingPage /></ProtectedRoute>} />
-        <Route path="/annotator/ai-label" element={<ProtectedRoute allowedRoles={['annotator', 'admin']}><AnnotatorAILabelPage /></ProtectedRoute>} />
-        <Route path="/annotator/ai-label/:id" element={<ProtectedRoute allowedRoles={['annotator', 'admin']}><AnnotatorAILabelPage /></ProtectedRoute>} />
-        <Route path="/annotator/returned" element={<ProtectedRoute allowedRoles={['annotator', 'admin']}><AnnotatorReturnedTasksPage /></ProtectedRoute>} />
-        <Route path="/annotator/rework/:id" element={<ProtectedRoute allowedRoles={['annotator', 'admin']}><AnnotatorAILabelPage /></ProtectedRoute>} />
-        <Route path="/annotator/earnings" element={<ProtectedRoute allowedRoles={['annotator', 'admin']}><AnnotatorEarningsPage /></ProtectedRoute>} />
+        <Route path="/annotator/*" element={<ProtectedRoute allowedRoles={['annotator', 'admin']}><AnnotatorRoutes /></ProtectedRoute>} />
 
         {/* Admin Routes */}
         <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUserManagement /></ProtectedRoute>} />

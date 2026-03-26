@@ -1,9 +1,6 @@
-export interface ServiceResponse<T> {
-  isSuccess: boolean;
-  data: T;
-  message: string;
-  errors: string[];
-}
+import type { ServiceResponse } from "../services/authService";
+
+export { type ServiceResponse };
 
 export interface AnnotatorTaskSummary {
   id: string;
@@ -11,91 +8,68 @@ export interface AnnotatorTaskSummary {
   dataItemId: string;
   status: string;
   assignedAt?: string | null;
-  completedAt?: string | null;
+}
+
+export interface AnnotatorTaskDetail extends AnnotatorTaskSummary {
+  // Add any additional detail fields if necessary
+}
+
+export interface TaskLabel {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface Annotation {
+  id: string;
+  labelId: string;
+  geometryData: any; 
+}
+
+export interface AnnotatorAnnotation extends Annotation {
+  taskId: string;
+}
+
+export interface AISuggestion {
+  id: string;
+  labelId: string;
+  geometryData: any;
+  confidence: number;
+}
+
+export interface AiAssistSuggestResponse {
+  predictions: AISuggestion[];
+}
+
+export interface ReviewFeedback {
+  id: string;
+  comment: string;
+  createdAt: string;
+  errorCategories: {
+    id: string;
+    name: string;
+  }[];
 }
 
 export interface AnnotatorTaskItem {
+  id: string;
   taskId: string;
-  dataItemId: string;
-  storageProvider: string;
-  objectKey: string;
-  originalWidth: number;
-  originalHeight: number;
+  content: string;
+  contentType: string;
 }
 
 export interface LabelResponse {
   id: string;
   name: string;
-  yoloClassId: number;
-}
-
-export interface AnnotatorAnnotation {
-  id: string;
-  labelId: string;
-  geometryData: any; // Can be string or object
-  isDraft: boolean;
-  createdAt: string;
-  updatedAt: string;
-  submittedAt?: string | null;
-}
-
-export interface AnnotatorReviewErrorCategoryResponse {
-  errorTypeId: string;
-  errorName: string;
-  description?: string | null;
-}
-
-export interface AnnotatorReviewFeedbackResponse {
-  id: string;
-  annotationSetId: string;
-  result: string;
-  score: number;
-  comment?: string | null;
-  reviewedAt: string;
-  categories: AnnotatorReviewErrorCategoryResponse[];
-}
-
-export interface AddReviewerCommentRequest {
-  comment: string;
-}
-
-export interface RejectAiSuggestionRequest {
-  reason: string;
+  color: string;
+  projectId: string;
 }
 
 export interface ProjectGuideline {
   projectId: string;
-  guideline?: string | null;
-}
-
-export interface AnnotationObjectPayload {
-  labelId: string;
-  geometryData: {
-    type: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
+  guideline: string;
 }
 
 export interface UpsertTaskAnnotationsPayload {
-  objects: AnnotationObjectPayload[];
-  predictionId?: string;
-}
-
-export interface AiAssistSuggestionObject {
-  labelId: string;
-  confidence: number;
-  geometryData: string;
-}
-
-export interface AiAssistSuggestResponse {
-  runId: string;
-  provider: string;
-  model: string;
-  confidenceThreshold: number;
-  originalWidth: number;
-  originalHeight: number;
-  objects: AiAssistSuggestionObject[];
+  annotations: Partial<Annotation>[];
 }

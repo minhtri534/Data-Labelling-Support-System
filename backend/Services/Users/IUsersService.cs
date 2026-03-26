@@ -15,4 +15,6 @@ public interface IUsersService
     Task<ServiceResponse<UserResponse>> UpdateAsync(string userId, UpdateUserRequest request);
 
     Task<ServiceResponse<bool>> DeleteAsync(string userId);
+
+    Task<ServiceResponse<List<UserSummaryResponse>>> SearchAsync(string actorUserId, string query, string? roleName = null);
 }
