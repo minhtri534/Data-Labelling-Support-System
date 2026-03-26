@@ -21,8 +21,12 @@ const getStatusBadge = (status: string) => {
     return <Badge variant="success">Submitted</Badge>;
   }
 
-  if (status === "Rejected" || status === "Returned") {
-    return <Badge variant="danger">Needs Revision</Badge>;
+  if (status === "Rejected" || status === "Returned" || status === "Rework") {
+    return <Badge variant="danger">Revision Required</Badge>;
+  }
+
+  if (status === "Completed") {
+    return <Badge variant="success">Completed</Badge>;
   }
 
   switch (status) {
@@ -55,7 +59,7 @@ const AnnotatorTaskListPage: React.FC = () => {
 
   const taskStats = useMemo(
     () => ({
-      assigned: tasks.filter((t) => ["Assigned", "InProgress", "Returned", "Rejected"].includes(t.status)).length,
+      assigned: tasks.filter((t) => ["Assigned", "InProgress", "Returned", "Rejected", "Rework"].includes(t.status)).length,
       done: tasks.filter((t) => ["Submitted", "Completed"].includes(t.status)).length,
     }),
     [tasks]
@@ -63,7 +67,7 @@ const AnnotatorTaskListPage: React.FC = () => {
 
   const filteredTasks = useMemo(() => {
     if (activeTab === "todo") {
-      return tasks.filter((t) => ["Assigned", "InProgress", "Returned", "Rejected"].includes(t.status));
+      return tasks.filter((t) => ["Assigned", "InProgress", "Returned", "Rejected", "Rework"].includes(t.status));
     }
     return tasks.filter((t) => ["Submitted", "Completed"].includes(t.status));
   }, [tasks, activeTab]);

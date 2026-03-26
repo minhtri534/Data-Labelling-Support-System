@@ -25,25 +25,32 @@ const AnnotatorTaskDetailPage: React.FC = () => {
 
       setLoading(true);
       try {
-        // Gọi thêm API lấy feedback
-        const [taskRes, guidelineRes, feedbackRes] = await Promise.all([
-          annotatorService.getMyTasks(),
-          annotatorService.getGuideline(taskId),
-          annotatorService.getReviewFeedback(taskId), // Lấy feedback từ service
-        ]);
-
+        // Fetch base task info first to determine if we need feedback
+        const taskRes = await annotatorService.getMyTasks();
+        let currentTask: AnnotatorTaskSummary | null = null;
         if (taskRes.isSuccess) {
-          const found = (taskRes.data || []).find((t) => t.id === taskId) || null;
-          setTask(found);
+          currentTask = (taskRes.data || []).find((t) => t.id === taskId) || null;
+          setTask(currentTask);
         }
+
+        // Only fetch feedback if the task status indicates it might have one
+        const needsFeedback = currentTask && ["Returned", "Rejected", "Rework", "Completed"].includes(currentTask.status);
+        const feedbackPromise = needsFeedback 
+          ? annotatorService.getReviewFeedback(taskId).catch(() => ({ isSuccess: false, data: null }))
+          : Promise.resolve({ isSuccess: false, data: null });
+
+        const [guidelineRes, feedbackRes] = await Promise.all([
+          annotatorService.getGuideline(taskId),
+          feedbackPromise,
+        ]);
 
         if (guidelineRes.isSuccess) {
           setGuideline(guidelineRes.data?.guideline || "No specific guideline for this project.");
         }
 
-        // FIX: Cập nhật dữ liệu feedback
         if (feedbackRes.isSuccess && feedbackRes.data) {
-          setFeedback(feedbackRes.data);
+          const data = Array.isArray(feedbackRes.data) ? feedbackRes.data : [feedbackRes.data];
+          setFeedback(data);
         }
       } catch (err) {
         console.error("Error loading task details:", err);
@@ -187,24 +194,30 @@ const AnnotatorTaskDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* FIX TS2304 & TS7006: Phần render feedback */}
-              {task.status === "Returned" && feedback.length > 0 && (
+              {/* Hiển thị feedback cho trạng thái Returned, Rework hoặc Completed */}
+              {(task.status === "Returned" || task.status === "Rework" || task.status === "Completed") && feedback.length > 0 && (
                 <div className="pt-6 border-t border-red-100">
                   <h3 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <MessageSquareWarning className="h-4 w-4" />
                     Feedback from Reviewer
                   </h3>
-                  {feedback.map((fb: ReviewFeedback) => ( // Thêm type cho fb
-                    <div key={fb.id} className="p-4 bg-red-50 text-red-800 rounded-lg text-sm mb-3 border border-red-100">
+                  {feedback.map((fb: ReviewFeedback) => ( 
+                    <div key={fb.id || `feedback-${fb.createdAt}`} className={`p-4 rounded-lg text-sm mb-3 border ${
+                      task.status === "Completed" ? "bg-green-50 text-green-800 border-green-100" : "bg-red-50 text-red-800 border-red-100"
+                    }`}>
                       <p className="italic">“{fb.comment}”</p>
                       <div className="flex flex-wrap gap-2 mt-3">
-                        {fb.errorCategories.map((cat: ErrorCategory) => ( // Thêm type cho cat
-                          <span key={cat.errorTypeId} className="px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-semibold">
+                        {(fb.errorCategories || []).map((cat: ErrorCategory) => ( 
+                          <span key={cat.errorTypeId || cat.errorName} className={`px-2 py-1 rounded-md text-xs font-semibold ${
+                            task.status === "Completed" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                          }`}>
                             {cat.errorName}
                           </span>
                         ))}
                       </div>
-                      <p className="text-xs text-red-400 mt-2 text-right">
+                      <p className={`text-xs mt-2 text-right ${
+                        task.status === "Completed" ? "text-green-400" : "text-red-400"
+                      }`}>
                         {fb.createdAt ? new Date(fb.createdAt).toLocaleString() : ""}
                       </p>
                     </div>

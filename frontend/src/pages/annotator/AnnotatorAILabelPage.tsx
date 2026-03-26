@@ -84,8 +84,8 @@ export default function AnnotatorAILabelPage() {
         setTask(currentTask);
       }
 
-      // Only fetch feedback if the task status indicates it might have one
-      const needsFeedback = currentTask && ["Returned", "Rejected", "Submitted"].includes(currentTask.status);
+      // Only fetch feedback if the task status indicates it might have one (Rework or Completed)
+      const needsFeedback = currentTask && ["Returned", "Rejected", "Rework", "Completed"].includes(currentTask.status);
       const feedbackPromise = needsFeedback 
         ? annotatorService.getReviewFeedback(taskId).catch(() => ({ isSuccess: false, data: null }))
         : Promise.resolve({ isSuccess: false, data: null });
@@ -394,38 +394,51 @@ export default function AnnotatorAILabelPage() {
     );
   }
 
-  const isRework = task.status === "Returned" || task.status === "Rejected";
+  const isRework = task.status === "Returned" || task.status === "Rejected" || task.status === "Rework";
+  const isCompleted = task.status === "Completed";
 
   return (
     <DashboardLayout>
       <div className="h-[calc(100vh-120px)] flex flex-col gap-4">
         {/* Review Feedback Banner */}
-        {isRework && reviewFeedback && (
-          <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex items-start gap-3 shadow-sm">
-              <AlertCircle className="text-amber-600 h-5 w-5 mt-0.5 shrink-0" />
+        {(isRework || isCompleted) && reviewFeedback && (
+          <div className={`${
+            isCompleted ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"
+          } border p-3 rounded-xl flex items-start gap-3 shadow-sm`}>
+              <AlertCircle className={`${isCompleted ? "text-green-600" : "text-amber-600"} h-5 w-5 mt-0.5 shrink-0`} />
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-amber-900 text-sm">Revision request from Reviewer</span>
-                <span className="bg-amber-200 text-amber-800 text-[10px] px-2 py-0.5 rounded font-bold">Điểm: {reviewFeedback.score}/100</span>
+                <span className={`font-bold ${isCompleted ? "text-green-900" : "text-amber-900"} text-sm`}>
+                  {isCompleted ? "Reviewer Approved" : "Revision request from Reviewer"}
+                </span>
+                <span className={`${isCompleted ? "bg-green-200 text-green-800" : "bg-amber-200 text-amber-800"} text-[10px] px-2 py-0.5 rounded font-bold`}>
+                  Điểm: {reviewFeedback.score}/100
+                </span>
               </div>
-              <p className="text-sm text-amber-800 italic mt-1">"{reviewFeedback.comment || "Please check accuracy."}"</p>
+              <p className={`text-sm ${isCompleted ? "text-green-800" : "text-amber-800"} italic mt-1`}>
+                "{reviewFeedback.comment || (isCompleted ? "Good job!" : "Please check accuracy.")}"
+              </p>
               <div className="flex gap-2 mt-2">
-                {reviewFeedback.categories.map(c => (
-                  <span key={c.errorTypeId} className="bg-white/60 border border-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded">
+                {(reviewFeedback.categories || []).map(c => (
+                  <span key={c.errorTypeId} className={`bg-white/60 border ${
+                    isCompleted ? "border-green-100 text-green-700" : "border-amber-100 text-amber-700"
+                  } text-[10px] px-2 py-0.5 rounded`}>
                     {c.errorName}
                   </span>
                 ))}
               </div>
             </div>
-            <div className="flex flex-col gap-2 min-w-[200px]">
-                <Input 
-                size={3}
-                placeholder="Feedback for Reviewer..." 
-                value={reworkComment} 
-                onChange={(e) => setReworkComment(e.target.value)}
-                className="bg-white/80 text-xs h-8"
-              />
-            </div>
+            {!isCompleted && (
+              <div className="flex flex-col gap-2 min-w-[200px]">
+                  <Input 
+                  size={3}
+                  placeholder="Feedback for Reviewer..." 
+                  value={reworkComment} 
+                  onChange={(e) => setReworkComment(e.target.value)}
+                  className="bg-white/80 text-xs h-8"
+                />
+              </div>
+            )}
           </div>
         )}
 
