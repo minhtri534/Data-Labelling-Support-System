@@ -5,13 +5,15 @@ import { Button } from "../../components/ui/Button";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { ArrowLeft, PlayCircle, FileText, Clock, CheckCircle, Loader2, MessageSquareWarning } from "lucide-react";
 import { annotatorService } from "../../services/annotatorService";
-import type { AnnotatorTaskSummary } from "../../types/annotator";
-import type { ReviewFeedback } from "../../types/annotator";
+import type { AnnotatorTaskSummary, ReviewFeedback, ErrorCategory } from "../../types/annotator"; // Thêm ErrorCategory
 
 const AnnotatorTaskDetailPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const [task, setTask] = useState<AnnotatorTaskSummary | null>(null);
   const [guideline, setGuideline] = useState<string>("Loading guideline...");
+  
+  // FIX TS2304: Khai báo state cho feedback
+  const [feedback, setFeedback] = useState<ReviewFeedback[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,9 +25,11 @@ const AnnotatorTaskDetailPage: React.FC = () => {
 
       setLoading(true);
       try {
-        const [taskRes, guidelineRes] = await Promise.all([
+        // Gọi thêm API lấy feedback
+        const [taskRes, guidelineRes, feedbackRes] = await Promise.all([
           annotatorService.getMyTasks(),
           annotatorService.getGuideline(taskId),
+          annotatorService.getReviewFeedback(taskId), // Lấy feedback từ service
         ]);
 
         if (taskRes.isSuccess) {
@@ -36,6 +40,13 @@ const AnnotatorTaskDetailPage: React.FC = () => {
         if (guidelineRes.isSuccess) {
           setGuideline(guidelineRes.data?.guideline || "No specific guideline for this project.");
         }
+
+        // FIX: Cập nhật dữ liệu feedback
+        if (feedbackRes.isSuccess && feedbackRes.data) {
+          setFeedback(feedbackRes.data);
+        }
+      } catch (err) {
+        console.error("Error loading task details:", err);
       } finally {
         setLoading(false);
       }
@@ -114,7 +125,6 @@ const AnnotatorTaskDetailPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Task Info */}
           <Card className="p-8 col-span-2 space-y-8 border-none shadow-sm">
             <div className="space-y-3">
               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -155,7 +165,6 @@ const AnnotatorTaskDetailPage: React.FC = () => {
             )}
           </Card>
 
-          {/* Sidebar Info */}
           <div className="space-y-6">
             <Card className="p-6 space-y-6 h-fit border-none shadow-sm">
               <div>
@@ -178,23 +187,26 @@ const AnnotatorTaskDetailPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* FIX TS2304 & TS7006: Phần render feedback */}
               {task.status === "Returned" && feedback.length > 0 && (
                 <div className="pt-6 border-t border-red-100">
                   <h3 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <MessageSquareWarning className="h-4 w-4" />
                     Feedback from Reviewer
                   </h3>
-                  {feedback.map(fb => (
+                  {feedback.map((fb: ReviewFeedback) => ( // Thêm type cho fb
                     <div key={fb.id} className="p-4 bg-red-50 text-red-800 rounded-lg text-sm mb-3 border border-red-100">
                       <p className="italic">“{fb.comment}”</p>
                       <div className="flex flex-wrap gap-2 mt-3">
-                        {fb.errorCategories.map(cat => (
-                          <span key={cat.id} className="px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-semibold">
-                            {cat.name}
+                        {fb.errorCategories.map((cat: ErrorCategory) => ( // Thêm type cho cat
+                          <span key={cat.errorTypeId} className="px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-semibold">
+                            {cat.errorName}
                           </span>
                         ))}
                       </div>
-                      <p className="text-xs text-red-400 mt-2 text-right">{new Date(fb.createdAt).toLocaleString()}</p>
+                      <p className="text-xs text-red-400 mt-2 text-right">
+                        {fb.createdAt ? new Date(fb.createdAt).toLocaleString() : ""}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -203,9 +215,9 @@ const AnnotatorTaskDetailPage: React.FC = () => {
 
             <Card className="p-6 bg-gray-900 text-white border-none shadow-xl">
               <h3 className="font-bold mb-2">Need help?</h3>
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  If you encounter issues while labeling, contact the Project Manager or refer to the project Guideline.
-                </p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                If you encounter issues while labeling, contact the Project Manager or refer to the project Guideline.
+              </p>
             </Card>
           </div>
         </div>

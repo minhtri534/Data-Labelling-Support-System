@@ -208,13 +208,13 @@ export default function AnnotatorAILabelPage() {
     () => ({
       objects: boxes.map((b) => ({
         labelId: b.labelId,
-        geometryData: {
+        geometryData: JSON.stringify({ 
           type: "bbox",
           x: Math.round(b.x),
           y: Math.round(b.y),
           width: Math.round(b.width),
           height: Math.round(b.height),
-        },
+        }),
       })),
     }),
     [boxes]
