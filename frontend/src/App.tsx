@@ -25,12 +25,9 @@ import AnnotatorRoutes from "./pages/annotator";
 
 // Admin Pages
 import AdminUserManagement from './pages/admin/AdminUserManagement';
-import AdminWorkforcePaymentPage from "./pages/admin/AdminWorkforcePaymentPage";
-import AdminDisputePage from "./pages/admin/AdminDisputePage";
 import AdminSystemConfigPage from "./pages/admin/AdminSystemConfigPage";
 import AdminSystemHealthPage from "./pages/admin/AdminSystemHealthPage";
 import AdminLogsPage from "./pages/admin/AdminLogsPage";
-import AdminPaymentVerificationPage from "./pages/admin/AdminPaymentVerificationPage";
 import AdminResetUserPasswordPage from "./pages/admin/AdminResetUserPasswordPage";
 
 // Common Pages
@@ -74,12 +71,9 @@ function App() {
         {/* Admin Routes */}
         <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUserManagement /></ProtectedRoute>} />
         <Route path="/admin/users/reset-password" element={<ProtectedRoute allowedRoles={['admin']}><AdminResetUserPasswordPage /></ProtectedRoute>} />
-        <Route path="/admin/workforce-payment" element={<ProtectedRoute allowedRoles={['admin']}><AdminWorkforcePaymentPage /></ProtectedRoute>} />
-        <Route path="/admin/dispute" element={<ProtectedRoute allowedRoles={['admin']}><AdminDisputePage /></ProtectedRoute>} />
         <Route path="/admin/system-config" element={<ProtectedRoute allowedRoles={['admin']}><AdminSystemConfigPage /></ProtectedRoute>} />
         <Route path="/admin/system-health" element={<ProtectedRoute allowedRoles={['admin']}><AdminSystemHealthPage /></ProtectedRoute>} />
         <Route path="/admin/logs" element={<ProtectedRoute allowedRoles={['admin']}><AdminLogsPage /></ProtectedRoute>} />
-        <Route path="/admin/payment-verification" element={<ProtectedRoute allowedRoles={['admin']}><AdminPaymentVerificationPage /></ProtectedRoute>} />
 
         {/* Default Route */}
         <Route path="/" element={<Navigate to="/login" replace />} />

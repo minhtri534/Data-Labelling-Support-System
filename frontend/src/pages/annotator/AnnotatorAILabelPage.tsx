@@ -139,8 +139,9 @@ export default function AnnotatorAILabelPage() {
         setBoxes(parsed);
       }
 
-      if (feedbackRes.isSuccess) {
-        setReviewFeedback(feedbackRes.data);
+      if (feedbackRes.isSuccess && feedbackRes.data) {
+        const data = Array.isArray(feedbackRes.data) ? feedbackRes.data[0] : feedbackRes.data;
+        setReviewFeedback(data);
       }
     } catch (err) {
       console.error("Error loading task data:", err);
@@ -202,7 +203,7 @@ export default function AnnotatorAILabelPage() {
 
   const savePayload: UpsertTaskAnnotationsPayload = useMemo(
     () => ({
-      objects: boxes.map((b) => ({
+      annotations: boxes.map((b) => ({
         labelId: b.labelId,
         geometryData: {
           type: "bbox",

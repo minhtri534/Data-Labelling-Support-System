@@ -3,9 +3,10 @@ import { useParams, Link } from "react-router-dom";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import DashboardLayout from "../../layouts/DashboardLayout";
-import { ArrowLeft, PlayCircle, FileText, Clock, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, PlayCircle, FileText, Clock, CheckCircle, Loader2, MessageSquareWarning } from "lucide-react";
 import { annotatorService } from "../../services/annotatorService";
 import type { AnnotatorTaskSummary } from "../../types/annotator";
+import type { ReviewFeedback } from "../../types/annotator";
 
 const AnnotatorTaskDetailPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();

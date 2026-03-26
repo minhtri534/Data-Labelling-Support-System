@@ -1,6 +1,6 @@
-import type { ServiceResponse } from "../services/authService";
+// src/types/annotator.ts
 
-export { type ServiceResponse };
+export type { ServiceResponse } from "../services/authService";
 
 export interface AnnotatorTaskSummary {
   id: string;
@@ -10,9 +10,7 @@ export interface AnnotatorTaskSummary {
   assignedAt?: string | null;
 }
 
-export interface AnnotatorTaskDetail extends AnnotatorTaskSummary {
-  // Add any additional detail fields if necessary
-}
+export interface AnnotatorTaskDetail extends AnnotatorTaskSummary {}
 
 export interface TaskLabel {
   id: string;
@@ -37,17 +35,20 @@ export interface AISuggestion {
   confidence: number;
 }
 
+// FIX: Thêm runId và đổi predictions thành objects để khớp với code component
 export interface AiAssistSuggestResponse {
-  predictions: AISuggestion[];
+  runId: string;
+  objects: AISuggestion[];
 }
 
-export interface ReviewFeedback {
+// FIX: Thêm interface này để fix lỗi TS2305
+export interface AnnotatorReviewFeedbackResponse {
   id: string;
+  score: number;
   comment: string;
-  createdAt: string;
-  errorCategories: {
-    id: string;
-    name: string;
+  categories: {
+    errorTypeId: string;
+    errorName: string;
   }[];
 }
 
@@ -58,11 +59,13 @@ export interface AnnotatorTaskItem {
   contentType: string;
 }
 
+// FIX: Thêm yoloClassId
 export interface LabelResponse {
   id: string;
   name: string;
   color: string;
   projectId: string;
+  yoloClassId: number; 
 }
 
 export interface ProjectGuideline {

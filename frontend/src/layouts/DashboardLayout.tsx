@@ -55,11 +55,8 @@ const NAV_BY_ROLE = {
 
   admin: [
     { label: 'User Management', icon: Users, path: '/admin/users' },
-    { label: 'Workforce Payments', icon: CheckSquare, path: '/admin/workforce-payment' },
-    { label: 'Disputes', icon: MessageSquare, path: '/admin/dispute' },
     { label: 'System Config', icon: Settings, path: '/admin/system-config' },
     { label: 'System Health', icon: ShieldCheck, path: '/admin/system-health' },
-    { label: 'Payment Verification', icon: CheckSquare, path: '/admin/payment-verification' },
     { label: 'System Logs', icon: History, path: '/admin/logs' },
   ],
 };
