@@ -124,11 +124,6 @@ public sealed class AnnotatorController(IAnnotatorService annotatorService, ISto
                 : StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        if (TryGetHttpUri(dataItemResult.Data!.ObjectKey, out var remoteUri))
-        {
-            return Redirect(remoteUri.ToString());
-        }
-
         var opened = await storageService.OpenReadAsync(
             dataItemResult.Data!.StorageProvider,
             dataItemResult.Data!.ObjectKey,
@@ -139,17 +134,6 @@ public sealed class AnnotatorController(IAnnotatorService annotatorService, ISto
         }
 
         return File(opened.Value.Stream, opened.Value.ContentType, opened.Value.FileName);
-    }
-
-    private static bool TryGetHttpUri(string value, out Uri uri)
-    {
-        var raw = (value ?? string.Empty).Trim();
-        if (!Uri.TryCreate(raw, UriKind.Absolute, out uri!))
-        {
-            return false;
-        }
-
-        return uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps;
     }
 
     [HttpGet("tasks/{taskId}/annotations")]
