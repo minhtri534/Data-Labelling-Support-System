@@ -235,9 +235,9 @@ public sealed class DevSeedHostedService(
 
             var desiredDataItems = new[]
             {
-                new { ObjectKey = "demo/images/0001.jpg", OriginalWidth = 1920, OriginalHeight = 1080 },
-                new { ObjectKey = "demo/images/0002.jpg", OriginalWidth = 1280, OriginalHeight = 720 },
-                new { ObjectKey = "demo/images/0003.jpg", OriginalWidth = 1024, OriginalHeight = 768 }
+                new { StorageProvider = "RemoteUrl", ObjectKey = "https://i.postimg.cc/nCyjGV1J/0001.jpg", OriginalWidth = 1920, OriginalHeight = 1080 },
+                new { StorageProvider = "RemoteUrl", ObjectKey = "https://i.postimg.cc/bs7D9YRq/0002.jpg", OriginalWidth = 1280, OriginalHeight = 720 },
+                new { StorageProvider = "RemoteUrl", ObjectKey = "https://i.postimg.cc/1fknrRKR/0003.jpg", OriginalWidth = 1024, OriginalHeight = 768 }
             };
 
             foreach (var desired in desiredDataItems)
@@ -251,7 +251,7 @@ public sealed class DevSeedHostedService(
                     dbContext.DataItems.Add(new DataItem
                     {
                         DatasetId = dataset.Id,
-                        StorageProvider = "Local",
+                        StorageProvider = desired.StorageProvider,
                         ObjectKey = desired.ObjectKey,
                         OriginalWidth = desired.OriginalWidth,
                         OriginalHeight = desired.OriginalHeight
