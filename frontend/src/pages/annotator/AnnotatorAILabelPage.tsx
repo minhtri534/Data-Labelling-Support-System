@@ -132,9 +132,17 @@ export default function AnnotatorAILabelPage() {
           .map((ann) => {
             try {
               let geo: any = ann.geometryData;
-              if (typeof geo === 'string') geo = JSON.parse(geo);
+              // Handle potential double-encoding from backend/previous saves
+              if (typeof geo === 'string') {
+                geo = JSON.parse(geo);
+                // If it's still a string after one parse, parse it again
+                if (typeof geo === 'string') {
+                  geo = JSON.parse(geo);
+                }
+              }
               
               if (
+                !geo ||
                 typeof geo.x !== "number" ||
                 typeof geo.y !== "number" ||
                 typeof geo.width !== "number" ||
@@ -151,7 +159,8 @@ export default function AnnotatorAILabelPage() {
                 height: geo.height,
                 labelId: ann.labelId,
               } as Box;
-            } catch {
+            } catch (e) {
+              console.error("Error parsing annotation geometry:", e, ann.geometryData);
               return null;
             }
           })
@@ -283,9 +292,15 @@ export default function AnnotatorAILabelPage() {
         .map((obj) => {
           try {
             let geo: any = obj.geometryData;
-            if (typeof geo === 'string') geo = JSON.parse(geo);
+            if (typeof geo === 'string') {
+              geo = JSON.parse(geo);
+              if (typeof geo === 'string') {
+                geo = JSON.parse(geo);
+              }
+            }
 
             if (
+              !geo ||
               typeof geo.x !== "number" ||
               typeof geo.y !== "number" ||
               typeof geo.width !== "number" ||

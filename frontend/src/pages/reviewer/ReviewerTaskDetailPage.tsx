@@ -20,11 +20,15 @@ const ReviewerTaskDetailPage: React.FC = () => {
   const [guidelineResult, setGuidelineResult] = useState<GuidelineComparisonResponse | null>(null);
   const [consistencyResult, setConsistencyResult] = useState<LabelConsistencyValidationResponse | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [comment, setComment] = useState("");
+
+  const CANVAS_BASE_WIDTH = 800;
+  const scaleX = imageNaturalSize ? CANVAS_BASE_WIDTH / imageNaturalSize.width : 1;
+  const scaleY = imageNaturalSize ? (CANVAS_BASE_WIDTH * imageNaturalSize.height) / imageNaturalSize.width / imageNaturalSize.height : 1;
 
   useEffect(() => {
     if (!taskId) return;
@@ -58,10 +62,18 @@ const ReviewerTaskDetailPage: React.FC = () => {
 
   const parseGeometry = (geo: any) => {
     if (!geo) return null;
-    if (typeof geo === 'object') return geo;
+    let parsed = geo;
     try {
-      return JSON.parse(geo);
-    } catch {
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed);
+        // Handle double-encoded string
+        if (typeof parsed === 'string') {
+          parsed = JSON.parse(parsed);
+        }
+      }
+      return parsed;
+    } catch (e) {
+      console.error("Error parsing geometry:", e, geo);
       return null;
     }
   };
@@ -174,15 +186,21 @@ const ReviewerTaskDetailPage: React.FC = () => {
                   src={imageUrl} 
                   alt="Task item" 
                   draggable={false}
+                  onLoad={(e) => {
+                    const target = e.currentTarget;
+                    if (target.naturalWidth > 0 && target.naturalHeight > 0) {
+                      setImageNaturalSize({ width: target.naturalWidth, height: target.naturalHeight });
+                    }
+                  }}
                   style={{
-                    width: 800 * zoom,
+                    width: CANVAS_BASE_WIDTH * zoom,
                     height: "auto",
                     display: "block",
                     userSelect: "none",
                   }}
                 />
                 
-                {/* Annotation Overlay - EXACT logic as Annotator page (box.x * zoom) */}
+                {/* Annotation Overlay - EXACT logic as Annotator page */}
                 {data?.annotations.map(ann => {
                   const geo = parseGeometry(ann.geometryData);
                   if (!geo || geo.type !== 'bbox') return null;
@@ -192,10 +210,10 @@ const ReviewerTaskDetailPage: React.FC = () => {
                       key={ann.annotationId}
                       className="absolute border-2 border-emerald-400 bg-emerald-400/20 group cursor-default"
                       style={{
-                        left: geo.x * zoom,
-                        top: geo.y * zoom,
-                        width: geo.width * zoom,
-                        height: geo.height * zoom,
+                        left: geo.x * scaleX * zoom,
+                        top: geo.y * scaleY * zoom,
+                        width: geo.width * scaleX * zoom,
+                        height: geo.height * scaleY * zoom,
                       }}
                     >
                       <div className="absolute -top-6 left-0 bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-bold">
