@@ -6,6 +6,7 @@ export interface AnnotatorTaskSummary {
   dataItemId: string;
   status: string;
   assignedAt?: string | null;
+  completedAt?: string | null;
 }
 
 export interface AnnotatorTaskDetail extends AnnotatorTaskSummary {}
