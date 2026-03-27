@@ -41,6 +41,14 @@ interface Box {
   confidence?: number;
 }
 
+interface ToastMessage {
+  id: number;
+  type: "success" | "error" | "info";
+  text: string;
+}
+
+const CANVAS_BASE_WIDTH = 800;
+
 const FALLBACK_IMAGE =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
@@ -67,12 +75,21 @@ export default function AnnotatorAILabelPage() {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [selectedLabelId, setSelectedLabelId] = useState<string>("");
   const [secureImageUrl, setSecureImageUrl] = useState<string>("");
+  const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
   const [reworkComment, setReworkComment] = useState("");
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const currentTaskId = task?.id || "";
-  const isReadOnly = useMemo(() => 
-    task?.status === "Submitted" || task?.status === "Completed"
-  , [task?.status]);
+  const scaleX = imageNaturalSize ? CANVAS_BASE_WIDTH / imageNaturalSize.width : 1;
+  const scaleY = imageNaturalSize ? (CANVAS_BASE_WIDTH * imageNaturalSize.height) / imageNaturalSize.width / imageNaturalSize.height : 1;
+
+  const showToast = (type: ToastMessage["type"], text: string) => {
+    const id = Date.now() + Math.floor(Math.random() * 1000);
+    setToasts((prev) => [...prev, { id, type, text }]);
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 3800);
+  };
 
   const loadTaskContext = async (taskId: string) => {
     try {
@@ -223,7 +240,7 @@ export default function AnnotatorAILabelPage() {
   const handleSave = async (isSubmit: boolean) => {
     if (!currentTaskId) return;
     if (isSubmit && boxes.length === 0) {
-      alert("Please label at least one object before submitting.");
+      showToast("error", "Please label at least one object before submitting.");
       return;
     }
 
@@ -238,10 +255,10 @@ export default function AnnotatorAILabelPage() {
         : await annotatorService.saveDraft(currentTaskId, savePayload);
 
       if (res.isSuccess) {
-        alert(isSubmit ? "Submission successful!" : "Draft saved.");
+        showToast("success", isSubmit ? "Submission successful!" : "Draft saved.");
         if (isSubmit) navigate("/annotator/tasks");
       } else {
-        alert(res.message || "Error saving data.");
+        showToast("error", res.message || "Error saving data.");
       }
     } finally {
       setSaving(false);
@@ -255,7 +272,8 @@ export default function AnnotatorAILabelPage() {
     try {
       const res = await annotatorService.suggestAi(currentTaskId, false);
       if (!res.isSuccess || !res.data) {
-        alert("AI found no suggestions or AI service is disabled.");
+        const details = (res.errors || []).join("; ");
+        showToast("error", details ? `${res.message}. ${details}` : (res.message || "AI found no suggestions or AI service is disabled."));
         return;
       }
 
@@ -292,10 +310,37 @@ export default function AnnotatorAILabelPage() {
 
       if (aiBoxes.length > 0) {
         setBoxes((prev) => [...prev, ...aiBoxes]);
-        alert(`Added ${aiBoxes.length} AI suggestions. You can accept or reject each label.`);
+        showToast(
+          "success",
+          `AI detected ${res.data.objects.length} object(s), mapped ${aiBoxes.length} object(s) into current project labels.\n` +
+          `You can accept or reject each suggestion.`
+        );
       } else {
-        alert("AI found no objects.");
+        const projectLabelSummary = labels.length > 0
+          ? labels.map((x) => `${x.name}:${x.yoloClassId}`).join(", ")
+          : "(no labels in project)";
+
+        showToast(
+          "info",
+          `AI responded successfully but no suggestions were added.\n` +
+          `Possible causes:\n` +
+          `1) The image has no detectable objects.\n` +
+          `2) Project labels do not match model class ids.\n` +
+          `Current labels => ${projectLabelSummary}\n` +
+          `Tip: person=0, car=2, cat=15, dog=16 (COCO yolov8n).`
+        );
       }
+    } catch (error: any) {
+      const backendMessage = error?.response?.data?.message;
+      const backendErrors = error?.response?.data?.errors;
+      const detail = Array.isArray(backendErrors) ? backendErrors.join("; ") : "";
+
+      showToast(
+        "error",
+        `AI Suggest request failed.\n` +
+        `${backendMessage || "Cannot connect to AI service or backend."}\n` +
+        `${detail}`.trim()
+      );
     } finally {
       setAiLoading(false);
     }
@@ -338,9 +383,13 @@ export default function AnnotatorAILabelPage() {
   const getMousePosition = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return { x: 0, y: 0 };
     const rect = containerRef.current.getBoundingClientRect();
+
+    const displayX = (e.clientX - rect.left) / zoom;
+    const displayY = (e.clientY - rect.top) / zoom;
+
     return {
-      x: (e.clientX - rect.left) / zoom,
-      y: (e.clientY - rect.top) / zoom,
+      x: displayX / scaleX,
+      y: displayY / scaleY,
     };
   };
 
@@ -396,9 +445,26 @@ export default function AnnotatorAILabelPage() {
 
   const isRework = task.status === "Returned" || task.status === "Rejected" || task.status === "Rework";
   const isCompleted = task.status === "Completed";
+  const isReadOnly = isCompleted || task.status === "Submitted";
 
   return (
     <DashboardLayout>
+      <div className="fixed top-5 right-5 z-[80] flex w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-2">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`rounded-lg border px-3 py-2 text-sm shadow-lg whitespace-pre-line ${
+              toast.type === "success"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                : toast.type === "error"
+                  ? "bg-red-50 border-red-200 text-red-800"
+                  : "bg-blue-50 border-blue-200 text-blue-800"
+            }`}
+          >
+            {toast.text}
+          </div>
+        ))}
+      </div>
       <div className="h-[calc(100vh-120px)] flex flex-col gap-4">
         {/* Review Feedback Banner */}
         {(isRework || isCompleted) && reviewFeedback && (
@@ -541,8 +607,14 @@ export default function AnnotatorAILabelPage() {
                 src={secureImageUrl}
                     alt="Labeled Data"
                 draggable={false}
+                onLoad={(e) => {
+                  const target = e.currentTarget;
+                  if (target.naturalWidth > 0 && target.naturalHeight > 0) {
+                    setImageNaturalSize({ width: target.naturalWidth, height: target.naturalHeight });
+                  }
+                }}
                 style={{
-                  width: 800 * zoom,
+                  width: CANVAS_BASE_WIDTH * zoom,
                   height: "auto",
                   display: "block",
                   userSelect: "none",
@@ -559,10 +631,10 @@ export default function AnnotatorAILabelPage() {
                       : "border-emerald-400 bg-emerald-400/20"
                   }`}
                   style={{
-                    left: box.x * zoom,
-                    top: box.y * zoom,
-                    width: box.width * zoom,
-                    height: box.height * zoom,
+                    left: box.x * scaleX * zoom,
+                    top: box.y * scaleY * zoom,
+                    width: box.width * scaleX * zoom,
+                    height: box.height * scaleY * zoom,
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -606,10 +678,10 @@ export default function AnnotatorAILabelPage() {
                 <div
                   className="absolute border-2 border-blue-400 bg-blue-400/20"
                   style={{
-                    left: previewBox.x * zoom,
-                    top: previewBox.y * zoom,
-                    width: previewBox.width * zoom,
-                    height: previewBox.height * zoom,
+                    left: previewBox.x * scaleX * zoom,
+                    top: previewBox.y * scaleY * zoom,
+                    width: previewBox.width * scaleX * zoom,
+                    height: previewBox.height * scaleY * zoom,
                   }}
                 />
               )}

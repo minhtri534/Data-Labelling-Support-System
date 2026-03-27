@@ -4,6 +4,10 @@ import os
 import time
 from typing import Any
 
+# PyTorch 2.6+ changed torch.load default weights_only=True, which breaks
+# loading older YOLO checkpoints unless explicitly disabled.
+os.environ.setdefault("TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD", "1")
+
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 
