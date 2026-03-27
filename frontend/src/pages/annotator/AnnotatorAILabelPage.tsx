@@ -77,6 +77,7 @@ export default function AnnotatorAILabelPage() {
   const [secureImageUrl, setSecureImageUrl] = useState<string>("");
   const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
   const [reworkComment, setReworkComment] = useState("");
+  const [aiOnlySelectedLabel, setAiOnlySelectedLabel] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const currentTaskId = task?.id || "";
@@ -270,7 +271,8 @@ export default function AnnotatorAILabelPage() {
 
     setAiLoading(true);
     try {
-      const res = await annotatorService.suggestAi(currentTaskId, false);
+      const labelFilter = aiOnlySelectedLabel ? selectedLabelId : undefined;
+      const res = await annotatorService.suggestAi(currentTaskId, false, labelFilter);
       if (!res.isSuccess || !res.data) {
         const details = (res.errors || []).join("; ");
         showToast("error", details ? `${res.message}. ${details}` : (res.message || "AI found no suggestions or AI service is disabled."));
@@ -565,6 +567,15 @@ export default function AnnotatorAILabelPage() {
             >
               {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Bot size={16} className="mr-1" />}
               AI Suggestions
+            </Button>
+            <Button
+              variant={aiOnlySelectedLabel ? "primary" : "outline"}
+              size="sm"
+              onClick={() => setAiOnlySelectedLabel((v) => !v)}
+              disabled={isReadOnly}
+              title="When enabled, AI only returns suggestions for the currently selected label"
+            >
+              {aiOnlySelectedLabel ? "Selected Label Only: ON" : "Selected Label Only: OFF"}
             </Button>
           </div>
 

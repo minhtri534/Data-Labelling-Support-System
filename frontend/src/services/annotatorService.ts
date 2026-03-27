@@ -66,9 +66,14 @@ export const annotatorService = {
     return res.data;
   },
 
-  async suggestAi(taskId: string, apply = false) {
+  async suggestAi(taskId: string, apply = false, labelId?: string) {
+    const query = new URLSearchParams({ apply: String(apply) });
+    if (labelId && labelId.trim().length > 0) {
+      query.set("labelId", labelId.trim());
+    }
+
     const res = await api.post<ServiceResponse<AiAssistSuggestResponse>>(
-      `/annotator/tasks/${taskId}/ai-suggest?apply=${apply}`
+      `/annotator/tasks/${taskId}/ai-suggest?${query.toString()}`
     );
     return res.data;
   },

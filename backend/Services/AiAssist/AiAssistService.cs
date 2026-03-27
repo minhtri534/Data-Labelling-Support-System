@@ -19,6 +19,7 @@ public interface IAiAssistService
         string userId,
         string taskId,
         bool applyAsDraft,
+    string? labelId,
         CancellationToken cancellationToken);
 }
 
@@ -34,10 +35,12 @@ public sealed class AiAssistService(
         string userId,
         string taskId,
         bool applyAsDraft,
+        string? labelId,
         CancellationToken cancellationToken)
     {
         var uid = (userId ?? string.Empty).Trim();
         var id = (taskId ?? string.Empty).Trim();
+        var selectedLabelId = (labelId ?? string.Empty).Trim();
 
         var opt = options.Value;
         if (!opt.Enabled)
@@ -103,6 +106,18 @@ public sealed class AiAssistService(
             .GroupBy(x => x.YoloClassId)
             .ToDictionary(g => g.Key, g => g.First().Id);
 
+        HashSet<int>? allowedClassIds = null;
+        if (!string.IsNullOrWhiteSpace(selectedLabelId))
+        {
+            var selectedLabel = labels.FirstOrDefault(x => string.Equals(x.Id, selectedLabelId, StringComparison.Ordinal));
+            if (selectedLabel is null)
+            {
+                return ServiceResponse<AiAssistSuggestResponse>.Failure("Invalid label", ["Selected label is not available in this task project"]);
+            }
+
+            allowedClassIds = [selectedLabel.YoloClassId];
+        }
+
         var opened = await storageService.OpenReadAsync(item.StorageProvider, item.ObjectKey, cancellationToken);
         if (opened is null)
         {
@@ -137,7 +152,12 @@ public sealed class AiAssistService(
 
         foreach (var det in detect.Detections)
         {
-            if (!labelByClassId.TryGetValue(det.ClassId, out var labelId))
+            if (allowedClassIds is not null && !allowedClassIds.Contains(det.ClassId))
+            {
+                continue;
+            }
+
+            if (!labelByClassId.TryGetValue(det.ClassId, out var mappedLabelId))
             {
                 continue;
             }
@@ -162,7 +182,7 @@ public sealed class AiAssistService(
             });
 
             objects.Add(new AiAssistSuggestionObject(
-                LabelId: labelId,
+                LabelId: mappedLabelId,
                 Confidence: det.Confidence,
                 GeometryData: geometryJson));
         }

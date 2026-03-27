@@ -30,6 +30,29 @@ import type {
 
 type TabType = "overview" | "data" | "tasks" | "monitoring" | "exports" | "settings";
 
+const YOLO_CLASS_OPTIONS = [
+  { id: 0, name: "person" },
+  { id: 1, name: "bicycle" },
+  { id: 2, name: "car" },
+  { id: 3, name: "motorcycle" },
+  { id: 5, name: "bus" },
+  { id: 7, name: "truck" },
+  { id: 15, name: "cat" },
+  { id: 16, name: "dog" },
+  { id: 24, name: "backpack" },
+  { id: 26, name: "handbag" },
+  { id: 27, name: "tie" },
+  { id: 39, name: "bottle" },
+  { id: 56, name: "chair" },
+  { id: 57, name: "couch" },
+  { id: 58, name: "potted plant" },
+  { id: 59, name: "bed" },
+  { id: 60, name: "dining table" },
+  { id: 62, name: "tv" },
+  { id: 63, name: "laptop" },
+  { id: 67, name: "cell phone" },
+] as const;
+
 const ProjectDetailPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
@@ -61,6 +84,8 @@ const ProjectDetailPage: React.FC = () => {
   // Form states
   const [newDatasetName, setNewDatasetName] = useState("");
   const [newLabelName, setNewLabelName] = useState("");
+  const [newLabelYoloClassId, setNewLabelYoloClassId] = useState<string>("");
+  const [selectedYoloPreset, setSelectedYoloPreset] = useState<string>("");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newTypeName, setNewTypeName] = useState("");
   const [guidelineText, setGuidelineText] = useState("");
@@ -141,17 +166,31 @@ const ProjectDetailPage: React.FC = () => {
   };
 
   const handleCreateLabel = async () => {
-    if (!projectId || !newLabelName) return;
+    if (!projectId || !newLabelName.trim()) return;
+
+    const parsedYoloClassId = Number.parseInt(newLabelYoloClassId, 10);
+    if (!Number.isInteger(parsedYoloClassId) || parsedYoloClassId < 0) {
+      alert("Please enter a valid YOLO Class ID (>= 0).");
+      return;
+    }
+
+    if (labels.some((label) => label.yoloClassId === parsedYoloClassId)) {
+      alert(`YOLO Class ID ${parsedYoloClassId} is already used in this project.`);
+      return;
+    }
+
     setIsActionLoading(true);
     const res = await managerService.createLabel({ 
       projectId, 
-      name: newLabelName, 
-      yoloClassId: labels.length,
+      name: newLabelName.trim(), 
+      yoloClassId: parsedYoloClassId,
       categoryId: categories.length > 0 ? categories[0].id : undefined,
       annotationTypeId: annotationTypes.length > 0 ? annotationTypes[0].id : undefined
     });
     if (res.isSuccess) {
       setNewLabelName("");
+      setNewLabelYoloClassId("");
+      setSelectedYoloPreset("");
       fetchData();
     }
     setIsActionLoading(false);
@@ -334,6 +373,18 @@ const ProjectDetailPage: React.FC = () => {
       default: return "Unknown";
     }
   };
+
+  const suggestedYoloByName = YOLO_CLASS_OPTIONS.find(
+    (option) => option.name.toLowerCase() === newLabelName.trim().toLowerCase()
+  );
+
+  const isDuplicateYoloId = (() => {
+    const value = Number.parseInt(newLabelYoloClassId, 10);
+    if (!Number.isInteger(value) || value < 0) {
+      return false;
+    }
+    return labels.some((label) => label.yoloClassId === value);
+  })();
 
   if (loading && !project) {
     return (
@@ -570,13 +621,68 @@ const ProjectDetailPage: React.FC = () => {
                     <Tag className="h-5 w-5 text-green-500" />
                     Label Classes
                   </h3>
-                  <div className="flex gap-2 mb-4">
+                  <div className="space-y-2 mb-4">
                     <Input 
                       placeholder="Label name..."
                       value={newLabelName} 
                       onChange={e => setNewLabelName(e.target.value)} 
                     />
-                    <Button onClick={handleCreateLabel} disabled={isActionLoading}>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <select
+                        className="w-full h-10 px-3 text-sm bg-white border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                        value={selectedYoloPreset}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setSelectedYoloPreset(next);
+                          setNewLabelYoloClassId(next);
+                        }}
+                      >
+                        <option value="">Pick model class (optional)</option>
+                        {YOLO_CLASS_OPTIONS.map((option) => (
+                          <option key={option.id} value={String(option.id)}>
+                            {option.name} (ID {option.id})
+                          </option>
+                        ))}
+                      </select>
+
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="YOLO Class ID"
+                        value={newLabelYoloClassId}
+                        onChange={(e) => {
+                          setNewLabelYoloClassId(e.target.value);
+                          setSelectedYoloPreset("");
+                        }}
+                      />
+                    </div>
+
+                    {suggestedYoloByName && !newLabelYoloClassId && (
+                      <p className="text-xs text-blue-600 flex items-center gap-1">
+                        <Info className="h-3.5 w-3.5" />
+                        Suggested ID for "{newLabelName.trim()}": {suggestedYoloByName.id}
+                        <button
+                          type="button"
+                          className="underline"
+                          onClick={() => {
+                            setNewLabelYoloClassId(String(suggestedYoloByName.id));
+                            setSelectedYoloPreset(String(suggestedYoloByName.id));
+                          }}
+                        >
+                          Use this
+                        </button>
+                      </p>
+                    )}
+
+                    {isDuplicateYoloId && (
+                      <p className="text-xs text-red-600">This YOLO Class ID is already used in this project.</p>
+                    )}
+
+                    <Button
+                      onClick={handleCreateLabel}
+                      disabled={isActionLoading || !newLabelName.trim() || !newLabelYoloClassId || isDuplicateYoloId}
+                    >
                       {isActionLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Plus className="h-4 w-4" />}
                     </Button>
                   </div>

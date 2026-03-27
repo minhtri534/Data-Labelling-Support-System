@@ -229,6 +229,7 @@ public sealed class AnnotatorController(IAnnotatorService annotatorService, ISto
     public async Task<ActionResult<ServiceResponse<AiAssistSuggestResponse>>> AiSuggestBbox(
         [FromRoute] string taskId,
         [FromQuery] bool apply,
+        [FromQuery] string? labelId,
         CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -237,7 +238,7 @@ public sealed class AnnotatorController(IAnnotatorService annotatorService, ISto
             return Unauthorized(ServiceResponse<AiAssistSuggestResponse>.Failure(ErrorMessages.Unauthorized, ["Missing user id claim"]));
         }
 
-        var result = await aiAssistService.SuggestBboxAsync(userId, taskId, apply, cancellationToken);
+        var result = await aiAssistService.SuggestBboxAsync(userId, taskId, apply, labelId, cancellationToken);
         return this.ToOkOrStatusCode(result, StatusCodes.Status403Forbidden);
     }
 
